@@ -1,15 +1,25 @@
 <?php
 require_once 'auth_check.php';
 require_once '../config/db.php';
+require_once '../includes/functions.php';
 
 $requests = $conn->query("SELECT * FROM requests ORDER BY date_requested DESC");
 
-// ---- Quick stats ----
-$stats = $conn->query("SELECT
-    SUM(request_status = 'Pending') AS pending,
-    SUM(request_status = 'Ready for Pickup') AS ready,
-    COUNT(*) AS total
-    FROM requests")->fetch_assoc();
+/* Quick stats */
+$stats = $conn->query("
+    SELECT
+        SUM(request_status = 'Pending') AS pending,
+        SUM(request_status = 'Ready for Pickup') AS ready,
+        COUNT(*) AS total
+    FROM requests
+")->fetch_assoc();
+
+$adminName = $_SESSION['admin_name'] ?? 'Admin';
+$adminPhoto = $_SESSION['admin_photo'] ?? null;
+$nameParts = explode(' ', trim($adminName));
+$firstInitial = strtoupper(substr($nameParts[0], 0, 1));
+$secondInitial = strtoupper(substr(end($nameParts), 0, 1));
+$adminInitial = $firstInitial . $secondInitial;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -17,117 +27,598 @@ $stats = $conn->query("SELECT
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Requests Dashboard | Registrar Admin</title>
+
+  <title>Registrar Admin</title>
+
   <link rel="stylesheet" href="../assets/css/style.css">
+
 </head>
 
 <body class="admin-body">
-  <header class="site-header admin-header">
-    <div class="header-inner">
-      <a href="dashboard.php" class="brand">
-        <span class="brand-icon" aria-hidden="true"></span>
-        <span class="brand-text">Registrar Admin</span>
-      </a>
-      <nav class="site-nav">
-        <span class="admin-who">Hi admin, <?php echo htmlspecialchars($_SESSION['admin_name']); ?></span>
-        <a href="logout.php">Log out</a>
+
+  <div class="admin-shell">
+
+    <!-- SIDEBAR -->
+    <aside class="admin-sidebar">
+      <div class="sidebar-brand">
+        <span class="sidebar-brand-icon" aria-hidden="true">
+          <img src="../assets/images/logo.png" alt="" class="sidebar-brand-img">
+        </span>
+        <div class="univ">
+          <span class="sidebar-brand-text">
+            University of Rizal System
+          </span>
+          <span class="sidebar-office">
+            Registrar Office - Morong
+          </span>
+        </div>
+      </div>
+
+      <!-- Status -->
+      <div class="sidebar-section-label">
+        Status
+      </div>
+
+      <nav class="sidebar-nav sidebar-nav-status">
+
+        <!-- All -->
+        <a href="#"
+          class="sidebar-link sidebar-status-link active"
+          data-status="">
+          <span>All requests</span>
+          <span class="sidebar-count sidebar-count-all"
+            id="count-all">
+            <?php echo (int)$stats['total']; ?>
+          </span>
+        </a>
+
+        <a href="#"
+          class="sidebar-link sidebar-status-link"
+          data-status="Pending">
+          <span>Pending</span>
+          <span class="sidebar-count sidebar-count-pending"
+            id="count-pending">
+            <?php echo (int)$stats['pending']; ?>
+          </span>
+        </a>
+
+        <a href="#"
+          class="sidebar-link sidebar-status-link"
+          data-status="Ready for Pickup">
+          <span>Ready for pickup</span>
+          <span class="sidebar-count sidebar-count-ready"
+            id="count-ready">
+            <?php echo (int)$stats['ready']; ?>
+          </span>
+        </a>
       </nav>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <div class="admin-content">
+
+
+      <!-- TOPBAR -->
+      <header class="admin-topbar">
+        <div class="topbar-status-row">
+          <a href="dashboard.php"
+            class="topbar-link"
+            data-status="">
+            <svg viewBox="0 0 24 24" fill="none">
+              <rect
+                x="3.5"
+                y="3.5"
+                width="7"
+                height="7"
+                rx="1.5"
+                stroke="currentColor"
+                stroke-width="1.5" />
+
+              <rect
+                x="13.5"
+                y="3.5"
+                width="7"
+                height="7"
+                rx="1.5"
+                stroke="currentColor"
+                stroke-width="1.5" />
+
+              <rect
+                x="3.5"
+                y="13.5"
+                width="7"
+                height="7"
+                rx="1.5"
+                stroke="currentColor"
+                stroke-width="1.5" />
+
+              <rect
+                x="13.5"
+                y="13.5"
+                width="7"
+                height="7"
+                rx="1.5"
+                stroke="currentColor"
+                stroke-width="1.5" />
+            </svg>
+
+            <span>Admin Dashboard</span>
+          </a>
+
+          <!-- Admin profile -->
+          <div class="topbar-profile" id="profileMenu">
+            <button type="button" class="topbar-profile-trigger" id="profileTrigger"
+              aria-haspopup="true" aria-expanded="false">
+              <span class="sidebar-avatar" id="topbarAvatar"><?php echo avatarContent($adminPhoto, $adminInitial, '../'); ?></span>
+
+              <div class="sidebar-profile-info">
+                <span class="sidebar-admin-name"><?php echo htmlspecialchars($adminName); ?></span>
+                <span class="sidebar-profile-greeting">Admin</span>
+              </div>
+
+              <svg class="topbar-profile-chevron" viewBox="0 0 24 24" fill="none">
+                <path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="1.8"
+                  stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </button>
+
+            <div class="profile-dropdown" id="profileDropdown" hidden>
+              <div class="profile-dropdown-header">
+                <span class="profile-dropdown-avatar" id="dropdownAvatar"><?php echo avatarContent($adminPhoto, $adminInitial, '../'); ?></span>
+                <div>
+                  <span class="profile-dropdown-name"><?php echo htmlspecialchars($adminName); ?></span>
+                  <span class="profile-dropdown-role">Admin</span>
+                </div>
+              </div>
+
+              <div class="profile-dropdown-office">
+                <span class="profile-dropdown-office-label">Office</span>
+                <span class="profile-dropdown-office-value">Morong</span>
+              </div>
+
+              <div class="profile-dropdown-items">
+                <button type="button" class="profile-dropdown-item" id="openEditProfile">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="8" r="3.4" stroke="currentColor" stroke-width="1.6" />
+                    <path d="M5 20c0-3.6 3.1-6.2 7-6.2s7 2.6 7 6.2" stroke="currentColor"
+                      stroke-width="1.6" stroke-linecap="round" />
+                  </svg>
+                  Edit Profile
+                </button>
+                <a href="logout.php" class="profile-dropdown-item profile-dropdown-item-danger">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M9 4H6A1.5 1.5 0 0 0 4.5 5.5V18.5A1.5 1.5 0 0 0 6 20H9"
+                      stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+                    <path d="M14 16L18 12L14 8" stroke="currentColor" stroke-width="1.6"
+                      stroke-linecap="round" stroke-linejoin="round" />
+                    <path d="M18 12H9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+                  </svg>
+                  Sign Out
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SEARCH -->
+        <div class="topbar-tools">
+          <label class="topbar-search">
+            <svg viewBox="0 0 24 24" fill="none">
+              <circle
+                cx="11"
+                cy="11"
+                r="6.5"
+                stroke="currentColor"
+                stroke-width="1.7" />
+              <path
+                d="M16 16L20 20"
+                stroke="currentColor"
+                stroke-width="1.7"
+                stroke-linecap="round" />
+            </svg>
+            <input
+              type="text"
+              id="filterSearch"
+              autocomplete="off"
+              placeholder="Search name, student no. or reference no.">
+          </label>
+        </div>
+      </header>
+
+      <!-- DASHBOARD CONTENT -->
+      <main class="admin-main">
+
+        <!-- Statistics -->
+        <div class="stats-row">
+
+          <!-- Total -->
+          <div class="stat-card">
+            <div class="stat-icon stat-icon-total">
+              <svg viewBox="0 0 24 24" fill="none">
+                <rect
+                  x="5"
+                  y="3"
+                  width="14"
+                  height="18"
+                  rx="2"
+                  stroke="currentColor"
+                  stroke-width="1.6" />
+
+                <path
+                  d="M8.5 8H15.5M8.5 12H15.5M8.5 16H13"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round" />
+              </svg>
+            </div>
+
+            <div>
+              <span class="stat-number"
+                id="stat-total">
+                <?php echo (int)$stats['total']; ?>
+              </span>
+
+              <span class="stat-label">
+                Total requests
+              </span>
+            </div>
+          </div>
+
+
+          <!-- Pending -->
+          <div class="stat-card stat-card-pending">
+            <div class="stat-icon stat-icon-pending">
+              <svg viewBox="0 0 24 24" fill="none">
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="8"
+                  stroke="currentColor"
+                  stroke-width="1.7" />
+
+                <path
+                  d="M12 7V12L15 14"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>
+            </div>
+
+            <div>
+              <span class="stat-number"
+                id="stat-pending">
+                <?php echo (int)$stats['pending']; ?>
+              </span>
+
+              <span class="stat-label">
+                Pending
+              </span>
+            </div>
+          </div>
+
+          <!-- Ready -->
+          <div class="stat-card stat-card-ready">
+            <div class="stat-icon stat-icon-ready">
+              <svg viewBox="0 0 24 24" fill="none">
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="8"
+                  stroke="currentColor"
+                  stroke-width="1.7" />
+
+                <path
+                  d="M8.5 12L11 14.5L15.5 9.5"
+                  stroke="currentColor"
+                  stroke-width="1.7"
+                  stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>
+            </div>
+
+            <div>
+              <span class="stat-number"
+                id="stat-ready">
+                <?php echo (int)$stats['ready']; ?>
+              </span>
+
+              <span class="stat-label">
+                Ready for pickup
+              </span>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- REQUEST TABLE -->
+        <div class="table-wrap">
+
+          <table class="admin-table">
+
+            <thead>
+              <tr>
+                <th>Reference no.</th>
+                <th>Student no.</th>
+                <th>Name</th>
+                <th>Document</th>
+                <th>Year Level</th>
+                <th>Semester</th>
+                <th>Claim date</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr class="filter-empty"
+                hidden>
+                <td colspan="9"
+                  class="empty-row">
+                  <div class="empty-state">
+                    <svg viewBox="0 0 24 24"
+                      fill="none">
+
+                      <rect
+                        x="5"
+                        y="3"
+                        width="14"
+                        height="18"
+                        rx="2"
+                        stroke="currentColor"
+                        stroke-width="1.5" />
+
+                      <path
+                        d="M9 8H15M9 12H15M9 16H13"
+                        stroke="currentColor"
+                        stroke-width="1.4"
+                        stroke-linecap="round" />
+                    </svg>
+                    <span>
+                      No requests match that search.
+                    </span>
+                  </div>
+                </td>
+              </tr>
+
+              <?php if ($requests->num_rows === 0): ?>
+                <tr>
+                  <td colspan="9"
+                    class="empty-row">
+                    No requests yet. New submissions from the student site will appear here.
+                  </td>
+                </tr>
+              <?php endif; ?>
+
+              <?php while ($r = $requests->fetch_assoc()): ?>
+                <tr
+                  id="row-<?php echo $r['id']; ?>"
+                  data-reference="<?php echo htmlspecialchars($r['reference_no'], ENT_QUOTES, 'UTF-8'); ?>"
+                  data-full-name="<?php echo htmlspecialchars($r['full_name'], ENT_QUOTES, 'UTF-8'); ?>">
+                  <td data-label="Reference no.">
+                    <span class="cell-ref">
+                      <?php echo htmlspecialchars($r['reference_no']); ?>
+                    </span>
+                  </td>
+
+                  <td data-label="Student no.">
+                    <?php echo htmlspecialchars($r['student_number']); ?>
+                  </td>
+
+                  <td data-label="Name">
+                    <?php echo htmlspecialchars($r['full_name']); ?>
+                  </td>
+
+                  <td data-label="Document">
+                    <?php echo htmlspecialchars($r['document_type']); ?>
+                  </td>
+
+                  <td data-label="Year Level">
+                    <?php
+                    echo (
+                      $r['year_level'] !== ''
+                      && $r['year_level'] !== null
+                    )
+                      ? htmlspecialchars($r['year_level'])
+                      : '&mdash;';
+                    ?>
+                  </td>
+
+                  <td data-label="Semester">
+                    <?php
+                    echo (
+                      $r['semester'] !== ''
+                      && $r['semester'] !== null
+                    )
+                      ? htmlspecialchars($r['semester'])
+                      : '&mdash;';
+                    ?>
+                  </td>
+
+                  <td data-label="Claim date">
+                    <?php
+                    echo $r['claim_date']
+                      ? date(
+                        'M d, Y',
+                        strtotime($r['claim_date'])
+                      )
+                      : '&mdash;';
+                    ?>
+                  </td>
+
+                  <td data-label="Status"
+                    class="cell-status">
+                    <select
+                      class="status-select"
+                      data-id="<?php echo $r['id']; ?>"
+                      aria-label="Status for <?php echo htmlspecialchars($r['reference_no']); ?>">
+                      <?php foreach (
+                        ['Pending', 'Ready for Pickup']
+                        as $s
+                      ): ?>
+                        <option
+                          value="<?php echo $s; ?>"
+                          <?php
+                          echo $r['request_status'] === $s
+                            ? 'selected'
+                            : '';
+                          ?>>
+                          <?php echo $s; ?>
+                        </option>
+                      <?php endforeach; ?>
+                    </select>
+                  </td>
+
+                  <td
+                    class="cell-action"
+                    id="action-<?php echo $r['id']; ?>">
+                    <?php if (
+                      $r['request_status'] === 'Ready for Pickup'
+                    ): ?>
+                      <button
+                        type="button"
+                        class="btn-claim"
+                        data-id="<?php echo $r['id']; ?>"
+                        data-reference="<?php echo htmlspecialchars($r['reference_no'], ENT_QUOTES, 'UTF-8'); ?>"
+                        data-full-name="<?php echo htmlspecialchars($r['full_name'], ENT_QUOTES, 'UTF-8'); ?>"
+                        title="Mark as claimed"
+                        aria-label="<?php echo htmlspecialchars($r['reference_no'] . ' (' . $r['full_name'] . ')', ENT_QUOTES, 'UTF-8'); ?> as claimed">
+
+                        <svg viewBox="0 0 24 24" fill="none">
+                          <path d="M5 13L9.5 17.5L19 7"
+                            stroke="currentColor"
+                            stroke-width="2.2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round" />
+                        </svg>
+                      </button>
+                    <?php endif; ?>
+                  </td>
+                </tr>
+              <?php endwhile; ?>
+            </tbody>
+          </table>
+        </div>
+      </main>
     </div>
-  </header>
+  </div>
 
-  <main class="admin-main">
-
-    <div class="stats-row">
-      <div class="stat-card">
-        <span class="stat-number" id="stat-total"><?php echo (int)$stats['total']; ?></span>
-        <span class="stat-label">Total requests</span>
-      </div>
-      <div class="stat-card stat-card-pending">
-        <span class="stat-number" id="stat-pending"><?php echo (int)$stats['pending']; ?></span>
-        <span class="stat-label">Pending</span>
-      </div>
-      <div class="stat-card stat-card-ready">
-        <span class="stat-number" id="stat-ready"><?php echo (int)$stats['ready']; ?></span>
-        <span class="stat-label">Ready for pickup</span>
+  <!-- CLAIM CONFIRMATION MODAL -->
+  <div class="modal-overlay" id="claimModalOverlay" hidden>
+    <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="claimModalTitle">
+      <h3 id="claimModalTitle">Mark as claimed?</h3>
+      <p id="claimModalText">This will permanently delete the request from the system.</p>
+      <div class="modal-actions">
+        <button type="button" class="btn-modal btn-modal-cancel" id="claimModalCancel">Cancel</button>
+        <button type="button" class="btn-modal btn-modal-confirm" id="claimModalConfirm">Yes, mark claimed</button>
       </div>
     </div>
+  </div>
 
-    <div class="filter-bar">
-      <div class="filter-search">
-        <input type="text" id="filterSearch" autocomplete="off"
-          placeholder="Search by name, student number or reference number">
+  <!-- EDIT PROFILE MODAL -->
+  <div class="modal-overlay" id="editProfileOverlay" hidden>
+    <div class="edit-profile-box" role="dialog" aria-modal="true" aria-labelledby="editProfileTitle">
+      <div class="edit-profile-header">
+        <span class="edit-profile-header-icon">
+          <svg viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="8" r="3.4" stroke="currentColor" stroke-width="1.6" />
+            <path d="M5 20c0-3.6 3.1-6.2 7-6.2s7 2.6 7 6.2" stroke="currentColor"
+              stroke-width="1.6" stroke-linecap="round" />
+          </svg>
+        </span>
+        <div class="edit-profile-header-text">
+          <h3 id="editProfileTitle">Edit Profile</h3>
+          <p>Update your account information</p>
+        </div>
+        <button type="button" class="edit-profile-close" id="editProfileClose" aria-label="Close">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+          </svg>
+        </button>
       </div>
 
-      <select id="filterStatus" class="filter-status">
-        <option value="">All statuses</option>
-        <option value="Pending">Pending</option>
-        <option value="Ready for Pickup">Ready for Pickup</option>
-      </select>
+      <form id="editProfileForm">
+        <div class="edit-profile-body">
+
+          <div id="editProfileAlert"></div>
+
+          <div class="edit-profile-avatar-row">
+            <span class="edit-profile-avatar" id="editProfileAvatar"><?php echo avatarContent($adminPhoto, $adminInitial, '../'); ?></span>
+            <div>
+              <span class="edit-profile-avatar-name" id="editProfileAvatarName"><?php echo htmlspecialchars($adminName); ?></span>
+              <span class="edit-profile-avatar-role">Registrar Admin</span>
+              <button type="button" class="edit-profile-photo-btn" id="editProfilePhotoBtn">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M12 16V4M12 4L7 9M12 4L17 9" stroke="currentColor" stroke-width="1.6"
+                    stroke-linecap="round" stroke-linejoin="round" />
+                  <path d="M4 16V18.5A1.5 1.5 0 0 0 5.5 20H18.5A1.5 1.5 0 0 0 20 18.5V16"
+                    stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+                </svg>
+                Change Photo
+              </button>
+              <input type="file" id="editProfilePhotoInput" name="photo"
+                accept="image/png, image/jpeg, image/webp" hidden>
+            </div>
+          </div>
+
+          <div class="edit-profile-section">
+            <div class="edit-profile-section-label">
+              Account Information
+            </div>
+
+            <div class="edit-profile-field">
+              <label for="edit_full_name">Full Name</label>
+              <input type="text" id="edit_full_name" name="full_name"
+                value="<?php echo htmlspecialchars($adminName); ?>" required>
+            </div>
+
+            <div class="edit-profile-field">
+              <label for="edit_username">Username</label>
+              <input type="text" id="edit_username" name="username"
+                value="<?php echo htmlspecialchars($_SESSION['admin_username'] ?? ''); ?>" required>
+              <p class="edit-profile-hint">Your login username. Must be unique across the system.</p>
+            </div>
+          </div>
+
+          <div class="edit-profile-section">
+            <div class="edit-profile-section-label">
+              Change Password
+            </div>
+
+            <div class="edit-profile-field">
+              <label for="edit_current_password">Current Password</label>
+              <input type="password" id="edit_current_password" name="current_password" autocomplete="off">
+            </div>
+
+            <div class="edit-profile-field">
+              <label for="edit_new_password">New Password</label>
+              <input type="password" id="edit_new_password" name="new_password"
+                autocomplete="new-password" minlength="8">
+            </div>
+
+            <div class="edit-profile-field">
+              <label for="edit_confirm_password">Confirm New Password</label>
+              <input type="password" id="edit_confirm_password" name="confirm_password"
+                autocomplete="new-password" minlength="8">
+              <p class="edit-profile-hint">Leave the password fields blank if you don't want to change your password.</p>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="edit-profile-footer">
+          <button type="button" class="btn-modal btn-modal-cancel" id="editProfileCancel">Cancel</button>
+          <button type="submit" class="btn-modal btn-modal-save" id="editProfileSave">Save Changes</button>
+        </div>
+      </form>
     </div>
+  </div>
 
-    <div class="table-wrap">
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>Reference no.</th>
-            <th>Student no.</th>
-            <th>Name</th>
-            <th>Document</th>
-            <th>Year Level</th>
-            <th>Semester</th>
-            <th>Claim date</th>
-            <th>Status</th>
-            <th><span class="visually-hidden">Actions</span></th>
-          </tr>
-        </thead>
-        <tbody>
-          <!-- Shown by admin.js when a search or status filter matches nothing -->
-          <tr class="filter-empty" hidden>
-            <td colspan="8" class="empty-row">No requests match that search.</td>
-          </tr>
-
-          <?php if ($requests->num_rows === 0): ?>
-            <tr>
-              <td colspan="8" class="empty-row">
-                No requests yet. New submissions from the student site will appear here.
-              </td>
-            </tr>
-          <?php endif; ?>
-
-          <?php while ($r = $requests->fetch_assoc()): ?>
-            <tr id="row-<?php echo $r['id']; ?>" data-reference="<?php echo htmlspecialchars($r['reference_no']); ?>">
-              <td data-label="Reference no."><span class="cell-ref"><?php echo htmlspecialchars($r['reference_no']); ?></span></td>
-              <td data-label="Student no."><?php echo htmlspecialchars($r['student_number']); ?></td>
-              <td data-label="Name"><?php echo htmlspecialchars($r['full_name']); ?></td>
-              <td data-label="Document"><?php echo htmlspecialchars($r['document_type']); ?></td>
-              <td data-label="Year Level"><?php echo $r['year_level'] !== '' && $r['year_level'] !== null ? htmlspecialchars($r['year_level']) : '&mdash;'; ?></td>
-              <td data-label="Semester"><?php echo $r['semester'] !== '' && $r['semester'] !== null ? htmlspecialchars($r['semester']) : '&mdash;'; ?></td>
-              <td data-label="Claim date"><?php echo $r['claim_date'] ? date('M d, Y', strtotime($r['claim_date'])) : '&mdash;'; ?></td>
-              <td data-label="Status" class="cell-status">
-                <select class="status-select" data-id="<?php echo $r['id']; ?>"
-                  aria-label="Status for <?php echo htmlspecialchars($r['reference_no']); ?>">
-                  <?php foreach (['Pending', 'Ready for Pickup'] as $s): ?>
-                    <option value="<?php echo $s; ?>" <?php echo $r['request_status'] === $s ? 'selected' : ''; ?>><?php echo $s; ?></option>
-                  <?php endforeach; ?>
-                </select>
-              </td>
-              <td class="cell-action" id="action-<?php echo $r['id']; ?>">
-                <?php if ($r['request_status'] === 'Ready for Pickup'): ?>
-                  <button type="button" class="btn btn-small btn-danger btn-claim"
-                    data-id="<?php echo $r['id']; ?>"
-                    data-reference="<?php echo htmlspecialchars($r['reference_no']); ?>">
-                    Mark claimed
-                  </button>
-                <?php endif; ?>
-              </td>
-            </tr>
-          <?php endwhile; ?>
-        </tbody>
-      </table>
-    </div>
-  </main>
+  <!-- TOAST NOTIFICATIONS -->
+  <div class="toast-container" id="toastContainer"></div>
 
   <script src="../assets/js/admin.js"></script>
+
 </body>
 
 </html>

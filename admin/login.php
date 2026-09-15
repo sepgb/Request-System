@@ -23,6 +23,7 @@ function startAdminSession(array $admin): void
   $_SESSION['admin_id']       = $admin['id'];
   $_SESSION['admin_username'] = $admin['username'];
   $_SESSION['admin_name']     = $admin['full_name'];
+  $_SESSION['admin_photo']    = $admin['photo'] ?? null;
   header('Location: dashboard.php');
   exit;
 }
@@ -40,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($username === '' || $password === '') {
       $loginError = 'Enter your username and password.';
     } else {
-      $stmt = $conn->prepare("SELECT id, username, password, full_name FROM admin WHERE username = ?");
+      $stmt = $conn->prepare("SELECT id, username, password, full_name, photo FROM admin WHERE username = ?");
       $stmt->bind_param('s', $username);
       $stmt->execute();
       $res = $stmt->get_result();
