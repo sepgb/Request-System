@@ -172,7 +172,7 @@ $adminInitial = $firstInitial . $secondInitial;
               </div>
 
               <div class="profile-dropdown-office">
-                <span class="profile-dropdown-office-label">Office</span>
+                <span class="profile-dropdown-office-label">Registrar Office</span>
                 <span class="profile-dropdown-office-value">Morong</span>
               </div>
 
@@ -576,7 +576,7 @@ $adminInitial = $firstInitial . $secondInitial;
               <label for="edit_username">Username</label>
               <input type="text" id="edit_username" name="username"
                 value="<?php echo htmlspecialchars($_SESSION['admin_username'] ?? ''); ?>" required>
-              <p class="edit-profile-hint">Your login username. Must be unique across the system.</p>
+              <p class="edit-profile-hint">Your login username must be unique across the system.</p>
             </div>
           </div>
 

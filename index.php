@@ -17,29 +17,29 @@ include 'includes/header.php';
 </section>
 
 <section class="how-it-works">
-  <h2>How it works</h2>
+  <h2 class="reveal">How it works</h2>
   <div class="steps">
-    <div class="step-card">
+    <div class="step-card reveal">
       <span class="step-number">1</span>
       <h3>Fill up the form</h3>
       <p>Enter your details accurately. Free and instant request. No account needed.</p>
     </div>
-    <div class="step-card">
+    <div class="step-card reveal">
       <span class="step-number">2</span>
       <h3>Save your receipt</h3>
       <p>Print your claim receipt — it shows your claim date and what is needed to track your request.</p>
     </div>
-    <div class="step-card">
+    <div class="step-card reveal">
       <span class="step-number">3</span>
       <h3>Pay at the cashier</h3>
       <p>Pay the processing fee at the Cashier's Office and keep the official receipt securely.</p>
     </div>
-    <div class="step-card">
+    <div class="step-card reveal">
       <span class="step-number">4</span>
       <h3>Registrar processes it</h3>
       <p>The registrar's office carefully reviews and prepares your document for release.</p>
     </div>
-    <div class="step-card">
+    <div class="step-card reveal">
       <span class="step-number">5</span>
       <h3>Claim your document</h3>
       <p>Once marked 'Ready for Pickup', bring your receipt and a valid ID to claim in registrar office.</p>
@@ -47,7 +47,7 @@ include 'includes/header.php';
   </div>
 </section>
 
-<section class="documents-offered">
+<section class="documents-offered reveal">
   <h2>Documents you can request</h2>
 
   <div class="doc-marquee">
