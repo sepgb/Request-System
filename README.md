@@ -7,18 +7,18 @@ A web-based platform that lets URS - Morong students request registrar documents
 2. **Save your receipt** — print your claim receipt, showing your claim date and what you'll need to track your request.
 3. **Pay at the cashier** — pay the processing fee at the Cashier's Office and keep the official receipt.
 4. **Registrar processes it** — the registrar's office reviews and prepares your document.
-5. **Claim your document** — once marked "Ready for Pickup," bring your receipt and a valid ID to claim it. <br/> <br/> <br/>
+5. **Claim your document** — once marked "Ready for Pickup," bring your receipt and a valid ID to claim it.
 
 ## Requests lifecycle
 Each request submitted through `request.php` can later be looked up on `track.php` using the details provided at submission, and a receipt for it can be 
-viewed/printed via `receipt.php`. Administrators manage and update request status from the `admin/` section. <br/> <br/> <br/>
+viewed/printed via `receipt.php`. Administrators manage and update request status from the `admin/` section. 
 
 ## Getting started
 1. Clone the repository:
    ```bash
    git clone https://github.com/sepgb/Request-System.git
    ```
-2. Set up a local PHP + MySQL environment (e.g. XAMPP, WAMP, or MAMP).
+2. Set up a local PHP + MySQL environment (e.g. XAMPP).
 3. Import the schema/seed files from the `database/` folder into your MySQL server.
 4. Update the database connection details in `config/` to match your local setup.
 5. Place the project folder in your server's document root (e.g. `htdocs/`) and open `index.php` in your browser.
