@@ -1,4 +1,5 @@
 <?php
+session_start();
 require_once 'config/db.php';
 require_once 'includes/functions.php';
 
@@ -12,6 +13,10 @@ $basePath = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   $errors = [];
+
+  if (!csrf_verify($_POST['csrf_token'] ?? null)) {
+    $errors[] = 'Your form session expired. Please go back and submit again.';
+  }
 
   $student_number = trim($_POST['student_number'] ?? '');
   $full_name      = trim($_POST['full_name'] ?? '');

@@ -9,6 +9,11 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+if (!csrf_verify($_POST['csrf_token'] ?? null)) {
+    echo json_encode(['success' => false, 'message' => 'Your session expired. Please refresh the page.']);
+    exit;
+}
+
 $adminId = (int)$_SESSION['admin_id'];
 
 $fullName        = trim($_POST['full_name'] ?? '');

@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
       fetch('quick_status.php', {
         method: 'POST',
-        body: new URLSearchParams({ id: id, request_status: newStatus })
+        body: new URLSearchParams({ id: id, request_status: newStatus, csrf_token: window.CSRF_TOKEN })
       })
         .then(function (res) { return res.json(); })
         .then(function (json) {
@@ -136,7 +136,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     fetch('claim_request.php', {
       method: 'POST',
-      body: new URLSearchParams({ id: id })
+      body: new URLSearchParams({ id: id, csrf_token: window.CSRF_TOKEN })
     })
       .then(function (res) { return res.json(); })
       .then(function (json) {

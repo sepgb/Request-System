@@ -28,13 +28,24 @@ function startAdminSession(array $admin): void
   exit;
 }
 
+require_once '../includes/functions.php';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $formType = $_POST['form_type'] ?? 'login';
+
+  if (!csrf_verify($_POST['csrf_token'] ?? null)) {
+    if ($formType === 'signup') {
+      $activeTab = 'signup';
+      $signupError = 'Your form session expired. Please try again.';
+    } else {
+      $loginError = 'Your form session expired. Please try again.';
+    }
+  }
 
   // ---------------------------------------------------------------
   // Log in
   // ---------------------------------------------------------------
-  if ($formType === 'login') {
+  elseif ($formType === 'login') {
     $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
 
@@ -62,7 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   // ---------------------------------------------------------------
   // Create account
   // ---------------------------------------------------------------
-  if ($formType === 'signup') {
+  elseif ($formType === 'signup') {
     $activeTab = 'signup';
 
     $fullName = trim($_POST['full_name'] ?? '');
@@ -148,6 +159,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
           <form method="POST" class="auth-form">
             <input type="hidden" name="form_type" value="login" autocomplete="off">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>">
 
             <div class="form-group">
               <label for="username">Username</label>
@@ -175,6 +187,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
           <form method="POST" class="auth-form">
             <input type="hidden" name="form_type" value="signup" autocomplete="off">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>">
 
             <div class="form-group">
               <label for="full_name">Full name</label>

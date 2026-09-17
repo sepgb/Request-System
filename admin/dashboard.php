@@ -538,6 +538,7 @@ $adminInitial = $firstInitial . $secondInitial;
       </div>
 
       <form id="editProfileForm">
+        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>">
         <div class="edit-profile-body">
 
           <div id="editProfileAlert"></div>
@@ -617,6 +618,9 @@ $adminInitial = $firstInitial . $secondInitial;
   <!-- TOAST NOTIFICATIONS -->
   <div class="toast-container" id="toastContainer"></div>
 
+  <script>
+    window.CSRF_TOKEN = <?php echo json_encode(csrf_token()); ?>;
+  </script>
   <script src="../assets/js/admin.js"></script>
 
 </body>

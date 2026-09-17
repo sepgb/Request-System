@@ -31,3 +31,26 @@ CREATE TABLE IF NOT EXISTS requests (
   INDEX idx_student_number (student_number),
   INDEX idx_status (request_status)
 ) ENGINE = InnoDB;
+-- ---------------------------------------------------------
+-- Table: audit_log
+-- Permanent record of every status change and claim/delete,
+-- written BEFORE the mutating action — nothing is lost even
+-- though `requests` rows get deleted once claimed.
+-- ---------------------------------------------------------
+CREATE TABLE IF NOT EXISTS audit_log (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  request_id INT NOT NULL,
+  reference_no VARCHAR(20) NOT NULL,
+  student_number VARCHAR(20) NOT NULL,
+  full_name VARCHAR(150) NOT NULL,
+  document_type VARCHAR(150) NOT NULL,
+  action VARCHAR(30) NOT NULL,
+  -- 'status_change' or 'claimed'
+  old_status VARCHAR(30) NULL,
+  new_status VARCHAR(30) NULL,
+  performed_by_admin_id INT NULL,
+  performed_by_username VARCHAR(50) NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_reference_no (reference_no),
+  INDEX idx_request_id (request_id)
+) ENGINE = InnoDB;

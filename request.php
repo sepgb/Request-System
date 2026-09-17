@@ -1,4 +1,7 @@
 <?php
+session_start();
+require_once 'includes/functions.php';
+
 $pageTitle = 'New Request';
 $basePath = '';
 include 'includes/header.php';
@@ -10,6 +13,7 @@ include 'includes/header.php';
     must match your official records. *Required fields.</p>
 
   <form id="requestForm" action="submit_request.php" method="POST" novalidate>
+    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>">
     <div class="form-grid">
       <div class="form-group">
         <label for="student_number">Student Number *</label>
