@@ -3564,3 +3564,307 @@ body:has(.hero) {
   white-space: nowrap;
   border: 0;
 }
+
+/* =====================================================================
+   SIDEBAR GENERAL NAV (Statistics link, above Status section)
+   ===================================================================== */
+
+.sidebar-nav-general {
+  margin-bottom: 4px;
+}
+
+/* =====================================================================
+   STATISTICS PAGE
+   ===================================================================== */
+
+.stats-page {
+  padding: 28px 32px 60px;
+}
+
+.stats-page-header {
+  margin-bottom: 26px;
+}
+
+.stats-page-header h1 {
+  margin: 0 0 4px;
+  color: #f1f2f4;
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.stats-page-header p {
+  margin: 0;
+  color: #8a919c;
+  font-size: 0.86rem;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 20px;
+  border-radius: 14px;
+  background: #111317;
+  border: 1px solid #202329;
+}
+
+.stat-card-icon {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: rgba(92, 127, 214, 0.14);
+  color: var(--admin-blue-300);
+}
+
+.stat-card-icon svg {
+  width: 21px;
+  height: 21px;
+}
+
+.stat-card-ready .stat-card-icon {
+  background: rgba(90, 199, 140, 0.14);
+  color: #8fe0b4;
+}
+
+.stat-card-pending .stat-card-icon {
+  background: rgba(227, 197, 137, 0.14);
+  color: var(--gold-300);
+}
+
+.stat-card-claimed .stat-card-icon {
+  background: rgba(148, 152, 166, 0.16);
+  color: #aeb9c9;
+}
+
+.stat-card-value {
+  display: block;
+  color: #f1f2f4;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.stat-card-label {
+  display: block;
+  margin-top: 2px;
+  color: #8a919c;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.stats-row-2col {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.panel {
+  padding: 22px;
+  border-radius: 14px;
+  background: #111317;
+  border: 1px solid #202329;
+}
+
+.panel-title {
+  margin: 0 0 18px;
+  color: #d0d4da;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+/* ---------- Bar chart (requests / claims per day) ---------- */
+.bar-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 140px;
+}
+
+.bar-chart-col {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+  justify-content: flex-end;
+}
+
+.bar-chart-bar {
+  width: 100%;
+  max-width: 22px;
+  border-radius: 4px 4px 0 0;
+  background: var(--admin-blue-300);
+  min-height: 2px;
+  transition: opacity 0.15s ease;
+}
+
+.bar-chart-bar:hover {
+  opacity: 0.75;
+}
+
+.bar-chart-label {
+  color: #626974;
+  font-size: 9.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.chart-legend {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #1c1f24;
+}
+
+.chart-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #8a919c;
+  font-size: 0.78rem;
+}
+
+.chart-legend-swatch {
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
+}
+
+/* ---------- Document type breakdown ---------- */
+.doc-breakdown-row {
+  margin-bottom: 16px;
+}
+
+.doc-breakdown-row:last-child {
+  margin-bottom: 0;
+}
+
+.doc-breakdown-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 6px;
+}
+
+.doc-breakdown-name {
+  color: #d0d4da;
+  font-size: 0.84rem;
+  font-weight: 500;
+}
+
+.doc-breakdown-count {
+  color: #8a919c;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.doc-breakdown-track {
+  height: 7px;
+  border-radius: 999px;
+  background: #1a1d22;
+  overflow: hidden;
+}
+
+.doc-breakdown-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--admin-blue-300);
+}
+
+/* ---------- Recent activity ---------- */
+.activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.activity-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 4px;
+  border-bottom: 1px solid #1c1f24;
+}
+
+.activity-item:last-child {
+  border-bottom: none;
+}
+
+.activity-dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: var(--admin-blue-300);
+}
+
+.activity-dot.is-claimed {
+  background: #8fe0b4;
+}
+
+.activity-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.activity-text p {
+  margin: 0;
+  color: #d0d4da;
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.activity-text p strong {
+  color: #f1f2f4;
+  font-weight: 600;
+}
+
+.activity-meta {
+  display: block;
+  margin-top: 2px;
+  color: #626974;
+  font-size: 0.74rem;
+}
+
+.stats-empty {
+  padding: 30px 0;
+  text-align: center;
+  color: #626974;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 1100px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .stats-row-2col {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .stats-page {
+    padding: 20px 16px 40px;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -20,6 +20,7 @@ $nameParts = explode(' ', trim($adminName));
 $firstInitial = strtoupper(substr($nameParts[0], 0, 1));
 $secondInitial = strtoupper(substr(end($nameParts), 0, 1));
 $adminInitial = $firstInitial . $secondInitial;
+$currentAdminPage = basename($_SERVER['PHP_SELF'] ?? '');
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -53,6 +54,16 @@ $adminInitial = $firstInitial . $secondInitial;
           </span>
         </div>
       </div>
+
+      <!-- General -->
+      <nav class="sidebar-nav sidebar-nav-general">
+        <a href="statistics.php" class="sidebar-link<?php echo $currentAdminPage === 'statistics.php' ? ' active' : ''; ?>">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M5 19V10M11 19V5M17 19V13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <span>Statistics</span>
+        </a>
+      </nav>
 
       <!-- Status -->
       <div class="sidebar-section-label">
