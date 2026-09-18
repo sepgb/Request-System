@@ -283,6 +283,28 @@ document.addEventListener('DOMContentLoaded', function () {
   const openEditProfileBtn = document.getElementById('openEditProfile');
   const editProfileClose = document.getElementById('editProfileClose');
   const editProfileCancel = document.getElementById('editProfileCancel');
+
+  // ---- Audit log popup ----
+  const auditLogOverlay = document.getElementById('auditLogOverlay');
+  const openAuditLogBtn = document.getElementById('openAuditLogModal');
+  const auditLogClose = document.getElementById('auditLogClose');
+
+  function openAuditLogModal() {
+    if (auditLogOverlay) auditLogOverlay.hidden = false;
+  }
+
+  function closeAuditLogModal() {
+    if (auditLogOverlay) auditLogOverlay.hidden = true;
+  }
+
+  if (openAuditLogBtn) openAuditLogBtn.addEventListener('click', openAuditLogModal);
+  if (auditLogClose) auditLogClose.addEventListener('click', closeAuditLogModal);
+
+  if (auditLogOverlay) {
+    auditLogOverlay.addEventListener('click', function (e) {
+      if (e.target === auditLogOverlay) closeAuditLogModal();
+    });
+  }
   const editProfilePhotoBtn = document.getElementById('editProfilePhotoBtn');
   const editProfilePhotoInput = document.getElementById('editProfilePhotoInput');
   const editProfileAvatarEl = document.getElementById('editProfileAvatar');
@@ -421,6 +443,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (e.key !== 'Escape') return;
     closeProfileDropdown();
     if (editProfileOverlay && !editProfileOverlay.hidden) closeEditProfileModal();
+    if (auditLogOverlay && !auditLogOverlay.hidden) closeAuditLogModal();
   });
 
   if (editProfileForm) {

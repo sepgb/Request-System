@@ -89,7 +89,36 @@ foreach ($days as $v) {
 /* ---------------------------------------------------------------
    Recent activity
    --------------------------------------------------------------- */
-$recentActivity = $conn->query("SELECT * FROM audit_log ORDER BY created_at DESC LIMIT 8");
+$activityLimit = 5;
+$fullActivityLimit = 200; // sane cap for the "see all" popup
+
+$fullActivity = $conn->query("SELECT * FROM audit_log ORDER BY created_at DESC LIMIT {$fullActivityLimit}");
+$allActivityRows = [];
+while ($row = $fullActivity->fetch_assoc()) {
+    $allActivityRows[] = $row;
+}
+
+$activityRows = array_slice($allActivityRows, 0, $activityLimit);
+$hasMoreActivity = count($allActivityRows) > $activityLimit;
+function renderActivityItem(array $a): void
+{
+    $isClaimed = $a['action'] === 'claimed';
+    echo '<div class="activity-item">';
+    echo '<span class="activity-dot' . ($isClaimed ? ' is-claimed' : '') . '"></span>';
+    echo '<div class="activity-text">';
+    if ($isClaimed) {
+        echo '<p><strong>' . htmlspecialchars($a['performed_by_username'] ?? 'Admin') . '</strong>'
+            . ' marked <strong>' . htmlspecialchars($a['reference_no']) . '</strong>'
+            . ' (' . htmlspecialchars($a['full_name']) . ') as claimed</p>';
+    } else {
+        echo '<p><strong>' . htmlspecialchars($a['performed_by_username'] ?? 'Admin') . '</strong>'
+            . ' changed <strong>' . htmlspecialchars($a['reference_no']) . '</strong>'
+            . ' from ' . htmlspecialchars($a['old_status'] ?? '—')
+            . ' to ' . htmlspecialchars($a['new_status'] ?? '—') . '</p>';
+    }
+    echo '<span class="activity-meta">' . date('M j, Y \a\t g:i A', strtotime($a['created_at'])) . '</span>';
+    echo '</div></div>';
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -361,34 +390,56 @@ $recentActivity = $conn->query("SELECT * FROM audit_log ORDER BY created_at DESC
 
                 <!-- Recent activity -->
                 <div class="panel">
-                    <h2 class="panel-title">Recent activity</h2>
-                    <?php if ($recentActivity->num_rows === 0): ?>
+                    <div class="panel-header-row">
+                        <h2 class="panel-title">Recent activity</h2>
+                        <?php if ($hasMoreActivity): ?>
+                            <button type="button" class="panel-see-all" id="openAuditLogModal">
+                                See all recent activity
+                                <svg viewBox="0 0 24 24" fill="none">
+                                    <path d="M9 6L15 12L9 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            </button>
+                        <?php endif; ?>
+                    </div>
+
+                    <?php if (empty($activityRows)): ?>
                         <p class="stats-empty">No activity recorded yet.</p>
                     <?php else: ?>
                         <div class="activity-list">
-                            <?php while ($a = $recentActivity->fetch_assoc()): ?>
-                                <div class="activity-item">
-                                    <span class="activity-dot<?php echo $a['action'] === 'claimed' ? ' is-claimed' : ''; ?>"></span>
-                                    <div class="activity-text">
-                                        <?php if ($a['action'] === 'claimed'): ?>
-                                            <p><strong><?php echo htmlspecialchars($a['performed_by_username'] ?? 'Admin'); ?></strong>
-                                                marked <strong><?php echo htmlspecialchars($a['reference_no']); ?></strong>
-                                                (<?php echo htmlspecialchars($a['full_name']); ?>) as claimed</p>
-                                        <?php else: ?>
-                                            <p><strong><?php echo htmlspecialchars($a['performed_by_username'] ?? 'Admin'); ?></strong>
-                                                changed <strong><?php echo htmlspecialchars($a['reference_no']); ?></strong>
-                                                from <?php echo htmlspecialchars($a['old_status'] ?? '—'); ?>
-                                                to <?php echo htmlspecialchars($a['new_status'] ?? '—'); ?></p>
-                                        <?php endif; ?>
-                                        <span class="activity-meta"><?php echo date('M j, Y \a\t g:i A', strtotime($a['created_at'])); ?></span>
-                                    </div>
-                                </div>
-                            <?php endwhile; ?>
+                            <?php foreach ($activityRows as $a): renderActivityItem($a);
+                            endforeach; ?>
                         </div>
                     <?php endif; ?>
                 </div>
-
             </main>
+        </div>
+    </div>
+
+    <!-- AUDIT LOG MODAL -->
+    <div class="modal-overlay" id="auditLogOverlay" hidden>
+        <div class="audit-log-box" role="dialog" aria-modal="true" aria-labelledby="auditLogTitle">
+            <div class="audit-log-header">
+                <div>
+                    <h3 id="auditLogTitle">All Recent Activity</h3>
+                    <p>Showing the last <?php echo count($allActivityRows); ?> logged actions.</p>
+                </div>
+                <button type="button" class="edit-profile-close" id="auditLogClose" aria-label="Close">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="audit-log-body">
+                <?php if (empty($allActivityRows)): ?>
+                    <p class="stats-empty">No activity recorded yet.</p>
+                <?php else: ?>
+                    <div class="activity-list">
+                        <?php foreach ($allActivityRows as $a): renderActivityItem($a);
+                        endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
         </div>
     </div>
 

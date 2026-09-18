@@ -3613,6 +3613,25 @@ body:has(.hero) {
   border-radius: 14px;
   background: #111317;
   border: 1px solid #202329;
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(92, 127, 214, 0.4);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.35);
+}
+
+.stat-card-ready:hover {
+  border-color: rgba(90, 199, 140, 0.4);
+}
+
+.stat-card-pending:hover {
+  border-color: rgba(227, 197, 137, 0.4);
+}
+
+.stat-card-claimed:hover {
+  border-color: rgba(148, 152, 166, 0.4);
 }
 
 .stat-card-icon {
@@ -3682,6 +3701,115 @@ body:has(.hero) {
   color: #d0d4da;
   font-size: 0.92rem;
   font-weight: 600;
+}
+
+.panel-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.panel-header-row .panel-title {
+  margin: 0;
+}
+
+.panel-see-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  color: var(--admin-blue-300);
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.2s ease, gap 0.2s ease, opacity 0.2s ease;
+}
+
+.panel-see-all svg {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  transition: transform 0.2s ease;
+}
+
+.panel-see-all:hover {
+  color: #a7bef0;
+  gap: 8px;
+}
+
+.panel-see-all:hover svg {
+  transform: translateX(2px);
+}
+
+.panel-see-all:active {
+  opacity: 0.75;
+}
+
+.panel-see-all:focus-visible {
+  outline: 2px solid var(--admin-blue-300);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+
+
+/* =====================================================================
+   AUDIT LOG POPUP
+   ===================================================================== */
+
+.audit-log-box {
+  width: 560px;
+  max-width: 92vw;
+  max-height: 82vh;
+  display: flex;
+  flex-direction: column;
+  border-radius: 14px;
+  background: #14161a;
+  border: 1px solid #202329;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+.audit-log-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 22px 22px 18px;
+  border-bottom: 1px solid #202329;
+}
+
+.audit-log-header h3 {
+  margin: 0 0 3px;
+  color: #f1f2f4;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.audit-log-header p {
+  margin: 0;
+  color: #8a919c;
+  font-size: 0.8rem;
+}
+
+.audit-log-body {
+  padding: 8px 22px 18px;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.audit-log-body::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 /* ---------- Bar chart (requests / claims per day) ---------- */
@@ -3867,4 +3995,21 @@ body:has(.hero) {
   .stats-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* =====================================================================
+   HIDE PAGE SCROLLBAR (admin dashboard pages, incl. statistics.php)
+   ===================================================================== */
+
+html:has(body.admin-body),
+body.admin-body {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html:has(body.admin-body)::-webkit-scrollbar,
+body.admin-body::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
