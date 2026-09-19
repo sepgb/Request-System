@@ -1,5 +1,6 @@
 <?php
 require_once 'config/db.php';
+require_once 'includes/functions.php';
 $pageTitle = 'Claim Receipt';
 $basePath = '';
 
@@ -7,24 +8,39 @@ $reference_no = trim($_GET['reference_no'] ?? '');
 $student_number = trim($_GET['student_number'] ?? '');
 $result = null;
 $notFound = false;
+$rateLimited = false;
 
 if ($reference_no !== '' && $student_number !== '') {
-  $stmt = $conn->prepare("SELECT * FROM requests WHERE reference_no = ? AND student_number = ?");
-  $stmt->bind_param('ss', $reference_no, $student_number);
-  $stmt->execute();
-  $res = $stmt->get_result();
-  if ($res->num_rows === 1) {
-    $result = $res->fetch_assoc();
+  $clientIp = getClientIp();
+
+  if (!checkRateLimit($conn, $clientIp)) {
+    $rateLimited = true;
   } else {
-    $notFound = true;
+    recordLookupAttempt($conn, $clientIp);
+
+    $stmt = $conn->prepare("SELECT * FROM requests WHERE reference_no = ? AND student_number = ?");
+    $stmt->bind_param('ss', $reference_no, $student_number);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    if ($res->num_rows === 1) {
+      $result = $res->fetch_assoc();
+    } else {
+      $notFound = true;
+    }
+    $stmt->close();
   }
-  $stmt->close();
 }
 
 include 'includes/header.php';
 ?>
 
-<?php if ($notFound || !$result): ?>
+<?php if ($rateLimited): ?>
+  <section class="form-section">
+    <h1>Too Many Attempts</h1>
+    <div class="alert alert-error">Too many lookup attempts from this connection. Please wait a few minutes and try again.</div>
+    <a href="track.php" class="btn btn-secondary">Back to Track Request</a>
+  </section>
+<?php elseif ($notFound || !$result): ?>
   <section class="form-section">
     <h1>Receipt Not Found</h1>
     <div class="alert alert-error">No matching request found. Please check your reference number and student number.</div>

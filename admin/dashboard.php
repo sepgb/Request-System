@@ -9,7 +9,9 @@ $requests = $conn->query("SELECT * FROM requests ORDER BY date_requested DESC");
 $stats = $conn->query("
     SELECT
         SUM(request_status = 'Pending') AS pending,
+        SUM(request_status = 'Processing') AS processing,
         SUM(request_status = 'Ready for Pickup') AS ready,
+        SUM(request_status = 'Rejected') AS rejected,
         COUNT(*) AS total
     FROM requests
 ")->fetch_assoc();
@@ -95,11 +97,31 @@ $currentAdminPage = basename($_SERVER['PHP_SELF'] ?? '');
 
         <a href="#"
           class="sidebar-link sidebar-status-link"
+          data-status="Processing">
+          <span>Processing</span>
+          <span class="sidebar-count sidebar-count-processing"
+            id="count-processing">
+            <?php echo (int)$stats['processing']; ?>
+          </span>
+        </a>
+
+        <a href="#"
+          class="sidebar-link sidebar-status-link"
           data-status="Ready for Pickup">
           <span>Ready for pickup</span>
           <span class="sidebar-count sidebar-count-ready"
             id="count-ready">
             <?php echo (int)$stats['ready']; ?>
+          </span>
+        </a>
+
+        <a href="#"
+          class="sidebar-link sidebar-status-link"
+          data-status="Rejected">
+          <span>Rejected</span>
+          <span class="sidebar-count sidebar-count-rejected"
+            id="count-rejected">
+            <?php echo (int)$stats['rejected']; ?>
           </span>
         </a>
       </nav>
@@ -464,7 +486,7 @@ $currentAdminPage = basename($_SERVER['PHP_SELF'] ?? '');
                       data-id="<?php echo $r['id']; ?>"
                       aria-label="Status for <?php echo htmlspecialchars($r['reference_no']); ?>">
                       <?php foreach (
-                        ['Pending', 'Ready for Pickup']
+                        ['Pending', 'Processing', 'Ready for Pickup', 'Rejected']
                         as $s
                       ): ?>
                         <option

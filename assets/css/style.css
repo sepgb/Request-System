@@ -2692,6 +2692,18 @@ body:has(.hero) {
   color: #8fe0b4;
 }
 
+.status-select-processing {
+  background-color: rgba(94, 163, 255, 0.14);
+  border-color: rgba(94, 163, 255, 0.35);
+  color: #9dc4ff;
+}
+
+.status-select-rejected {
+  background-color: rgba(214, 84, 84, 0.14);
+  border-color: rgba(214, 84, 84, 0.35);
+  color: #f4b6b6;
+}
+
 .status-select:disabled {
   opacity: 0.55;
   cursor: wait;
@@ -3600,7 +3612,7 @@ body:has(.hero) {
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 16px;
   margin-bottom: 28px;
 }
@@ -3634,6 +3646,10 @@ body:has(.hero) {
   border-color: rgba(148, 152, 166, 0.4);
 }
 
+.stat-card-processing:hover {
+  border-color: rgba(94, 163, 255, 0.4);
+}
+
 .stat-card-icon {
   width: 44px;
   height: 44px;
@@ -3659,6 +3675,11 @@ body:has(.hero) {
 .stat-card-pending .stat-card-icon {
   background: rgba(227, 197, 137, 0.14);
   color: var(--gold-300);
+}
+
+.stat-card-processing .stat-card-icon {
+  background: rgba(94, 163, 255, 0.14);
+  color: #9dc4ff;
 }
 
 .stat-card-claimed .stat-card-icon {
@@ -3975,6 +3996,12 @@ body:has(.hero) {
   text-align: center;
   color: #626974;
   font-size: 0.85rem;
+}
+
+@media (max-width: 1300px) {
+  .stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 @media (max-width: 1100px) {

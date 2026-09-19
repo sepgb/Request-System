@@ -24,7 +24,12 @@ CREATE TABLE IF NOT EXISTS requests (
   purpose TEXT NOT NULL,
   amount DECIMAL(8, 2) NOT NULL DEFAULT 20.00,
   claim_date DATE NULL,
-  request_status ENUM('Pending', 'Ready for Pickup') NOT NULL DEFAULT 'Pending',
+  request_status ENUM(
+    'Pending',
+    'Processing',
+    'Ready for Pickup',
+    'Rejected'
+  ) NOT NULL DEFAULT 'Pending',
   admin_remarks TEXT NULL,
   date_requested TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   date_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -53,4 +58,16 @@ CREATE TABLE IF NOT EXISTS audit_log (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_reference_no (reference_no),
   INDEX idx_request_id (request_id)
+) ENGINE = InnoDB;
+-- ---------------------------------------------------------
+-- Table: lookup_attempts
+-- Tracks track.php / receipt.php lookup attempts per IP so a
+-- script can't brute-force reference numbers against guessed
+-- student numbers. See includes/functions.php: checkRateLimit()
+-- ---------------------------------------------------------
+CREATE TABLE IF NOT EXISTS lookup_attempts (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  ip_address VARCHAR(45) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_ip_time (ip_address, created_at)
 ) ENGINE = InnoDB;

@@ -1,25 +1,35 @@
 <?php
 require_once 'config/db.php';
+require_once 'includes/functions.php';
 $pageTitle = 'Track Request';
 $basePath = '';
 include 'includes/header.php';
 
 $result = null;
 $notFound = false;
+$rateLimited = false;
 $reference_no = trim($_GET['reference_no'] ?? '');
 $student_number = trim($_GET['student_number'] ?? '');
 
 if ($reference_no !== '' && $student_number !== '') {
-  $stmt = $conn->prepare("SELECT * FROM requests WHERE reference_no = ? AND student_number = ?");
-  $stmt->bind_param('ss', $reference_no, $student_number);
-  $stmt->execute();
-  $res = $stmt->get_result();
-  if ($res->num_rows === 1) {
-    $result = $res->fetch_assoc();
+  $clientIp = getClientIp();
+
+  if (!checkRateLimit($conn, $clientIp)) {
+    $rateLimited = true;
   } else {
-    $notFound = true;
+    recordLookupAttempt($conn, $clientIp);
+
+    $stmt = $conn->prepare("SELECT * FROM requests WHERE reference_no = ? AND student_number = ?");
+    $stmt->bind_param('ss', $reference_no, $student_number);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    if ($res->num_rows === 1) {
+      $result = $res->fetch_assoc();
+    } else {
+      $notFound = true;
+    }
+    $stmt->close();
   }
-  $stmt->close();
 }
 
 function statusClass($status)
@@ -48,7 +58,9 @@ function statusClass($status)
     <button type="submit" class="btn btn-primary">Check Status</button>
   </form>
 
-  <?php if ($notFound): ?>
+  <?php if ($rateLimited): ?>
+    <div class="alert alert-error">Too many lookup attempts from this connection. Please wait a few minutes and try again.</div>
+  <?php elseif ($notFound): ?>
     <div class="alert alert-error">No matching request found. Please check your reference number and student number.</div>
   <?php endif; ?>
 

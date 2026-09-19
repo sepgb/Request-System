@@ -4,7 +4,9 @@ document.addEventListener('DOMContentLoaded', function () {
   const statReady = document.getElementById('stat-ready');
   const sidebarCountAll = document.getElementById('count-all');
   const sidebarCountPending = document.getElementById('count-pending');
+  const sidebarCountProcessing = document.getElementById('count-processing');
   const sidebarCountReady = document.getElementById('count-ready');
+  const sidebarCountRejected = document.getElementById('count-rejected');
 
   function bumpStat(el, delta) {
     if (el) el.textContent = String(parseInt(el.textContent, 10) + delta);
@@ -79,17 +81,29 @@ document.addEventListener('DOMContentLoaded', function () {
                 bumpStat(statPending, -1);
                 bumpStat(sidebarCountPending, -1);
               }
+              if (prevStatus === 'Processing') {
+                bumpStat(sidebarCountProcessing, -1);
+              }
               if (prevStatus === 'Ready for Pickup') {
                 bumpStat(statReady, -1);
                 bumpStat(sidebarCountReady, -1);
+              }
+              if (prevStatus === 'Rejected') {
+                bumpStat(sidebarCountRejected, -1);
               }
               if (newStatus === 'Pending') {
                 bumpStat(statPending, 1);
                 bumpStat(sidebarCountPending, 1);
               }
+              if (newStatus === 'Processing') {
+                bumpStat(sidebarCountProcessing, 1);
+              }
               if (newStatus === 'Ready for Pickup') {
                 bumpStat(statReady, 1);
                 bumpStat(sidebarCountReady, 1);
+              }
+              if (newStatus === 'Rejected') {
+                bumpStat(sidebarCountRejected, 1);
               }
             }
           } else {

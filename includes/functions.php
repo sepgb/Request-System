@@ -72,3 +72,43 @@ function logAudit(mysqli $conn, array $request, string $action, ?string $oldStat
     $stmt->execute();
     $stmt->close();
 }
+
+/**
+ * Best-effort client IP. Not spoof-proof if behind a proxy that doesn't
+ * strip client-supplied headers, but sufficient for basic rate limiting.
+ */
+function getClientIp(): string
+{
+    return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+}
+
+/**
+ * Returns true if this IP is still allowed to attempt a lookup.
+ * Default: max 8 attempts per 10-minute rolling window.
+ */
+function checkRateLimit(mysqli $conn, string $ip, int $maxAttempts = 8, int $windowMinutes = 10): bool
+{
+    $stmt = $conn->prepare(
+        "SELECT COUNT(*) AS c FROM lookup_attempts
+         WHERE ip_address = ? AND created_at >= (NOW() - INTERVAL ? MINUTE)"
+    );
+    $stmt->bind_param('si', $ip, $windowMinutes);
+    $stmt->execute();
+    $count = (int)$stmt->get_result()->fetch_assoc()['c'];
+    $stmt->close();
+
+    return $count < $maxAttempts;
+}
+
+/**
+ * Records one lookup attempt for this IP. Call this every time a
+ * reference_no + student_number pair is actually queried against the DB,
+ * whether it matches or not.
+ */
+function recordLookupAttempt(mysqli $conn, string $ip): void
+{
+    $stmt = $conn->prepare("INSERT INTO lookup_attempts (ip_address) VALUES (?)");
+    $stmt->bind_param('s', $ip);
+    $stmt->execute();
+    $stmt->close();
+}

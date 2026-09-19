@@ -17,12 +17,14 @@ $currentAdminPage = basename($_SERVER['PHP_SELF'] ?? '');
 $statusCounts = $conn->query("
     SELECT
         SUM(request_status = 'Pending') AS pending,
+        SUM(request_status = 'Processing') AS processing,
         SUM(request_status = 'Ready for Pickup') AS ready,
         COUNT(*) AS active_total
     FROM requests
 ")->fetch_assoc();
 
 $pending = (int)($statusCounts['pending'] ?? 0);
+$processing = (int)($statusCounts['processing'] ?? 0);
 $ready = (int)($statusCounts['ready'] ?? 0);
 $activeTotal = (int)($statusCounts['active_total'] ?? 0);
 
@@ -315,6 +317,22 @@ function renderActivityItem(array $a): void
                         <div>
                             <span class="stat-card-value"><?php echo $pending; ?></span>
                             <span class="stat-card-label">Pending</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card stat-card-processing">
+                        <span class="stat-card-icon">
+                            <svg viewBox="0 0 24 24" fill="none">
+                                <path d="M12 5V12L16.5 14.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+                                <path d="M4 12C4 7.6 7.6 4 12 4C15.2 4 18 5.9 19.3 8.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+                                <path d="M20 12C20 16.4 16.4 20 12 20C8.8 20 6 18.1 4.7 15.4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+                                <path d="M19.3 5.5V8.6H16.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+                                <path d="M4.7 18.5V15.4H7.8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                        </span>
+                        <div>
+                            <span class="stat-card-value"><?php echo $processing; ?></span>
+                            <span class="stat-card-label">Processing</span>
                         </div>
                     </div>
 
