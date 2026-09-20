@@ -10,6 +10,7 @@ $firstInitial = strtoupper(substr($nameParts[0], 0, 1));
 $secondInitial = strtoupper(substr(end($nameParts), 0, 1));
 $adminInitial = $firstInitial . $secondInitial;
 $currentAdminPage = basename($_SERVER['PHP_SELF'] ?? '');
+$initialStatusFilter = trim($_GET['status'] ?? '');
 
 /* ---------------------------------------------------------------
    Top stat cards
@@ -19,6 +20,7 @@ $statusCounts = $conn->query("
         SUM(request_status = 'Pending') AS pending,
         SUM(request_status = 'Processing') AS processing,
         SUM(request_status = 'Ready for Pickup') AS ready,
+        SUM(request_status = 'Rejected') AS rejected,
         COUNT(*) AS active_total
     FROM requests
 ")->fetch_assoc();
@@ -26,6 +28,7 @@ $statusCounts = $conn->query("
 $pending = (int)($statusCounts['pending'] ?? 0);
 $processing = (int)($statusCounts['processing'] ?? 0);
 $ready = (int)($statusCounts['ready'] ?? 0);
+$rejected = (int)($statusCounts['rejected'] ?? 0);
 $activeTotal = (int)($statusCounts['active_total'] ?? 0);
 
 $claimedTotal = (int)($conn->query(
@@ -166,13 +169,21 @@ function renderActivityItem(array $a): void
                     <span>All requests</span>
                     <span class="sidebar-count"><?php echo $activeTotal; ?></span>
                 </a>
-                <a href="dashboard.php" class="sidebar-link">
+                <a href="dashboard.php?status=Pending" class="sidebar-link">
                     <span>Pending</span>
                     <span class="sidebar-count"><?php echo $pending; ?></span>
                 </a>
-                <a href="dashboard.php" class="sidebar-link">
+                <a href="dashboard.php?status=Processing" class="sidebar-link">
+                    <span>Processing</span>
+                    <span class="sidebar-count"><?php echo $processing; ?></span>
+                </a>
+                <a href="dashboard.php?status=Ready+for+Pickup" class="sidebar-link">
                     <span>Ready for pickup</span>
                     <span class="sidebar-count"><?php echo $ready; ?></span>
+                </a>
+                <a href="dashboard.php?status=Rejected" class="sidebar-link">
+                    <span>Rejected</span>
+                    <span class="sidebar-count"><?php echo $rejected; ?></span>
                 </a>
             </nav>
         </aside>

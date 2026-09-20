@@ -23,6 +23,7 @@ $firstInitial = strtoupper(substr($nameParts[0], 0, 1));
 $secondInitial = strtoupper(substr(end($nameParts), 0, 1));
 $adminInitial = $firstInitial . $secondInitial;
 $currentAdminPage = basename($_SERVER['PHP_SELF'] ?? '');
+$initialStatusFilter = trim($_GET['status'] ?? '');
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -75,8 +76,8 @@ $currentAdminPage = basename($_SERVER['PHP_SELF'] ?? '');
       <nav class="sidebar-nav sidebar-nav-status">
 
         <!-- All -->
-        <a href="#"
-          class="sidebar-link sidebar-status-link active"
+        <a href="dashboard.php"
+          class="sidebar-link sidebar-status-link<?php echo $initialStatusFilter === '' ? ' active' : ''; ?>"
           data-status="">
           <span>All requests</span>
           <span class="sidebar-count sidebar-count-all"
@@ -85,8 +86,8 @@ $currentAdminPage = basename($_SERVER['PHP_SELF'] ?? '');
           </span>
         </a>
 
-        <a href="#"
-          class="sidebar-link sidebar-status-link"
+        <a href="dashboard.php?status=Pending"
+          class="sidebar-link sidebar-status-link<?php echo $initialStatusFilter === 'Pending' ? ' active' : ''; ?>"
           data-status="Pending">
           <span>Pending</span>
           <span class="sidebar-count sidebar-count-pending"
@@ -95,8 +96,8 @@ $currentAdminPage = basename($_SERVER['PHP_SELF'] ?? '');
           </span>
         </a>
 
-        <a href="#"
-          class="sidebar-link sidebar-status-link"
+        <a href="dashboard.php?status=Processing"
+          class="sidebar-link sidebar-status-link<?php echo $initialStatusFilter === 'Processing' ? ' active' : ''; ?>"
           data-status="Processing">
           <span>Processing</span>
           <span class="sidebar-count sidebar-count-processing"
@@ -105,8 +106,8 @@ $currentAdminPage = basename($_SERVER['PHP_SELF'] ?? '');
           </span>
         </a>
 
-        <a href="#"
-          class="sidebar-link sidebar-status-link"
+        <a href="dashboard.php?status=Ready+for+Pickup"
+          class="sidebar-link sidebar-status-link<?php echo $initialStatusFilter === 'Ready for Pickup' ? ' active' : ''; ?>"
           data-status="Ready for Pickup">
           <span>Ready for pickup</span>
           <span class="sidebar-count sidebar-count-ready"
@@ -115,8 +116,8 @@ $currentAdminPage = basename($_SERVER['PHP_SELF'] ?? '');
           </span>
         </a>
 
-        <a href="#"
-          class="sidebar-link sidebar-status-link"
+        <a href="dashboard.php?status=Rejected"
+          class="sidebar-link sidebar-status-link<?php echo $initialStatusFilter === 'Rejected' ? ' active' : ''; ?>"
           data-status="Rejected">
           <span>Rejected</span>
           <span class="sidebar-count sidebar-count-rejected"
@@ -653,6 +654,7 @@ $currentAdminPage = basename($_SERVER['PHP_SELF'] ?? '');
 
   <script>
     window.CSRF_TOKEN = <?php echo json_encode(csrf_token()); ?>;
+    window.INITIAL_STATUS_FILTER = <?php echo json_encode($initialStatusFilter); ?>;
   </script>
   <script src="../assets/js/admin.js"></script>
 
