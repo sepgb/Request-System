@@ -158,7 +158,7 @@ include 'includes/header.php';
   <h1>Request received</h1>
   <p class="subtitle">The registrar's office has your request for
     <strong><?php echo htmlspecialchars($document_type); ?></strong>.
-    Please Pay the processing fee at the Cashier's Office and keep your official receipt
+    You may pay the processing fee at the Cashier's Office any time before your claim date &mdash; keep your official receipt for pickup.
   </p>
 
   <div class="reference-box">

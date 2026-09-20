@@ -119,10 +119,12 @@ include 'includes/header.php';
         placeholder="e.g. For scholarship"></textarea>
     </div>
 
-    <div class="gcash-box">
+    <div class="payment-box">
       <h3>Payment</h3>
-      <p class="gcash-amount">Processing Fee: <strong>&#8369;20.00</strong></p>
-      <p class="form-note">Pay at the Cashier's Office and keep the official receipt.
+      <p class="payment-amount">Processing Fee: <strong>&#8369;20.00</strong></p>
+      <p class="form-note">*You may pay at the Cashier's Office any time before your claim date.
+      </p>
+      <p class="form-note">*Bring the official receipt together with your claim receipt when picking up your document.
       </p>
     </div>
 

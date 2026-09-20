@@ -1046,7 +1046,7 @@ body:has(.hero) {
   min-height: 96px;
 }
 
-.gcash-box {
+.payment-box {
   margin-top: 8px;
   margin-bottom: 24px;
   padding: 24px 26px;
@@ -1055,7 +1055,7 @@ body:has(.hero) {
   border: 1px solid rgba(227, 197, 137, 0.28);
 }
 
-.gcash-box h3 {
+.payment-box h3 {
   font-family: 'Manrope', sans-serif;
   font-weight: 600;
   font-size: 1.15rem;
@@ -1063,25 +1063,25 @@ body:has(.hero) {
   margin: 0 0 6px;
 }
 
-.gcash-amount {
+.payment-amount {
   font-size: 0.95rem;
   color: var(--paper-dim);
   margin: 0 0 18px;
 }
 
-.gcash-amount strong {
+.payment-amount strong {
   color: var(--gold-300);
   font-size: 1.05rem;
 }
 
-.gcash-details {
+.payment-details {
   display: flex;
   align-items: center;
   gap: 20px;
   flex-wrap: wrap;
 }
 
-.gcash-qr-placeholder {
+.payment-qr-placeholder {
   width: 96px;
   height: 96px;
   flex: 0 0 auto;
@@ -1097,13 +1097,13 @@ body:has(.hero) {
   background: rgba(244, 241, 234, 0.03);
 }
 
-.gcash-info p {
+.payment-info p {
   font-size: 0.9rem;
   color: var(--paper-dim);
   margin: 0 0 6px;
 }
 
-.gcash-info p strong {
+.payment-info p strong {
   color: var(--paper);
 }
 
@@ -1114,7 +1114,7 @@ body:has(.hero) {
   margin: 0 0 24px;
 }
 
-.gcash-box .form-note {
+.payment-box .form-note {
   margin: 14px 0 0;
   font-style: italic;
   opacity: 0.75;
@@ -1267,7 +1267,7 @@ body:has(.hero) {
   min-height: 96px;
 }
 
-.gcash-box {
+.payment-box {
   margin-top: 8px;
   margin-bottom: 24px;
   padding: 24px 26px;
@@ -1276,7 +1276,7 @@ body:has(.hero) {
   border: 1px solid rgba(227, 197, 137, 0.28);
 }
 
-.gcash-box h3 {
+.payment-box h3 {
   font-family: 'Manrope', sans-serif;
   font-weight: 600;
   font-size: 1.15rem;
@@ -1284,25 +1284,25 @@ body:has(.hero) {
   margin: 0 0 6px;
 }
 
-.gcash-amount {
+.payment-amount {
   font-size: 0.95rem;
   color: var(--paper-dim);
   margin: 0 0 18px;
 }
 
-.gcash-amount strong {
+.payment-amount strong {
   color: var(--gold-300);
   font-size: 1.05rem;
 }
 
-.gcash-details {
+.payment-details {
   display: flex;
   align-items: center;
   gap: 20px;
   flex-wrap: wrap;
 }
 
-.gcash-qr-placeholder {
+.payment-qr-placeholder {
   width: 96px;
   height: 96px;
   flex: 0 0 auto;
@@ -1318,13 +1318,13 @@ body:has(.hero) {
   background: rgba(244, 241, 234, 0.03);
 }
 
-.gcash-info p {
+.payment-info p {
   font-size: 0.9rem;
   color: var(--paper-dim);
   margin: 0 0 6px;
 }
 
-.gcash-info p strong {
+.payment-info p strong {
   color: var(--paper);
 }
 
@@ -1335,7 +1335,7 @@ body:has(.hero) {
   margin: 0 0 24px;
 }
 
-.gcash-box .form-note {
+.payment-box .form-note {
   margin: 14px 0 0;
   font-style: italic;
   opacity: 0.75;
