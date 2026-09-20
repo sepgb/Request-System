@@ -13,7 +13,7 @@ A web-based platform that lets URS - Morong students request registrar documents
 Each request submitted through `request.php` can later be looked up on `track.php` using the details provided at submission, and a receipt for it can be 
 viewed/printed via `receipt.php`. Administrators manage and update request status from the `admin/` section. 
 
-## Getting started
+## Get started
 1. Clone the repository:
    ```bash
    git clone https://github.com/sepgb/Request-System.git
