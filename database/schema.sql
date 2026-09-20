@@ -28,7 +28,8 @@ CREATE TABLE IF NOT EXISTS requests (
     'Pending',
     'Processing',
     'Ready for Pickup',
-    'Rejected'
+    'Rejected',
+    'Cancelled'
   ) NOT NULL DEFAULT 'Pending',
   admin_remarks TEXT NULL,
   date_requested TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

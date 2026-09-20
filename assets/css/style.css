@@ -4040,3 +4040,69 @@ body.admin-body::-webkit-scrollbar {
   width: 0;
   height: 0;
 }
+
+.status-select-cancelled {
+  background-color: rgba(148, 152, 166, 0.16);
+  border-color: rgba(148, 152, 166, 0.35);
+  color: #aeb9c9;
+}
+
+/* =====================================================================
+   TRACKING RESULT ACTIONS (track.php — receipt/edit/cancel buttons)
+   ===================================================================== */
+
+.tracking-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.btn-edit {
+  background: rgba(90, 199, 140, 0.12);
+  border: 1px solid rgba(90, 199, 140, 0.4);
+  color: #8fe0b4;
+}
+
+.btn-edit:hover {
+  transform: translateY(-2px);
+  background: rgba(90, 199, 140, 0.2);
+  border-color: #8fe0b4;
+}
+
+.btn-cancel {
+  background: rgba(214, 84, 84, 0.12);
+  border: 1px solid rgba(214, 84, 84, 0.4);
+  color: #f4b6b6;
+}
+
+.btn-cancel:hover {
+  transform: translateY(-2px);
+  background: rgba(214, 84, 84, 0.2);
+  border-color: #f4b6b6;
+}
+
+.btn-edit svg,
+.btn-cancel svg {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 auto;
+}
+
+.btn-edit,
+.btn-cancel {
+  gap: 8px;
+}
+
+@media (max-width: 640px) {
+
+  .btn-edit,
+  .btn-cancel {
+    padding: 13px;
+    gap: 0;
+  }
+
+  .btn-action-label {
+    display: none;
+  }
+}

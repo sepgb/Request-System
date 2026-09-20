@@ -1,4 +1,5 @@
 <?php
+session_start();
 require_once 'config/db.php';
 require_once 'includes/functions.php';
 $pageTitle = 'Track Request';
@@ -62,6 +63,14 @@ function statusClass($status)
     <div class="alert alert-error">Too many lookup attempts from this connection. Please wait a few minutes and try again.</div>
   <?php elseif ($notFound): ?>
     <div class="alert alert-error">No matching request found. Please check your reference number and student number.</div>
+  <?php elseif (isset($_GET['updated'])): ?>
+    <div class="alert alert-success">
+      <p>Your request has been updated.</p>
+    </div>
+  <?php elseif (isset($_GET['cancelled'])): ?>
+    <div class="alert alert-success">
+      <p>Your request has been cancelled.</p>
+    </div>
   <?php endif; ?>
 
   <?php if ($result): ?>
@@ -118,10 +127,46 @@ function statusClass($status)
         <?php endif; ?>
       </table>
 
-      <a href="receipt.php?reference_no=<?php echo urlencode($result['reference_no']); ?>&student_number=<?php echo urlencode($result['student_number']); ?>"
-        class="btn btn-primary" style="margin-top:16px;">View / Print Claim Receipt</a>
+      <div class="tracking-actions">
+        <a href="receipt.php?reference_no=<?php echo urlencode($result['reference_no']); ?>&student_number=<?php echo urlencode($result['student_number']); ?>"
+          class="btn btn-primary">View / Print Claim Receipt</a>
+
+        <?php if ($result['request_status'] === 'Pending'): ?>
+          <a href="edit_request.php?reference_no=<?php echo urlencode($result['reference_no']); ?>&student_number=<?php echo urlencode($result['student_number']); ?>"
+            class="btn btn-edit" aria-label="Edit Request">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M14.5 4.5L19.5 9.5L8 21H3V16L14.5 4.5Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            <span class="btn-action-label">Edit</span>
+          </a>
+          <button type="button" id="openCancelModal" class="btn btn-cancel" aria-label="Cancel Request">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" />
+            </svg>
+            <span class="btn-action-label">Cancel</span>
+          </button>
+        <?php endif; ?>
+      </div>
     </div>
   <?php endif; ?>
 </section>
+
+<?php if ($result && $result['request_status'] === 'Pending'): ?>
+  <div class="modal-overlay" id="cancelRequestOverlay" hidden>
+    <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="cancelModalTitle">
+      <h3 id="cancelModalTitle">Cancel this request?</h3>
+      <p>This can't be undone. You'll need to submit a new request if you change your mind.</p>
+      <form method="POST" action="cancel_request.php">
+        <input type="hidden" name="reference_no" value="<?php echo htmlspecialchars($result['reference_no']); ?>">
+        <input type="hidden" name="student_number" value="<?php echo htmlspecialchars($result['student_number']); ?>">
+        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>">
+        <div class="modal-actions">
+          <button type="button" class="btn-modal btn-modal-cancel" id="closeCancelModal">Go back</button>
+          <button type="submit" class="btn-modal btn-modal-confirm" style="background:#d65454;color:#fff;">Yes, cancel it</button>
+        </div>
+      </form>
+    </div>
+  </div>
+<?php endif; ?>
 
 <?php include 'includes/footer.php'; ?>

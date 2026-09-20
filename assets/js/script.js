@@ -125,3 +125,22 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 });
+
+// Cancel-request 
+document.addEventListener('DOMContentLoaded', function () {
+  const openBtn = document.getElementById('openCancelModal');
+  const overlay = document.getElementById('cancelRequestOverlay');
+  const closeBtn = document.getElementById('closeCancelModal');
+  if (!openBtn || !overlay) return;
+
+  openBtn.addEventListener('click', function () { overlay.hidden = false; });
+  if (closeBtn) closeBtn.addEventListener('click', function () { overlay.hidden = true; });
+
+  overlay.addEventListener('click', function (e) {
+    if (e.target === overlay) overlay.hidden = true;
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') overlay.hidden = true;
+  });
+});

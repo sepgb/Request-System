@@ -17,7 +17,7 @@ if (!csrf_verify($_POST['csrf_token'] ?? null)) {
 
 $id             = (int)($_POST['id'] ?? 0);
 $request_status = trim($_POST['request_status'] ?? '');
-$validStatuses  = ['Pending', 'Processing', 'Ready for Pickup', 'Rejected'];
+$validStatuses  = ['Pending', 'Processing', 'Ready for Pickup', 'Rejected', 'Cancelled'];
 
 if ($id <= 0 || !in_array($request_status, $validStatuses, true)) {
     echo json_encode(['success' => false, 'message' => 'Invalid input.']);
