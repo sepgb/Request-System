@@ -6,9 +6,22 @@ CREATE TABLE IF NOT EXISTS admin (
   password VARCHAR(255) NOT NULL,
   -- stored with PHP password_hash()
   full_name VARCHAR(100) NOT NULL,
+  role ENUM('full_admin', 'document_admin') NOT NULL DEFAULT 'full_admin',
   photo VARCHAR(255) NULL,
   -- relative path from site root, e.g. assets/uploads/admin_photos/admin_3_....jpg
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE = InnoDB;
+-- ---------------------------------------------------------
+-- Table: admin_document_scope
+-- Which document types a 'document_admin' is allowed to see and
+-- act on. Irrelevant for 'full_admin' rows (they see everything).
+-- ---------------------------------------------------------
+CREATE TABLE IF NOT EXISTS admin_document_scope (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  admin_id INT NOT NULL,
+  document_type VARCHAR(150) NOT NULL,
+  FOREIGN KEY (admin_id) REFERENCES admin(id) ON DELETE CASCADE,
+  UNIQUE KEY uniq_admin_doc (admin_id, document_type)
 ) ENGINE = InnoDB;
 CREATE TABLE IF NOT EXISTS requests (
   id INT AUTO_INCREMENT PRIMARY KEY,

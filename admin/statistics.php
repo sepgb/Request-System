@@ -15,6 +15,10 @@ $initialStatusFilter = trim($_GET['status'] ?? '');
 /* ---------------------------------------------------------------
    Top stat cards
    --------------------------------------------------------------- */
+$scopeIn = documentScopeInClause($conn);
+$scopeWhere = $scopeIn !== null ? " WHERE document_type IN ($scopeIn)" : '';
+$scopeAnd = $scopeIn !== null ? " AND document_type IN ($scopeIn)" : '';
+
 $statusCounts = $conn->query("
     SELECT
         SUM(request_status = 'Pending') AS pending,
@@ -22,7 +26,7 @@ $statusCounts = $conn->query("
         SUM(request_status = 'Ready for Pickup') AS ready,
         SUM(request_status = 'Rejected') AS rejected,
         COUNT(*) AS active_total
-    FROM requests
+    FROM requests{$scopeWhere}
 ")->fetch_assoc();
 
 $pending = (int)($statusCounts['pending'] ?? 0);
@@ -32,7 +36,7 @@ $rejected = (int)($statusCounts['rejected'] ?? 0);
 $activeTotal = (int)($statusCounts['active_total'] ?? 0);
 
 $claimedTotal = (int)($conn->query(
-    "SELECT COUNT(*) AS c FROM audit_log WHERE action = 'claimed'"
+    "SELECT COUNT(*) AS c FROM audit_log WHERE action = 'claimed'{$scopeAnd}"
 )->fetch_assoc()['c'] ?? 0);
 
 $submittedTotal = $activeTotal + $claimedTotal;
@@ -42,12 +46,12 @@ $submittedTotal = $activeTotal + $claimedTotal;
    --------------------------------------------------------------- */
 $docCounts = [];
 
-$res = $conn->query("SELECT document_type, COUNT(*) AS c FROM requests GROUP BY document_type");
+$res = $conn->query("SELECT document_type, COUNT(*) AS c FROM requests{$scopeWhere} GROUP BY document_type");
 while ($row = $res->fetch_assoc()) {
     $docCounts[$row['document_type']] = ($docCounts[$row['document_type']] ?? 0) + (int)$row['c'];
 }
 
-$res = $conn->query("SELECT document_type, COUNT(*) AS c FROM audit_log WHERE action = 'claimed' GROUP BY document_type");
+$res = $conn->query("SELECT document_type, COUNT(*) AS c FROM audit_log WHERE action = 'claimed'{$scopeAnd} GROUP BY document_type");
 while ($row = $res->fetch_assoc()) {
     $docCounts[$row['document_type']] = ($docCounts[$row['document_type']] ?? 0) + (int)$row['c'];
 }
@@ -67,7 +71,7 @@ for ($i = 13; $i >= 0; $i--) {
 $res = $conn->query("
     SELECT DATE(date_requested) AS d, COUNT(*) AS c
     FROM requests
-    WHERE date_requested >= (CURDATE() - INTERVAL 13 DAY)
+    WHERE date_requested >= (CURDATE() - INTERVAL 13 DAY){$scopeAnd}
     GROUP BY DATE(date_requested)
 ");
 while ($row = $res->fetch_assoc()) {
@@ -77,7 +81,7 @@ while ($row = $res->fetch_assoc()) {
 $res = $conn->query("
     SELECT DATE(created_at) AS d, COUNT(*) AS c
     FROM audit_log
-    WHERE action = 'claimed' AND created_at >= (CURDATE() - INTERVAL 13 DAY)
+    WHERE action = 'claimed' AND created_at >= (CURDATE() - INTERVAL 13 DAY){$scopeAnd}
     GROUP BY DATE(created_at)
 ");
 while ($row = $res->fetch_assoc()) {
@@ -95,7 +99,8 @@ foreach ($days as $v) {
 $activityLimit = 5;
 $fullActivityLimit = 200; // sane cap for the "see all" popup
 
-$fullActivity = $conn->query("SELECT * FROM audit_log ORDER BY created_at DESC LIMIT {$fullActivityLimit}");
+$activityWhere = $scopeIn !== null ? "WHERE document_type IN ($scopeIn) " : '';
+$fullActivity = $conn->query("SELECT * FROM audit_log {$activityWhere}ORDER BY created_at DESC LIMIT {$fullActivityLimit}");
 $allActivityRows = [];
 while ($row = $fullActivity->fetch_assoc()) {
     $allActivityRows[] = $row;
@@ -259,7 +264,7 @@ function renderActivityItem(array $a): void
                                 <span class="profile-dropdown-avatar" id="dropdownAvatar"><?php echo avatarContent($adminPhoto, $adminInitial, '../'); ?></span>
                                 <div>
                                     <span class="profile-dropdown-name"><?php echo htmlspecialchars($adminName); ?></span>
-                                    <span class="profile-dropdown-role">Admin</span>
+                                    <span class="profile-dropdown-role"><?php echo isFullAdmin() ? 'Full Admin' : 'Document Admin'; ?></span>
                                 </div>
                             </div>
 
@@ -297,8 +302,13 @@ function renderActivityItem(array $a): void
             <main class="stats-page">
 
                 <div class="stats-page-header">
-                    <h1>Statistics</h1>
-                    <p>An overview of document requests across the registrar system.</p>
+                    <?php if (isFullAdmin()): ?>
+                        <h1>Statistics</h1>
+                        <p>An overview of document requests across the registrar system.</p>
+                    <?php else: ?>
+                        <h1>My Statistics</h1>
+                        <p>An overview of document requests for<?php echo !empty($_SESSION['admin_doc_scope']) ? ' ' . htmlspecialchars(implode(', ', $_SESSION['admin_doc_scope'])) : '.'; ?></p>
+                    <?php endif; ?>
                 </div>
 
                 <!-- Stat cards -->
@@ -415,60 +425,64 @@ function renderActivityItem(array $a): void
 
                 </div>
 
-                <!-- Recent activity -->
-                <div class="panel">
-                    <div class="panel-header-row">
-                        <h2 class="panel-title">Recent activity</h2>
-                        <?php if ($hasMoreActivity): ?>
-                            <button type="button" class="panel-see-all" id="openAuditLogModal">
-                                See all recent activity
-                                <svg viewBox="0 0 24 24" fill="none">
-                                    <path d="M9 6L15 12L9 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                </svg>
-                            </button>
+                <!-- Recent activity (Full Admin only) -->
+                <?php if (isFullAdmin()): ?>
+                    <div class="panel">
+                        <div class="panel-header-row">
+                            <h2 class="panel-title">Recent activity</h2>
+                            <?php if ($hasMoreActivity): ?>
+                                <button type="button" class="panel-see-all" id="openAuditLogModal">
+                                    See all recent activity
+                                    <svg viewBox="0 0 24 24" fill="none">
+                                        <path d="M9 6L15 12L9 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                    </svg>
+                                </button>
+                            <?php endif; ?>
+                        </div>
+
+                        <?php if (empty($activityRows)): ?>
+                            <p class="stats-empty">No activity recorded yet.</p>
+                        <?php else: ?>
+                            <div class="activity-list">
+                                <?php foreach ($activityRows as $a): renderActivityItem($a);
+                                endforeach; ?>
+                            </div>
                         <?php endif; ?>
                     </div>
-
-                    <?php if (empty($activityRows)): ?>
-                        <p class="stats-empty">No activity recorded yet.</p>
-                    <?php else: ?>
-                        <div class="activity-list">
-                            <?php foreach ($activityRows as $a): renderActivityItem($a);
-                            endforeach; ?>
-                        </div>
-                    <?php endif; ?>
-                </div>
+                <?php endif; ?>
             </main>
         </div>
     </div>
 
-    <!-- AUDIT LOG MODAL -->
-    <div class="modal-overlay" id="auditLogOverlay" hidden>
-        <div class="audit-log-box" role="dialog" aria-modal="true" aria-labelledby="auditLogTitle">
-            <div class="audit-log-header">
-                <div>
-                    <h3 id="auditLogTitle">All Recent Activity</h3>
-                    <p>Showing the last <?php echo count($allActivityRows); ?> logged actions.</p>
-                </div>
-                <button type="button" class="edit-profile-close" id="auditLogClose" aria-label="Close">
-                    <svg viewBox="0 0 24 24" fill="none">
-                        <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-                    </svg>
-                </button>
-            </div>
-
-            <div class="audit-log-body">
-                <?php if (empty($allActivityRows)): ?>
-                    <p class="stats-empty">No activity recorded yet.</p>
-                <?php else: ?>
-                    <div class="activity-list">
-                        <?php foreach ($allActivityRows as $a): renderActivityItem($a);
-                        endforeach; ?>
+    <!-- AUDIT LOG MODAL (Full Admin only) -->
+    <?php if (isFullAdmin()): ?>
+        <div class="modal-overlay" id="auditLogOverlay" hidden>
+            <div class="audit-log-box" role="dialog" aria-modal="true" aria-labelledby="auditLogTitle">
+                <div class="audit-log-header">
+                    <div>
+                        <h3 id="auditLogTitle">All Recent Activity</h3>
+                        <p>Showing the last <?php echo count($allActivityRows); ?> logged actions.</p>
                     </div>
-                <?php endif; ?>
+                    <button type="button" class="edit-profile-close" id="auditLogClose" aria-label="Close">
+                        <svg viewBox="0 0 24 24" fill="none">
+                            <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="audit-log-body">
+                    <?php if (empty($allActivityRows)): ?>
+                        <p class="stats-empty">No activity recorded yet.</p>
+                    <?php else: ?>
+                        <div class="activity-list">
+                            <?php foreach ($allActivityRows as $a): renderActivityItem($a);
+                            endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
             </div>
         </div>
-    </div>
+    <?php endif; ?>
 
     <!-- EDIT PROFILE MODAL -->
     <div class="modal-overlay" id="editProfileOverlay" hidden>
@@ -501,8 +515,7 @@ function renderActivityItem(array $a): void
                         <span class="edit-profile-avatar" id="editProfileAvatar"><?php echo avatarContent($adminPhoto, $adminInitial, '../'); ?></span>
                         <div>
                             <span class="edit-profile-avatar-name" id="editProfileAvatarName"><?php echo htmlspecialchars($adminName); ?></span>
-                            <span class="edit-profile-avatar-role">Registrar Admin</span>
-                            <button type="button" class="edit-profile-photo-btn" id="editProfilePhotoBtn">
+                            <span class="edit-profile-avatar-role"><?php echo isFullAdmin() ? 'Full Admin' : 'Document Admin'; ?></span> <button type="button" class="edit-profile-photo-btn" id="editProfilePhotoBtn">
                                 <svg viewBox="0 0 24 24" fill="none">
                                     <path d="M12 16V4M12 4L7 9M12 4L17 9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
                                     <path d="M4 16V18.5A1.5 1.5 0 0 0 5.5 20H18.5A1.5 1.5 0 0 0 20 18.5V16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />

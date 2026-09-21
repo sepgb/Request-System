@@ -38,6 +38,12 @@ if (!$before) {
     exit;
 }
 
+$scope = getAdminDocumentScope();
+if ($scope !== null && !in_array($before['document_type'], $scope, true)) {
+    echo json_encode(['success' => false, 'message' => 'You do not have permission to manage this document type.']);
+    exit;
+}
+
 $stmt = $conn->prepare("DELETE FROM requests WHERE id = ? AND request_status = 'Ready for Pickup'");
 $stmt->bind_param('i', $id);
 $stmt->execute();

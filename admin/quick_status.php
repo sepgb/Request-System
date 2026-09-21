@@ -39,6 +39,12 @@ if (!$before) {
     exit;
 }
 
+$scope = getAdminDocumentScope();
+if ($scope !== null && !in_array($before['document_type'], $scope, true)) {
+    echo json_encode(['success' => false, 'message' => 'You do not have permission to manage this document type.']);
+    exit;
+}
+
 $stmt = $conn->prepare("UPDATE requests SET request_status = ? WHERE id = ?");
 $stmt->bind_param('si', $request_status, $id);
 

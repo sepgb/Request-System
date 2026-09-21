@@ -3,9 +3,12 @@ require_once 'auth_check.php';
 require_once '../config/db.php';
 require_once '../includes/functions.php';
 
-$requests = $conn->query("SELECT * FROM requests ORDER BY date_requested DESC");
+$scopeIn = documentScopeInClause($conn);
+$scopeWhere = $scopeIn !== null ? " WHERE document_type IN ($scopeIn)" : '';
 
-/* Quick stats */
+$requests = $conn->query("SELECT * FROM requests{$scopeWhere} ORDER BY date_requested DESC");
+
+/* Quick stats — scoped to this admin's document types, if restricted */
 $stats = $conn->query("
     SELECT
         SUM(request_status = 'Pending') AS pending,
@@ -13,7 +16,7 @@ $stats = $conn->query("
         SUM(request_status = 'Ready for Pickup') AS ready,
         SUM(request_status = 'Rejected') AS rejected,
         COUNT(*) AS total
-    FROM requests
+    FROM requests{$scopeWhere}
 ")->fetch_assoc();
 
 $adminName = $_SESSION['admin_name'] ?? 'Admin';
@@ -201,7 +204,7 @@ $initialStatusFilter = trim($_GET['status'] ?? '');
                 <span class="profile-dropdown-avatar" id="dropdownAvatar"><?php echo avatarContent($adminPhoto, $adminInitial, '../'); ?></span>
                 <div>
                   <span class="profile-dropdown-name"><?php echo htmlspecialchars($adminName); ?></span>
-                  <span class="profile-dropdown-role">Admin</span>
+                  <span class="profile-dropdown-role"><?php echo isFullAdmin() ? 'Full Admin' : 'Document Admin'; ?></span>
                 </div>
               </div>
 
@@ -581,8 +584,7 @@ $initialStatusFilter = trim($_GET['status'] ?? '');
             <span class="edit-profile-avatar" id="editProfileAvatar"><?php echo avatarContent($adminPhoto, $adminInitial, '../'); ?></span>
             <div>
               <span class="edit-profile-avatar-name" id="editProfileAvatarName"><?php echo htmlspecialchars($adminName); ?></span>
-              <span class="edit-profile-avatar-role">Registrar Admin</span>
-              <button type="button" class="edit-profile-photo-btn" id="editProfilePhotoBtn">
+              <span class="edit-profile-avatar-role"><?php echo isFullAdmin() ? 'Full Admin' : 'Document Admin'; ?></span> <button type="button" class="edit-profile-photo-btn" id="editProfilePhotoBtn">
                 <svg viewBox="0 0 24 24" fill="none">
                   <path d="M12 16V4M12 4L7 9M12 4L17 9" stroke="currentColor" stroke-width="1.6"
                     stroke-linecap="round" stroke-linejoin="round" />

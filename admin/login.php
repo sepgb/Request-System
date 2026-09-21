@@ -18,12 +18,26 @@ $signupError = '';
 $oldUsername = '';
 $oldFullName = '';
 
-function startAdminSession(array $admin): void
+function startAdminSession(array $admin, mysqli $conn): void
 {
   $_SESSION['admin_id']       = $admin['id'];
   $_SESSION['admin_username'] = $admin['username'];
   $_SESSION['admin_name']     = $admin['full_name'];
   $_SESSION['admin_photo']    = $admin['photo'] ?? null;
+  $_SESSION['admin_role']     = $admin['role'] ?? 'full_admin';
+
+  $_SESSION['admin_doc_scope'] = [];
+  if ($_SESSION['admin_role'] === 'document_admin') {
+    $scopeStmt = $conn->prepare("SELECT document_type FROM admin_document_scope WHERE admin_id = ?");
+    $scopeStmt->bind_param('i', $admin['id']);
+    $scopeStmt->execute();
+    $res = $scopeStmt->get_result();
+    while ($row = $res->fetch_assoc()) {
+      $_SESSION['admin_doc_scope'][] = $row['document_type'];
+    }
+    $scopeStmt->close();
+  }
+
   header('Location: statistics.php');
   exit;
 }
@@ -52,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($username === '' || $password === '') {
       $loginError = 'Enter your username and password.';
     } else {
-      $stmt = $conn->prepare("SELECT id, username, password, full_name, photo FROM admin WHERE username = ?");
+      $stmt = $conn->prepare("SELECT id, username, password, full_name, photo, role FROM admin WHERE username = ?");
       $stmt->bind_param('s', $username);
       $stmt->execute();
       $res = $stmt->get_result();
@@ -61,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $admin = $res->fetch_assoc();
         $stmt->close();
         if (password_verify($password, $admin['password'])) {
-          startAdminSession($admin);
+          startAdminSession($admin, $conn);
         }
       } else {
         $stmt->close();
@@ -81,6 +95,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = $_POST['new_password'] ?? '';
     $confirm  = $_POST['confirm_password'] ?? '';
     $regKey   = trim($_POST['reg_key'] ?? '');
+    $adminRole = ($_POST['admin_role'] ?? 'full_admin') === 'document_admin' ? 'document_admin' : 'full_admin';
+    $allowedDocTypes = ['Certificate of Registration', 'Certificate of Grades', 'Diploma (Copy / Authentication)'];
+    $selectedDocTypes = array_values(array_intersect($_POST['doc_types'] ?? [], $allowedDocTypes));
 
     $oldFullName = $fullName;
     $oldUsername = $username;
@@ -95,6 +112,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $signupError = 'The two passwords do not match.';
     } elseif (!hash_equals(ADMIN_REG_KEY, $regKey)) {
       $signupError = 'That registration key is not valid. Ask the registrar for the current key.';
+    } elseif ($adminRole === 'document_admin' && empty($selectedDocTypes)) {
+      $signupError = 'Select at least one document type for a Document Admin account.';
     } else {
       $check = $conn->prepare("SELECT id FROM admin WHERE username = ?");
       $check->bind_param('s', $username);
@@ -106,17 +125,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $signupError = 'That username is already taken. Choose another one.';
       } else {
         $hash = password_hash($password, PASSWORD_DEFAULT);
-        $ins  = $conn->prepare("INSERT INTO admin (username, password, full_name) VALUES (?, ?, ?)");
-        $ins->bind_param('sss', $username, $hash, $fullName);
+        $ins  = $conn->prepare("INSERT INTO admin (username, password, full_name, role) VALUES (?, ?, ?, ?)");
+        $ins->bind_param('ssss', $username, $hash, $fullName, $adminRole);
 
         if ($ins->execute()) {
           $newId = $ins->insert_id;
           $ins->close();
+
+          if ($adminRole === 'document_admin') {
+            $scopeIns = $conn->prepare("INSERT INTO admin_document_scope (admin_id, document_type) VALUES (?, ?)");
+            foreach ($selectedDocTypes as $docType) {
+              $scopeIns->bind_param('is', $newId, $docType);
+              $scopeIns->execute();
+            }
+            $scopeIns->close();
+          }
+
           startAdminSession([
             'id'        => $newId,
             'username'  => $username,
             'full_name' => $fullName,
-          ]);
+            'role'      => $adminRole,
+          ], $conn);
         } else {
           $ins->close();
           $signupError = 'The account could not be created. Try again in a moment.';
@@ -140,14 +170,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <main class="auth-page">
     <div class="auth-shell">
 
-      <div class="auth-intro">
+      <div class="auth-intro" id="authIntro" <?php echo $activeTab === 'signup' ? ' hidden' : ''; ?>>
         <h1> <span class="brand-icon" aria-hidden="true"></span>
           Registrar Admin</h1>
         <p>Review document requests, mark them ready for pickup, and close them out
           once a student has claimed their copy.</p>
       </div>
 
-      <section class="auth-card" aria-labelledby="authHeading">
+      <section class="auth-card<?php echo $activeTab === 'signup' ? ' auth-card-wide' : ''; ?>" id="authCard" aria-labelledby="authHeading">
         <h2 id="authHeading" class="auth-card-title">Registrar Admin Access</h2>
 
 
@@ -216,6 +246,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
 
             <div class="form-group">
+              <label>Account Type</label>
+              <div class="role-toggle">
+                <label class="role-option">
+                  <input type="radio" name="admin_role" value="full_admin" checked>
+                  <span>Full Admin <small>Sees and manages every request</small></span>
+                </label>
+                <label class="role-option">
+                  <input type="radio" name="admin_role" value="document_admin">
+                  <span>Document Admin <small>Only sees requests for chosen document types</small></span>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group" id="docTypesGroup" hidden>
+              <label>Assigned Document Types</label>
+              <div class="doc-type-checkboxes">
+                <label class="doc-type-checkbox">
+                  <input type="checkbox" name="doc_types[]" value="Certificate of Registration"> Certificate of Registration
+                </label>
+                <label class="doc-type-checkbox">
+                  <input type="checkbox" name="doc_types[]" value="Certificate of Grades"> Certificate of Grades
+                </label>
+                <label class="doc-type-checkbox">
+                  <input type="checkbox" name="doc_types[]" value="Diploma (Copy / Authentication)"> Diploma (Copy / Authentication)
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group">
               <label for="reg_key">Registration key</label>
               <input type="password" id="reg_key" name="reg_key" autocomplete="one-time-code" required> <span class="auth-hint">The registrar's office issues this key to authorised staff.</span>
             </div>
@@ -239,6 +298,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         signup: document.getElementById('panel-signup')
       };
 
+      var authIntro = document.getElementById('authIntro');
+      var authCard = document.getElementById('authCard');
+      var authShell = document.querySelector('.auth-shell');
+
       function show(name) {
         Object.keys(panels).forEach(function(key) {
           panels[key].hidden = key !== name;
@@ -249,6 +312,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           tab.setAttribute('aria-selected', on ? 'true' : 'false');
           tab.setAttribute('tabindex', on ? '0' : '-1');
         });
+
+        var isSignup = name === 'signup';
+        if (authIntro) authIntro.hidden = isSignup;
+        if (authCard) authCard.classList.toggle('auth-card-wide', isSignup);
+        if (authShell) authShell.classList.toggle('auth-shell-signup', isSignup);
+
         var first = panels[name].querySelector('input');
         if (first && document.activeElement !== document.body) first.focus();
       }
@@ -256,6 +325,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       document.querySelectorAll('[data-panel]').forEach(function(el) {
         el.addEventListener('click', function() {
           show(el.dataset.panel);
+        });
+      });
+
+      var docTypesGroup = document.getElementById('docTypesGroup');
+      document.querySelectorAll('input[name="admin_role"]').forEach(function(radio) {
+        radio.addEventListener('change', function() {
+          if (docTypesGroup) docTypesGroup.hidden = (radio.value !== 'document_admin' || !radio.checked);
         });
       });
 

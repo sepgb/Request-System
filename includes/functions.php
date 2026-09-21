@@ -100,15 +100,42 @@ function checkRateLimit(mysqli $conn, string $ip, int $maxAttempts = 8, int $win
     return $count < $maxAttempts;
 }
 
-/**
- * Records one lookup attempt for this IP. Call this every time a
- * reference_no + student_number pair is actually queried against the DB,
- * whether it matches or not.
- */
 function recordLookupAttempt(mysqli $conn, string $ip): void
 {
     $stmt = $conn->prepare("INSERT INTO lookup_attempts (ip_address) VALUES (?)");
     $stmt->bind_param('s', $ip);
     $stmt->execute();
     $stmt->close();
+}
+
+function isFullAdmin(): bool
+{
+    return ($_SESSION['admin_role'] ?? 'full_admin') === 'full_admin';
+}
+
+/**
+ * null = full admin, no restriction. Array = the exact document types
+ * this admin is allowed to see (may be empty, meaning "sees nothing yet").
+ */
+function getAdminDocumentScope(): ?array
+{
+    if (isFullAdmin()) return null;
+    return $_SESSION['admin_doc_scope'] ?? [];
+}
+
+/**
+ * Builds a safe, quoted SQL IN(...) list of this admin's allowed document
+ * types, or null if unrestricted. Values are sourced only from our own
+ * admin_document_scope table (validated against a fixed list at signup),
+ * so this is safe without a full prepared-statement rewrite.
+ */
+function documentScopeInClause(mysqli $conn): ?string
+{
+    $scope = getAdminDocumentScope();
+    if ($scope === null) return null;
+    if (empty($scope)) return "'__no_access__'"; // matches no real document_type
+    $escaped = array_map(function ($v) use ($conn) {
+        return "'" . $conn->real_escape_string($v) . "'";
+    }, $scope);
+    return implode(',', $escaped);
 }

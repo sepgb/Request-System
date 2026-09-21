@@ -1710,7 +1710,7 @@ body:has(.hero) {
 
 .auth-page::before {
   content: "";
-  position: absolute;
+  position: fixed;
   inset: 0;
   background: url('../images/urs.jpg') center 45% / cover no-repeat;
   opacity: 0.32;
@@ -1720,7 +1720,7 @@ body:has(.hero) {
 
 .auth-page::after {
   content: "";
-  position: absolute;
+  position: fixed;
   inset: 0;
   background: linear-gradient(to bottom,
       rgba(10, 15, 28, 0.72) 0%,
@@ -1735,11 +1735,23 @@ body:has(.hero) {
   max-width: 1000px;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  align-items: center;
+  align-items: start;
   gap: 56px;
+  transition: max-width 0.25s ease, grid-template-columns 0.25s ease;
+}
+
+.auth-shell-signup {
+  max-width: 620px;
+  grid-template-columns: 1fr;
 }
 
 /* ---------- Left column ---------- */
+.auth-intro {
+  position: sticky;
+  top: 48px;
+  align-self: start;
+}
+
 .auth-intro .brand-icon {
   margin-bottom: 22px;
 }
@@ -1790,6 +1802,11 @@ body:has(.hero) {
   backdrop-filter: blur(18px) saturate(140%);
   -webkit-backdrop-filter: blur(18px) saturate(140%);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  width: 100%;
+}
+
+.auth-card-wide .auth-row {
+  grid-template-columns: 1fr 1fr;
 }
 
 .auth-card-title {
@@ -4105,4 +4122,67 @@ body.admin-body::-webkit-scrollbar {
   .btn-action-label {
     display: none;
   }
+}
+
+.role-toggle {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.role-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--field-bg);
+  border: 1px solid var(--field-border);
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease;
+}
+
+.role-option:has(input:checked) {
+  border-color: var(--gold-300);
+}
+
+.role-option input {
+  margin-top: 3px;
+  flex: 0 0 auto;
+}
+
+.role-option span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--paper);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.role-option span small {
+  display: block;
+  color: var(--paper-dim);
+  font-size: 0.78rem;
+  font-weight: 400;
+  white-space: normal;
+}
+
+.doc-type-checkboxes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.doc-type-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--paper);
+  font-size: 0.88rem;
+  cursor: pointer;
 }
