@@ -35,8 +35,6 @@ $claimedTotal = (int)($conn->query(
     "SELECT COUNT(*) AS c FROM audit_log WHERE action = 'claimed'"
 )->fetch_assoc()['c'] ?? 0);
 
-/* All-time submitted = currently on file + everything already claimed.
-   (Claims logged before the audit trail existed aren't counted.) */
 $submittedTotal = $activeTotal + $claimedTotal;
 
 /* ---------------------------------------------------------------

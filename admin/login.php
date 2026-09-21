@@ -8,7 +8,7 @@ require_once '../config/db.php';
 define('ADMIN_REG_KEY', 'URS-REGISTRAR-2026');
 
 if (isset($_SESSION['admin_id'])) {
-  header('Location: dashboard.php');
+  header('Location: statistics.php');
   exit;
 }
 
@@ -24,7 +24,7 @@ function startAdminSession(array $admin): void
   $_SESSION['admin_username'] = $admin['username'];
   $_SESSION['admin_name']     = $admin['full_name'];
   $_SESSION['admin_photo']    = $admin['photo'] ?? null;
-  header('Location: dashboard.php');
+  header('Location: statistics.php');
   exit;
 }
 
