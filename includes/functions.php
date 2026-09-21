@@ -73,6 +73,10 @@ function logAudit(mysqli $conn, array $request, string $action, ?string $oldStat
     $stmt->close();
 }
 
+if (!defined('ADMIN_REG_KEY')) {
+    define('ADMIN_REG_KEY', 'URS-REGISTRAR-2026');
+}
+
 /**
  * Best-effort client IP. Not spoof-proof if behind a proxy that doesn't
  * strip client-supplied headers, but sufficient for basic rate limiting.

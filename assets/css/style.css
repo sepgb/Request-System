@@ -1758,6 +1758,7 @@ body:has(.hero) {
 
 .auth-intro h1 {
   font-family: 'Newsreader', serif;
+  justify-content: center;
   font-weight: 500;
   font-size: clamp(2rem, 3.6vw, 2.8rem);
   line-height: 1.05;
@@ -4185,4 +4186,63 @@ body.admin-body::-webkit-scrollbar {
   color: var(--paper);
   font-size: 0.88rem;
   cursor: pointer;
+}
+
+/* =====================================================================
+   AUTH PAGE TRANSITIONS (login.php, forgot_password.php)
+   ===================================================================== */
+
+@keyframes auth-card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.auth-card,
+.auth-intro {
+  animation: auth-card-enter 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+body.auth-leaving .auth-card,
+body.auth-leaving .auth-intro {
+  animation: none !important;
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: opacity 0.22s ease, transform 0.22s ease;
+  pointer-events: none;
+}
+
+/* Tab panel swap (Log in <-> Create account) */
+.auth-panel {
+  animation: auth-card-enter 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.auth-panel.auth-panel-out {
+  animation: none;
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .auth-card,
+  .auth-intro,
+  .auth-panel {
+    animation: none;
+  }
+
+  body.auth-leaving .auth-card,
+  body.auth-leaving .auth-intro,
+  .auth-panel.auth-panel-out {
+    transition: none;
+    opacity: 1;
+    transform: none;
+  }
 }

@@ -4,8 +4,7 @@ Registration key: URS-REGISTRAR-2026
 */
 session_start();
 require_once '../config/db.php';
-
-define('ADMIN_REG_KEY', 'URS-REGISTRAR-2026');
+require_once '../includes/functions.php';
 
 if (isset($_SESSION['admin_id'])) {
   header('Location: statistics.php');
@@ -185,6 +184,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="auth-panel" id="panel-login" role="tabpanel" aria-labelledby="tab-login">
           <?php if ($loginError): ?>
             <div class="alert alert-error auth-alert"><?php echo htmlspecialchars($loginError); ?></div>
+          <?php elseif (isset($_GET['reset'])): ?>
+            <div class="alert alert-success auth-alert">
+              <p>Your password has been reset. Log in with your new password.</p>
+            </div>
           <?php endif; ?>
 
           <form method="POST" class="auth-form">
@@ -203,6 +206,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <button type="submit" class="btn btn-primary auth-submit">Log in</button>
           </form>
+
+          <p class="auth-switch">
+            <a href="forgot_password.php" class="auth-link" style="text-decoration:none;">Forgot password?</a>
+          </p>
 
           <p class="auth-switch">No account yet?
             <button type="button" class="auth-link" data-panel="signup">Create one</button>
@@ -302,7 +309,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       var authCard = document.getElementById('authCard');
       var authShell = document.querySelector('.auth-shell');
 
-      function show(name) {
+      function applyPanelSwitch(name) {
         Object.keys(panels).forEach(function(key) {
           panels[key].hidden = key !== name;
         });
@@ -322,6 +329,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (first && document.activeElement !== document.body) first.focus();
       }
 
+      function show(name) {
+        var current = Object.keys(panels).map(function(k) {
+            return panels[k];
+          })
+          .find(function(p) {
+            return !p.hidden;
+          });
+
+        if (!current || current === panels[name]) {
+          applyPanelSwitch(name);
+          return;
+        }
+
+        current.classList.add('auth-panel-out');
+        setTimeout(function() {
+          current.classList.remove('auth-panel-out');
+          applyPanelSwitch(name);
+        }, 180);
+      }
+
       document.querySelectorAll('[data-panel]').forEach(function(el) {
         el.addEventListener('click', function() {
           show(el.dataset.panel);
@@ -332,6 +359,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       document.querySelectorAll('input[name="admin_role"]').forEach(function(radio) {
         radio.addEventListener('change', function() {
           if (docTypesGroup) docTypesGroup.hidden = (radio.value !== 'document_admin' || !radio.checked);
+        });
+      });
+
+      document.querySelectorAll('a.auth-link, a.auth-back').forEach(function(link) {
+        link.addEventListener('click', function(e) {
+          var href = link.getAttribute('href');
+          if (!href || e.metaKey || e.ctrlKey || e.shiftKey) return;
+          e.preventDefault();
+          document.body.classList.add('auth-leaving');
+          setTimeout(function() {
+            window.location.href = href;
+          }, 220);
         });
       });
 
