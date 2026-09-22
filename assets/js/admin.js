@@ -469,21 +469,27 @@ if (editProfileForm) {
   const currentPasswordInput = document.getElementById('edit_current_password');
   const newPasswordInput = document.getElementById('edit_new_password');
   const confirmPasswordInput = document.getElementById('edit_confirm_password');
+  const usernameInput = document.getElementById('edit_username');
+  const trackedInputs = [currentPasswordInput, newPasswordInput, confirmPasswordInput, usernameInput];
 
   function markInvalid(input, message) {
     if (!input) return;
     input.classList.add('is-invalid');
     const field = input.closest('.edit-profile-field');
-    if (field && message) {
-      const err = document.createElement('p');
-      err.className = 'edit-profile-field-error';
-      err.textContent = message;
-      field.appendChild(err);
+    if (field) {
+      const existing = field.querySelector('.edit-profile-field-error');
+      if (existing) existing.remove();
+      if (message) {
+        const err = document.createElement('p');
+        err.className = 'edit-profile-field-error';
+        err.textContent = message;
+        field.appendChild(err);
+      }
     }
   }
 
   function clearInvalid() {
-    [currentPasswordInput, newPasswordInput, confirmPasswordInput].forEach(function (input) {
+    trackedInputs.forEach(function (input) {
       if (!input) return;
       input.classList.remove('is-invalid');
       const field = input.closest('.edit-profile-field');
@@ -494,7 +500,7 @@ if (editProfileForm) {
     });
   }
 
-  [currentPasswordInput, newPasswordInput, confirmPasswordInput].forEach(function (input) {
+  trackedInputs.forEach(function (input) {
     if (!input) return;
     input.addEventListener('input', function () {
       input.classList.remove('is-invalid');
@@ -505,6 +511,24 @@ if (editProfileForm) {
       }
     });
   });
+
+  // ---- Live username format check (server still re-checks uniqueness on submit) ----
+  if (usernameInput) {
+    let usernameCheckTimer = null;
+
+    usernameInput.addEventListener('input', function () {
+      clearTimeout(usernameCheckTimer);
+      const value = usernameInput.value.trim();
+
+      usernameCheckTimer = setTimeout(function () {
+        if (value === '') return;
+
+        if (!/^[A-Za-z0-9._-]{4,50}$/.test(value)) {
+          markInvalid(usernameInput, 'Username must be 4-50 characters, using only letters, numbers, dot, underscore or dash.');
+        }
+      }, 400);
+    });
+  }
 
   if (editProfileForm) {
     editProfileForm.addEventListener('submit', function (e) {
