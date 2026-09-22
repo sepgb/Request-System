@@ -69,6 +69,17 @@ $initialStatusFilter = trim($_GET['status'] ?? '');
           </svg>
           <span>Statistics</span>
         </a>
+        <?php if (isFullAdmin()): ?>
+          <a href="manage_admins.php" class="sidebar-link<?php echo $currentAdminPage === 'manage_admins.php' ? ' active' : ''; ?>">
+            <svg viewBox="0 0 24 24" fill="none">
+              <circle cx="9" cy="8" r="3.2" stroke="currentColor" stroke-width="1.6" />
+              <path d="M3.5 19c0-3.3 2.5-5.6 5.5-5.6s5.5 2.3 5.5 5.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+              <path d="M15.5 8.5a2.8 2.8 0 1 0 0-5.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+              <path d="M17.5 13.6c2.2.5 3.7 2.3 3.7 5.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+            </svg>
+            <span>Manage Admins</span>
+          </a>
+        <?php endif; ?>
       </nav>
 
       <!-- Status -->

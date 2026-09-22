@@ -41,8 +41,6 @@ function startAdminSession(array $admin, mysqli $conn): void
   exit;
 }
 
-require_once '../includes/functions.php';
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $formType = $_POST['form_type'] ?? 'login';
 
@@ -95,8 +93,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $confirm  = $_POST['confirm_password'] ?? '';
     $regKey   = trim($_POST['reg_key'] ?? '');
     $adminRole = ($_POST['admin_role'] ?? 'full_admin') === 'document_admin' ? 'document_admin' : 'full_admin';
-    $allowedDocTypes = ['Certificate of Registration', 'Certificate of Grades', 'Diploma (Copy / Authentication)'];
-    $selectedDocTypes = array_values(array_intersect($_POST['doc_types'] ?? [], $allowedDocTypes));
 
     $oldFullName = $fullName;
     $oldUsername = $username;
@@ -111,8 +107,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $signupError = 'The two passwords do not match.';
     } elseif (!hash_equals(ADMIN_REG_KEY, $regKey)) {
       $signupError = 'That registration key is not valid. Ask the registrar for the current key.';
-    } elseif ($adminRole === 'document_admin' && empty($selectedDocTypes)) {
-      $signupError = 'Select at least one document type for a Document Admin account.';
     } else {
       $check = $conn->prepare("SELECT id FROM admin WHERE username = ?");
       $check->bind_param('s', $username);
@@ -131,14 +125,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           $newId = $ins->insert_id;
           $ins->close();
 
-          if ($adminRole === 'document_admin') {
-            $scopeIns = $conn->prepare("INSERT INTO admin_document_scope (admin_id, document_type) VALUES (?, ?)");
-            foreach ($selectedDocTypes as $docType) {
-              $scopeIns->bind_param('is', $newId, $docType);
-              $scopeIns->execute();
-            }
-            $scopeIns->close();
-          }
+          // Document type scope (for document_admin accounts) is no longer
+          // chosen at signup — it starts empty and is assigned afterward
+          // by a Full Admin via manage_admins.php.
 
           startAdminSession([
             'id'        => $newId,
@@ -266,21 +255,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               </div>
             </div>
 
-            <div class="form-group" id="docTypesGroup" hidden>
-              <label>Assigned Document Types</label>
-              <div class="doc-type-checkboxes">
-                <label class="doc-type-checkbox">
-                  <input type="checkbox" name="doc_types[]" value="Certificate of Registration"> Certificate of Registration
-                </label>
-                <label class="doc-type-checkbox">
-                  <input type="checkbox" name="doc_types[]" value="Certificate of Grades"> Certificate of Grades
-                </label>
-                <label class="doc-type-checkbox">
-                  <input type="checkbox" name="doc_types[]" value="Diploma (Copy / Authentication)"> Diploma (Copy / Authentication)
-                </label>
-              </div>
-            </div>
-
             <div class="form-group">
               <label for="reg_key">Registration key</label>
               <input type="password" id="reg_key" name="reg_key" autocomplete="one-time-code" required> <span class="auth-hint">The registrar's office issues this key to authorised staff.</span>
@@ -352,13 +326,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       document.querySelectorAll('[data-panel]').forEach(function(el) {
         el.addEventListener('click', function() {
           show(el.dataset.panel);
-        });
-      });
-
-      var docTypesGroup = document.getElementById('docTypesGroup');
-      document.querySelectorAll('input[name="admin_role"]').forEach(function(radio) {
-        radio.addEventListener('change', function() {
-          if (docTypesGroup) docTypesGroup.hidden = (radio.value !== 'document_admin' || !radio.checked);
         });
       });
 
