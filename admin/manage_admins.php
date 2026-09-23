@@ -221,104 +221,92 @@ unset($a);
                 <?php else: ?>
                     <div class="admin-cards">
                         <?php foreach ($admins as $a): ?>
-                            <div class="admin-manage-card" data-admin-id="<?php echo $a['id']; ?>">
-                                <div class="admin-manage-header">
-                                    <span class="sidebar-avatar admin-manage-avatar">
-                                        <?php
-                                        $np = explode(' ', trim($a['full_name']));
-                                        echo htmlspecialchars(strtoupper(substr($np[0], 0, 1)) . strtoupper(substr(end($np), 0, 1)));
-                                        ?>
-                                    </span>
-                                    <div>
-                                        <span class="admin-manage-name"><?php echo htmlspecialchars($a['full_name']); ?></span>
-                                        <span class="admin-manage-username">@<?php echo htmlspecialchars($a['username']); ?></span>
-                                    </div>
-                                </div>
+                            <div class="flip-card" data-admin-id="<?php echo $a['id']; ?>">
+                                <div class="flip-card-inner">
 
-                                <div class="admin-manage-stats-grid">
-                                    <div class="admin-manage-stat">
-                                        <span class="admin-manage-stat-value"><?php echo $a['stats']['pending']; ?></span>
-                                        <span class="admin-manage-stat-label">Pending</span>
-                                    </div>
-                                    <div class="admin-manage-stat">
-                                        <span class="admin-manage-stat-value"><?php echo $a['stats']['processing']; ?></span>
-                                        <span class="admin-manage-stat-label">Processing</span>
-                                    </div>
-                                    <div class="admin-manage-stat">
-                                        <span class="admin-manage-stat-value"><?php echo $a['stats']['ready']; ?></span>
-                                        <span class="admin-manage-stat-label">Ready</span>
-                                    </div>
-                                    <div class="admin-manage-stat">
-                                        <span class="admin-manage-stat-value"><?php echo $a['stats']['claimed']; ?></span>
-                                        <span class="admin-manage-stat-label">Claimed</span>
-                                    </div>
-                                </div>
+                                    <!-- FRONT -->
+                                    <div class="flip-card-front admin-manage-card">
+                                        <div class="admin-manage-header">
+                                            <span class="sidebar-avatar admin-manage-avatar">
+                                                <?php
+                                                $np = explode(' ', trim($a['full_name']));
+                                                echo htmlspecialchars(strtoupper(substr($np[0], 0, 1)) . strtoupper(substr(end($np), 0, 1)));
+                                                ?>
+                                            </span>
+                                            <div>
+                                                <span class="admin-manage-name"><?php echo htmlspecialchars($a['full_name']); ?></span>
+                                                <span class="admin-manage-username">@<?php echo htmlspecialchars($a['username']); ?></span>
+                                            </div>
+                                        </div>
 
-                                <div class="admin-manage-footer">
-                                    <div class="admin-manage-assigned">
-                                        <span class="admin-manage-assigned-label">Documents Assigned</span>
-                                        <div class="admin-manage-assigned-value">
-                                            <?php if (empty($a['scope'])): ?>
-                                                <span class="admin-manage-doc-pill admin-manage-doc-pill-empty">None yet</span>
-                                            <?php else: ?>
-                                                <?php foreach ($a['scope'] as $docType): ?>
-                                                    <span class="admin-manage-doc-pill"><?php echo htmlspecialchars($docType); ?></span>
-                                                <?php endforeach; ?>
-                                            <?php endif; ?>
+                                        <div class="admin-manage-stats-grid">
+                                            <div class="admin-manage-stat">
+                                                <span class="admin-manage-stat-value"><?php echo $a['stats']['pending']; ?></span>
+                                                <span class="admin-manage-stat-label">Pending</span>
+                                            </div>
+                                            <div class="admin-manage-stat">
+                                                <span class="admin-manage-stat-value"><?php echo $a['stats']['processing']; ?></span>
+                                                <span class="admin-manage-stat-label">Processing</span>
+                                            </div>
+                                            <div class="admin-manage-stat">
+                                                <span class="admin-manage-stat-value"><?php echo $a['stats']['ready']; ?></span>
+                                                <span class="admin-manage-stat-label">Ready</span>
+                                            </div>
+                                            <div class="admin-manage-stat">
+                                                <span class="admin-manage-stat-value"><?php echo $a['stats']['claimed']; ?></span>
+                                                <span class="admin-manage-stat-label">Claimed</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="admin-manage-footer">
+                                            <div class="admin-manage-assigned">
+                                                <span class="admin-manage-assigned-label">Documents Assigned</span>
+                                                <div class="admin-manage-assigned-list">
+                                                    <?php if (empty($a['scope'])): ?>
+                                                        <span class="admin-manage-assigned-empty">None yet</span>
+                                                    <?php else: ?>
+                                                        <?php foreach ($a['scope'] as $docType): ?>
+                                                            <span class="admin-manage-doc-row"><?php echo htmlspecialchars($docType); ?></span>
+                                                        <?php endforeach; ?>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
+                                            <button type="button" class="btn-modal btn-modal-save admin-manage-edit-btn flip-open-btn">
+                                                Edit
+                                            </button>
                                         </div>
                                     </div>
-                                    <button type="button" class="btn-modal btn-modal-save admin-manage-edit-btn"
-                                        data-admin-id="<?php echo $a['id']; ?>"
-                                        data-admin-name="<?php echo htmlspecialchars($a['full_name']); ?>">
-                                        Edit Assignment
-                                    </button>
+
+                                    <!-- BACK -->
+                                    <div class="flip-card-back admin-manage-card">
+                                        <div class="admin-manage-back-header">
+                                            <span>Edit Assignment</span>
+                                        </div>
+
+                                        <div class="admin-manage-back-alert"></div>
+
+                                        <div class="doc-type-checkboxes admin-manage-back-checkboxes">
+                                            <?php foreach ($allDocTypes as $docType): ?>
+                                                <label class="doc-type-checkbox">
+                                                    <input type="checkbox" class="scope-checkbox" value="<?php echo htmlspecialchars($docType); ?>"
+                                                        <?php echo in_array($docType, $a['scope'], true) ? 'checked' : ''; ?>>
+                                                    <?php echo htmlspecialchars($docType); ?>
+                                                </label>
+                                            <?php endforeach; ?>
+                                        </div>
+
+                                        <div class="admin-manage-back-footer">
+                                            <button type="button" class="btn-modal btn-modal-cancel flip-cancel-btn">Cancel</button>
+                                            <button type="button" class="btn-modal btn-modal-save flip-save-btn">Save Changes</button>
+                                        </div>
+                                    </div>
+
                                 </div>
                             </div>
                         <?php endforeach; ?>
                     </div>
                 <?php endif; ?>
             </main>
-        </div>
-    </div>
-
-    <!-- EDIT DOCUMENT ASSIGNMENT MODAL -->
-    <div class="modal-overlay" id="editScopeOverlay" hidden>
-        <div class="edit-profile-box" role="dialog" aria-modal="true" aria-labelledby="editScopeTitle">
-            <div class="edit-profile-header">
-                <span class="edit-profile-header-icon">
-                    <svg viewBox="0 0 24 24" fill="none">
-                        <rect x="4" y="4" width="16" height="16" rx="3" stroke="currentColor" stroke-width="1.6" />
-                        <path d="M8 9H16M8 13H16M8 17H12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
-                    </svg>
-                </span>
-                <div class="edit-profile-header-text">
-                    <h3 id="editScopeTitle">Edit Assignment</h3>
-                    <p id="editScopeSubtitle">Choose which document types this admin can see and manage</p>
-                </div>
-                <button type="button" class="edit-profile-close" id="editScopeClose" aria-label="Close">
-                    <svg viewBox="0 0 24 24" fill="none">
-                        <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-                    </svg>
-                </button>
-            </div>
-
-            <div class="edit-profile-body">
-                <div id="editScopeAlert"></div>
-
-                <div class="doc-type-checkboxes" id="editScopeCheckboxes">
-                    <?php foreach ($allDocTypes as $docType): ?>
-                        <label class="doc-type-checkbox">
-                            <input type="checkbox" class="scope-checkbox" value="<?php echo htmlspecialchars($docType); ?>">
-                            <?php echo htmlspecialchars($docType); ?>
-                        </label>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-
-            <div class="edit-profile-footer">
-                <button type="button" class="btn-modal btn-modal-cancel" id="editScopeCancel">Cancel</button>
-                <button type="button" class="btn-modal btn-modal-save" id="editScopeSave">Save Changes</button>
-            </div>
         </div>
     </div>
 

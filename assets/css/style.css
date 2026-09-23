@@ -4253,22 +4253,36 @@ body.auth-leaving .auth-intro {
 
 .admin-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+@media (max-width: 1300px) {
+  .admin-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 860px) {
+  .admin-cards {
+    grid-template-columns: 1fr;
+  }
 }
 
 .admin-manage-card {
-  max-width: 420px;
   padding: 20px;
   border-radius: 14px;
-  background: #111317;
-  border: 1px solid #202329;
-  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+  background: #181a20;
+  border: 1px solid #262a32;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
 }
 
 .admin-manage-card:hover {
-  border-color: rgba(92, 127, 214, 0.35);
-  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.3);
+  border-color: rgba(92, 127, 214, 0.45);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 16px 34px rgba(0, 0, 0, 0.35);
 }
 
 .admin-manage-header {
@@ -4329,14 +4343,6 @@ body.auth-leaving .auth-intro {
   border-top: 1px solid #1c1f24;
 }
 
-.admin-manage-footer {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 10px;
-  margin-top: 16px;
-}
-
 .admin-manage-status {
   font-size: 0.78rem;
   font-weight: 600;
@@ -4350,12 +4356,6 @@ body.auth-leaving .auth-intro {
   color: #f4b6b6;
 }
 
-.admin-manage-footer .btn-modal {
-  min-height: 34px;
-  padding: 0 16px;
-  font-size: 0.8rem;
-}
-
 @media (max-width: 640px) {
   .admin-cards {
     grid-template-columns: 1fr;
@@ -4363,7 +4363,7 @@ body.auth-leaving .auth-intro {
 }
 
 /* =====================================================================
-   MANAGE ADMINS — per-admin stat grid + assignment summary
+   MANAGE ADMINS 
    ===================================================================== */
 
 .admin-manage-stats-grid {
@@ -4399,10 +4399,18 @@ body.auth-leaving .auth-intro {
 
 .admin-manage-footer {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   gap: 14px;
-  margin-top: 14px;
+  margin-top: auto;
+  padding-top: 14px;
+}
+
+.admin-manage-footer .btn-modal {
+  flex: 0 0 auto;
+  min-height: 34px;
+  padding: 0 16px;
+  font-size: 0.8rem;
 }
 
 .admin-manage-assigned {
@@ -4421,25 +4429,22 @@ body.auth-leaving .auth-intro {
   text-transform: uppercase;
 }
 
-.admin-manage-assigned-value {
-  display: block;
-  margin-top: 3px;
-  line-height: 1.5;
+.admin-manage-assigned-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
 }
 
-.admin-manage-doc-pill {
+.admin-manage-doc-row {
   color: #d0d4da;
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   font-weight: 500;
 }
 
-.admin-manage-doc-pill:not(:last-child)::after {
-  content: ", ";
+.admin-manage-assigned-empty {
   color: #626974;
-}
-
-.admin-manage-doc-pill-empty {
-  color: #626974;
+  font-size: 0.82rem;
 }
 
 .admin-manage-edit-btn {
@@ -4448,4 +4453,122 @@ body.auth-leaving .auth-intro {
   padding: 0 16px;
   font-size: 0.8rem;
   white-space: nowrap;
+  background: var(--admin-blue-400);
+  color: #ffffff;
+  transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.admin-manage-edit-btn:hover {
+  background: var(--admin-blue-300);
+  transform: translateY(-2px);
+}
+
+/* MANAGE ADMINS */
+
+.flip-card {
+  perspective: 1400px;
+  min-height: 250px;
+}
+
+.flip-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 250px;
+  transition: transform 0.3s cubic-bezier(0.4, 0.1, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+.flip-card:not(.is-flipped):hover .flip-card-inner {
+  transform: translateY(-2px);
+}
+
+.flip-card.is-flipped .flip-card-inner {
+  transform: rotateY(180deg);
+}
+
+.flip-card.is-flipped:hover .flip-card-inner {
+  transform: rotateY(180deg) translateY(-2px);
+}
+
+.flip-card-front,
+.flip-card-back {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.flip-card-back {
+  transform: rotateY(180deg);
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.flip-card.is-flipped .flip-card-back {
+  pointer-events: auto;
+}
+
+.flip-card.is-flipped .flip-card-front {
+  pointer-events: none;
+}
+
+.admin-manage-back-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #262a32;
+  color: #f1f2f4;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.flip-close-btn {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  border: none;
+  background: rgba(244, 241, 234, 0.06);
+  color: #8a919c;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.flip-close-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.flip-close-btn:hover {
+  background: rgba(214, 84, 84, 0.14);
+  color: #f4b6b6;
+}
+
+.admin-manage-back-checkboxes {
+  flex: 1 1 auto;
+  overflow-y: auto;
+}
+
+.admin-manage-back-alert:empty {
+  display: none;
+}
+
+.admin-manage-back-alert .edit-profile-alert {
+  margin-bottom: 12px;
+}
+
+.admin-manage-back-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #262a32;
 }
