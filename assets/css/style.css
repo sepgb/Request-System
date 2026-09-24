@@ -2099,22 +2099,22 @@ body:has(.hero) {
 .sidebar-nav {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 1px;
 }
 
 .sidebar-link {
-  min-height: 42px;
+  min-height: 34px;
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 12px;
+  padding: 6px 10px;
   box-sizing: border-box;
-  border-radius: 10px;
+  border-radius: 7px;
   background: transparent !important;
-  color: #9aa0ab;
+  color: #b4b9c2;
   font-family: 'Manrope', sans-serif;
-  font-size: 13.5px;
-  font-weight: 500;
+  font-size: 15px;
+  font-weight: 400;
   text-decoration: none;
   transition:
     background 0.15s ease,
@@ -2122,20 +2122,19 @@ body:has(.hero) {
 }
 
 .sidebar-link svg {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   flex: 0 0 auto;
 }
 
 .sidebar-link:hover {
-  background: rgba(92, 127, 214, 0.08) !important;
-  color: #dfe3e8;
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: #f1f2f4;
 }
 
 .sidebar-link.active {
-  background: rgba(92, 127, 214, 0.16) !important;
-  color: var(--admin-blue-300);
-  font-weight: 600;
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #f1f2f4;
   box-shadow: none !important;
 }
 
@@ -2143,21 +2142,21 @@ body:has(.hero) {
 /* SIDEBAR STATUS */
 
 .sidebar-section-label {
-  padding: 24px 12px 8px;
-  color: #626974;
+  padding: 20px 10px 6px;
+  color: #74787f;
   font-family: 'Manrope', sans-serif;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 .sidebar-nav-status {
-  gap: 0px;
+  gap: 1px;
 }
 
 .sidebar-nav-status .sidebar-link {
-  min-height: 44px;
+  min-height: 34px;
 }
 
 /* Sidebar count */
@@ -3600,7 +3599,7 @@ body:has(.hero) {
    ===================================================================== */
 
 .sidebar-nav-general {
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 /* =====================================================================
