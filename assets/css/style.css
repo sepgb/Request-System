@@ -38,7 +38,6 @@ svg {
   --field-bg: rgba(10, 15, 28, 0.35);
   --field-border: rgba(244, 241, 234, 0.18);
 
-  /* Admin sidebar / profile accent (dark navy) */
   --admin-blue-300: #5c7fd6;
   --admin-blue-400: #1a2a5c;
   --admin-blue-900: #0c1330;
@@ -157,7 +156,7 @@ body.page-leaving .main-content {
 }
 
 /* =====================================================================
-   Header / nav
+   HEADER
    ===================================================================== */
 
 .site-header {
@@ -420,7 +419,7 @@ body.page-leaving .main-content {
 }
 
 /* =====================================================================
-   Footer
+   FOOTER
    ===================================================================== */
 
 .site-footer {
@@ -583,7 +582,9 @@ body.page-leaving .main-content {
   }
 }
 
-/* Homepage */
+/* =====================================================================
+   HOME PAGE
+   ===================================================================== */
 
 .hero,
 .how-it-works,
@@ -697,7 +698,6 @@ body.page-leaving .main-content {
   grid-column: span 2;
 }
 
-/* Cards 4 and 5 sit on row two, offset by one column so the pair centers */
 .steps .step-card:nth-child(4) {
   grid-column: 2 / span 2;
 }
@@ -753,13 +753,10 @@ body.page-leaving .main-content {
   margin: 0;
 }
 
-/* ---------- Scroll-triggered reveal (index.php, via .reveal class + IntersectionObserver) ---------- */
 .reveal {
   opacity: 1;
 }
 
-/* Only hide .reveal content once JS confirms it can observe and restore it
-   (class added by script.js) — keeps the sections visible if JS ever fails. */
 body.reveal-ready .reveal {
   opacity: 0;
 }
@@ -851,7 +848,6 @@ body.reveal-ready .reveal.is-visible {
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
 }
 
-/* ---------- Documents marquee (infinite scroll) ---------- */
 .doc-marquee {
   overflow: hidden;
   width: 100%;
@@ -936,7 +932,7 @@ body:has(.hero) {
 }
 
 /* =====================================================================
-   Request form (request.php)
+   REQUEST FORM
    ===================================================================== */
 
 .form-section {
@@ -1140,9 +1136,6 @@ body:has(.hero) {
   }
 }
 
-/* =====================================================================
-   Reduced motion
-   ===================================================================== */
 @media (prefers-reduced-motion: reduce) {
 
   .btn,
@@ -1151,9 +1144,6 @@ body:has(.hero) {
   }
 }
 
-/* =====================================================================
-   Request form (request.php)
-   ===================================================================== */
 
 .form-section>h1 {
   font-family: 'Newsreader', serif;
@@ -1360,11 +1350,6 @@ body:has(.hero) {
   }
 }
 
-/* =====================================================================
-   Shared page components — alerts, tables, badges, confirmation &
-   receipt boxes. Used by track.php, submit_request.php, receipt.php.
-   ===================================================================== */
-
 .subtitle {
   font-size: 0.98rem;
   line-height: 1.6;
@@ -1373,7 +1358,6 @@ body:has(.hero) {
   margin: 0 0 32px;
 }
 
-/* ---------- Alerts ---------- */
 .alert {
   border-radius: 14px;
   padding: 16px 20px;
@@ -1422,7 +1406,9 @@ body:has(.hero) {
   color: var(--paper-dim);
 }
 
-/* ---------- Detail table (track.php + receipt.php) ---------- */
+/* =====================================================================
+   TRACK PAGE
+   ===================================================================== */
 .detail-table {
   width: 100%;
   border-collapse: collapse;
@@ -1458,7 +1444,6 @@ body:has(.hero) {
   color: var(--gold-300);
 }
 
-/* ---------- Status badges ---------- */
 .badge {
   display: inline-flex;
   align-items: center;
@@ -1504,7 +1489,6 @@ body:has(.hero) {
   color: #f4b6b6;
 }
 
-/* ---------- Reference box (submit_request.php) ---------- */
 .reference-box {
   background: var(--form-glass-bg);
   border: 1px solid rgba(227, 197, 137, 0.32);
@@ -1551,7 +1535,9 @@ body:has(.hero) {
   margin-top: 50px;
 }
 
-/* ---------- Receipt page specifics ---------- */
+/* =====================================================================
+   RECEIPT PAGE
+   ===================================================================== */
 .receipt-header {
   margin-bottom: 30px;
   text-align: center;
@@ -1583,7 +1569,6 @@ body:has(.hero) {
   }
 }
 
-/* ---------- Print styles (receipt.php) ---------- */
 @media print {
 
   .site-header,
@@ -1646,9 +1631,6 @@ body:has(.hero) {
   border-bottom: 1px solid #ccc !important;
 }
 
-/* =====================================================================
-   Reduced motion
-   ===================================================================== */
 @media (prefers-reduced-motion: reduce) {
 
   .btn,
@@ -1684,7 +1666,7 @@ body:has(.hero) {
 }
 
 /* =====================================================================
-   Admin auth (admin/login.php) — log in / create account
+   ADMIN AUTH
    ===================================================================== */
 
 .auth-body {
@@ -1745,7 +1727,6 @@ body:has(.hero) {
   grid-template-columns: 1fr;
 }
 
-/* ---------- Left column ---------- */
 .auth-intro {
   position: sticky;
   top: 48px;
@@ -1794,7 +1775,6 @@ body:has(.hero) {
   outline-offset: 4px;
 }
 
-/* ---------- Card ---------- */
 .auth-card {
   background: var(--form-glass-bg);
   border: 1px solid var(--glass-border);
@@ -1819,7 +1799,6 @@ body:has(.hero) {
   text-align: center;
 }
 
-/* ---------- Tabs ---------- */
 .auth-tabs {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1859,7 +1838,6 @@ body:has(.hero) {
   outline-offset: 2px;
 }
 
-/* ---------- Forms ---------- */
 .auth-form .form-group {
   margin-bottom: 18px;
 }
@@ -1993,8 +1971,6 @@ body:has(.hero) {
   font-family: 'Manrope', system-ui, sans-serif;
 }
 
-/* MAIN SHELL */
-
 .admin-shell {
   display: flex;
   width: 100%;
@@ -2002,8 +1978,6 @@ body:has(.hero) {
   align-items: stretch;
   background: #0b0c0f;
 }
-
-/* SIDEBAR */
 
 .admin-sidebar {
   position: sticky;
@@ -2021,8 +1995,6 @@ body:has(.hero) {
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
 }
-
-/* SIDEBAR BRAND */
 
 .sidebar-brand {
   display: flex;
@@ -2093,8 +2065,9 @@ body:has(.hero) {
   display: none;
 }
 
-
-/* SIDEBAR NAVIGATION */
+/* =====================================================================
+   SIDEBAR NAVIGATION
+   ===================================================================== */
 
 .sidebar-nav {
   display: flex;
@@ -2139,13 +2112,11 @@ body:has(.hero) {
 }
 
 
-/* SIDEBAR STATUS */
-
 .sidebar-section-label {
   padding: 20px 10px 6px;
   color: #74787f;
   font-family: 'Manrope', sans-serif;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 500;
   letter-spacing: 0;
   text-transform: none;
@@ -2158,8 +2129,6 @@ body:has(.hero) {
 .sidebar-nav-status .sidebar-link {
   min-height: 34px;
 }
-
-/* Sidebar count */
 
 .sidebar-count {
   min-width: 24px;
@@ -2183,8 +2152,6 @@ body:has(.hero) {
   border-color: var(--admin-blue-300);
   color: #ffffff;
 }
-
-/* SIDEBAR PROFILE */
 
 .sidebar-profile {
   margin-top: auto;
@@ -2234,7 +2201,6 @@ body:has(.hero) {
   text-overflow: ellipsis;
 }
 
-
 .sidebar-logout {
   width: 30px;
   height: 30px;
@@ -2259,8 +2225,6 @@ body:has(.hero) {
   color: #cbd1d8;
 }
 
-/* MAIN CONTENT */
-
 .admin-content {
   min-width: 0;
   flex: 1 1 auto;
@@ -2268,8 +2232,6 @@ body:has(.hero) {
   flex-direction: column;
   background: #111317;
 }
-
-/* TOPBAR */
 
 .topbar-link {
   min-height: 50px;
@@ -2310,7 +2272,6 @@ body:has(.hero) {
   -webkit-backdrop-filter: none;
 }
 
-/* STATUS DISPLAY */
 .topbar-status-row {
   height: 60px;
   display: flex;
@@ -2340,8 +2301,6 @@ body:has(.hero) {
   cursor: default;
   user-select: none;
 }
-
-/* FILTER */
 
 .topbar-filter {
   height: 34px;
@@ -2373,7 +2332,6 @@ body:has(.hero) {
   color: #8f98a5;
 }
 
-/* Filter select */
 .filter-wrapper {
   position: relative;
   display: flex;
@@ -2450,7 +2408,6 @@ body:has(.hero) {
   color: var(--gold-300);
 }
 
-/* SEARCH */
 .topbar-tools {
   align-items: center;
   justify-content: center;
@@ -2496,8 +2453,6 @@ body:has(.hero) {
   color: #686d76;
 }
 
-/* DASHBOARD MAIN */
-
 .admin-main {
   width: 100% !important;
   max-width: none !important;
@@ -2510,9 +2465,6 @@ body:has(.hero) {
 .stats-row {
   display: none !important;
 }
-
-
-/* TABLE */
 
 .table-wrap {
   width: 100% !important;
@@ -2607,8 +2559,6 @@ body:has(.hero) {
   text-overflow: ellipsis;
 }
 
-/* TABLE ROWS */
-
 .admin-table tbody tr {
   background: #111317 !important;
   transition: background 0.12s ease;
@@ -2638,8 +2588,6 @@ body:has(.hero) {
   border-bottom: none;
 }
 
-/* Remove every possible table rounding */
-
 .admin-table,
 .admin-table thead,
 .admin-table tbody,
@@ -2649,17 +2597,12 @@ body:has(.hero) {
   border-radius: 0 !important;
 }
 
-
-/* REFERENCE NUMBER */
-
 .cell-ref {
   color: #9bb8df;
   font-family: 'Manrope', sans-serif;
   font-size: 12px;
   font-weight: 500;
 }
-
-/* STATUS */
 
 .status-select {
   min-width: 150px;
@@ -2730,8 +2673,6 @@ body:has(.hero) {
   position: relative;
 }
 
-/* ACTION */
-
 .cell-action {
   text-align: left;
 }
@@ -2773,9 +2714,6 @@ body:has(.hero) {
   cursor: default;
 }
 
-
-/* EMPTY STATE */
-
 .filter-empty {
   background: #08090b !important;
 }
@@ -2801,8 +2739,6 @@ body:has(.hero) {
   height: 18px;
 }
 
-/* HIDDEN ELEMENTS */
-
 [hidden] {
   display: none !important;
 }
@@ -2814,9 +2750,6 @@ body:has(.hero) {
   min-height: 60px;
   gap: 10px;
 }
-
-
-/* Confirmation page */
 
 .confirmation-mark {
   display: flex;
@@ -2906,9 +2839,6 @@ body:has(.hero) {
   color: var(--gold-300) !important;
 }
 
-
-/* Topbar admin profile */
-
 .topbar-profile {
   position: relative;
   margin-left: auto;
@@ -2927,8 +2857,6 @@ body:has(.hero) {
     display: none;
   }
 }
-
-/* CLAIM CONFIRMATION MODAL */
 
 .modal-overlay {
   position: fixed;
@@ -2990,10 +2918,14 @@ body:has(.hero) {
   background: transparent;
   border-color: #2a2e35;
   color: #aeb9c9;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
 }
 
 .btn-modal-cancel:hover {
-  background: #1a1d22;
+  background: rgba(214, 84, 84, 0.12);
+  border-color: rgba(214, 84, 84, 0.4);
+  color: #f4b6b6;
+  transform: translateY(-2px);
 }
 
 .btn-modal-confirm {
@@ -3005,16 +2937,13 @@ body:has(.hero) {
   background: #45d69b;
 }
 
-/* =====================================================================
-   ADMIN DASHBOARD FONT — Poppins throughout
-   ===================================================================== */
 .admin-body,
 .admin-body * {
   font-family: 'Manrope', sans-serif !important;
 }
 
 /* =====================================================================
-   PROFILE DROPDOWN (admin topbar)
+   PROFILE DROPDOWN 
    ===================================================================== */
 
 .topbar-profile-trigger {
@@ -3445,10 +3374,13 @@ body:has(.hero) {
 .btn-modal-save {
   background: var(--admin-blue-300);
   color: #ffffff;
+  transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
 }
 
 .btn-modal-save:hover {
-  filter: brightness(1.05);
+  background: #7191e0;
+  box-shadow: 0 0 20px rgba(92, 127, 214, 0.1);
+  transform: translateY(-2px);
 }
 
 .btn-modal-save:disabled {
@@ -4181,10 +4113,51 @@ body.admin-body::-webkit-scrollbar {
 .doc-type-checkbox {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   color: var(--paper);
   font-size: 0.88rem;
   cursor: pointer;
+}
+
+.doc-type-checkbox input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  flex: 0 0 auto;
+  width: 19px;
+  height: 19px;
+  margin: 0;
+  border-radius: 6px;
+  border: 1.5px solid var(--field-border);
+  background: var(--field-bg);
+  cursor: pointer;
+  position: relative;
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.doc-type-checkbox input[type="checkbox"]:hover {
+  border-color: rgba(92, 127, 214, 0.5);
+}
+
+.doc-type-checkbox input[type="checkbox"]:checked {
+  background: var(--admin-blue-300);
+  border-color: var(--admin-blue-300);
+}
+
+.doc-type-checkbox input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 2px;
+  width: 5px;
+  height: 10px;
+  border: solid #ffffff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.doc-type-checkbox input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--admin-blue-300);
+  outline-offset: 2px;
 }
 
 /* =====================================================================
@@ -4361,10 +4334,6 @@ body.auth-leaving .auth-intro {
   }
 }
 
-/* =====================================================================
-   MANAGE ADMINS 
-   ===================================================================== */
-
 .admin-manage-stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -4452,17 +4421,12 @@ body.auth-leaving .auth-intro {
   padding: 0 16px;
   font-size: 0.8rem;
   white-space: nowrap;
-  background: var(--admin-blue-400);
-  color: #ffffff;
-  transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .admin-manage-edit-btn:hover {
-  background: var(--admin-blue-300);
   transform: translateY(-2px);
 }
-
-/* MANAGE ADMINS */
 
 .flip-card {
   perspective: 1400px;
