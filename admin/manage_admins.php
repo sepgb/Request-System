@@ -81,6 +81,15 @@ unset($a);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manage Admins | Registrar Admin</title>
+    <script>
+        (function() {
+            try {
+                if (localStorage.getItem('urs_admin_theme') === 'light') {
+                    document.documentElement.setAttribute('data-theme', 'light');
+                }
+            } catch (e) {}
+        })();
+    </script>
     <link rel="stylesheet" href="../assets/css/style.css">
 </head>
 
@@ -207,6 +216,23 @@ unset($a);
                             </div>
                         </div>
                     </div>
+
+                    <!-- Light / dark mode toggle -->
+                    <button type="button" class="theme-toggle" id="themeToggle" role="switch"
+                        aria-checked="false" aria-label="Switch to light mode" title="Toggle light / dark mode">
+                        <span class="theme-toggle-track">
+                            <svg class="theme-toggle-icon theme-toggle-icon-sun" viewBox="0 0 24 24" fill="none">
+                                <circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.8" />
+                                <path d="M12 2.5V5M12 19V21.5M4.5 12H2M22 12H19.5M5.6 5.6L7.3 7.3M18.4 5.6L16.7 7.3M5.6 18.4L7.3 16.7M18.4 18.4L16.7 16.7"
+                                    stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                            </svg>
+                            <svg class="theme-toggle-icon theme-toggle-icon-moon" viewBox="0 0 24 24" fill="none">
+                                <path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a7 7 0 0 0 11 11Z" stroke="currentColor"
+                                    stroke-width="1.8" stroke-linejoin="round" />
+                            </svg>
+                            <span class="theme-toggle-thumb"></span>
+                        </span>
+                    </button>
                 </div>
             </header>
 
@@ -409,6 +435,36 @@ unset($a);
     </script>
     <script src="../assets/js/admin.js"></script>
     <script src="../assets/js/manage_admins.js"></script>
+
+    <!-- THEME TOGGLE -->
+    <script>
+        (function() {
+            var root = document.documentElement;
+            var toggle = document.getElementById('themeToggle');
+            if (!toggle) return;
+
+            function reflect(theme) {
+                var isLight = theme === 'light';
+                toggle.setAttribute('aria-checked', isLight ? 'true' : 'false');
+                toggle.setAttribute('aria-label', isLight ? 'Switch to dark mode' : 'Switch to light mode');
+            }
+
+            reflect(root.getAttribute('data-theme') === 'light' ? 'light' : 'dark');
+
+            toggle.addEventListener('click', function() {
+                var next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+                if (next === 'light') {
+                    root.setAttribute('data-theme', 'light');
+                } else {
+                    root.removeAttribute('data-theme');
+                }
+                try {
+                    localStorage.setItem('urs_admin_theme', next);
+                } catch (e) {}
+                reflect(next);
+            });
+        })();
+    </script>
 
 </body>
 
