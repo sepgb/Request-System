@@ -3567,6 +3567,7 @@ body:has(.hero) {
 }
 
 .stat-card {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 14px;
@@ -3574,12 +3575,79 @@ body:has(.hero) {
   border-radius: 14px;
   background: #111317;
   border: 1px solid #202329;
+  overflow: hidden;
   transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.stat-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--admin-blue-300);
+}
+
+.stat-card-pending::before {
+  background: var(--gold-300);
+}
+
+.stat-card-processing::before {
+  background: #9dc4ff;
+}
+
+.stat-card-ready::before {
+  background: #8fe0b4;
+}
+
+.stat-card-claimed::before {
+  background: #aeb9c9;
+}
+
+.stat-card {
+  background: rgba(92, 127, 214, 0.08);
+}
+
+.stat-card-pending {
+  background: rgba(227, 197, 137, 0.08);
+}
+
+.stat-card-processing {
+  background: rgba(157, 196, 255, 0.08);
+}
+
+.stat-card-ready {
+  background: rgba(90, 199, 140, 0.08);
+}
+
+.stat-card-claimed {
+  background: rgba(174, 185, 201, 0.06);
 }
 
 .stat-card:hover {
   transform: translateY(-3px);
   border-color: rgba(92, 127, 214, 0.4);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.35);
+}
+
+.stat-card-pending:hover {
+  border-color: rgba(227, 197, 137, 0.4);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.35);
+}
+
+.stat-card-processing:hover {
+  border-color: rgba(157, 196, 255, 0.4);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.35);
+}
+
+.stat-card-ready:hover {
+  border-color: rgba(90, 199, 140, 0.4);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.35);
+}
+
+.stat-card-claimed:hover {
+  border-color: rgba(174, 185, 201, 0.4);
   box-shadow: 0 14px 30px rgba(0, 0, 0, 0.35);
 }
 
@@ -3660,6 +3728,7 @@ body:has(.hero) {
 }
 
 .panel {
+  position: relative;
   padding: 22px;
   border-radius: 14px;
   background: #111317;
@@ -3671,6 +3740,72 @@ body:has(.hero) {
   color: #d0d4da;
   font-size: 0.92rem;
   font-weight: 600;
+}
+
+.panel-chart {
+  border-top: 3px solid var(--admin-blue-300);
+}
+
+.panel-docs {
+  background:
+    radial-gradient(70% 60% at 100% 0%, rgba(90, 199, 140, 0.08) 0%, transparent 60%),
+    #111317;
+}
+
+.panel-docs .panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.panel-docs .panel-title::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
+  background: linear-gradient(135deg, var(--admin-blue-300), #8fe0b4);
+  flex: 0 0 auto;
+}
+
+.panel-activity {
+  border-left: 3px solid #8fe0b4;
+}
+
+.panel-activity .panel-title {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.panel-activity .panel-title::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #8fe0b4;
+  box-shadow: 0 0 0 rgba(90, 199, 140, 0.6);
+  flex: 0 0 auto;
+  animation: activity-pulse 2s ease-in-out infinite;
+}
+
+@keyframes activity-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(90, 199, 140, 0.55);
+  }
+
+  70% {
+    box-shadow: 0 0 0 7px rgba(90, 199, 140, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(90, 199, 140, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel-activity .panel-title::before {
+    animation: none;
+  }
 }
 
 .panel-header-row {
@@ -3882,6 +4017,38 @@ body:has(.hero) {
   height: 100%;
   border-radius: 999px;
   background: var(--admin-blue-300);
+}
+
+.doc-breakdown-row:nth-child(1) .doc-breakdown-fill {
+  background: linear-gradient(90deg, var(--admin-blue-300), #7fa2ea);
+}
+
+.doc-breakdown-row:nth-child(2) .doc-breakdown-fill {
+  background: linear-gradient(90deg, #8fe0b4, #5ac78c);
+}
+
+.doc-breakdown-row:nth-child(3) .doc-breakdown-fill {
+  background: linear-gradient(90deg, var(--gold-300), var(--gold-400));
+}
+
+.doc-breakdown-row:nth-child(4) .doc-breakdown-fill {
+  background: linear-gradient(90deg, #9dc4ff, #5ea3ff);
+}
+
+.doc-breakdown-row:nth-child(1) .doc-breakdown-count {
+  color: #7fa2ea;
+}
+
+.doc-breakdown-row:nth-child(2) .doc-breakdown-count {
+  color: #8fe0b4;
+}
+
+.doc-breakdown-row:nth-child(3) .doc-breakdown-count {
+  color: var(--gold-300);
+}
+
+.doc-breakdown-row:nth-child(4) .doc-breakdown-count {
+  color: #9dc4ff;
 }
 
 /* ---------- Recent activity ---------- */

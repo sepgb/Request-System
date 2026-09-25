@@ -395,7 +395,7 @@ function renderActivityItem(array $a): void
                 <div class="stats-row-2col">
 
                     <!-- Last 14 days chart -->
-                    <div class="panel">
+                    <div class="panel panel-chart">
                         <h2 class="panel-title">Last 14 days</h2>
                         <div class="bar-chart">
                             <?php foreach ($days as $date => $counts): ?>
@@ -415,7 +415,7 @@ function renderActivityItem(array $a): void
                     </div>
 
                     <!-- Document type breakdown -->
-                    <div class="panel">
+                    <div class="panel panel-docs">
                         <h2 class="panel-title">By document type</h2>
                         <?php if (empty($docCounts)): ?>
                             <p class="stats-empty">No requests yet.</p>
@@ -438,7 +438,7 @@ function renderActivityItem(array $a): void
 
                 <!-- Recent activity (Full Admin only) -->
                 <?php if (isFullAdmin()): ?>
-                    <div class="panel">
+                    <div class="panel panel-activity">
                         <div class="panel-header-row">
                             <h2 class="panel-title">Recent activity</h2>
                             <?php if ($hasMoreActivity): ?>

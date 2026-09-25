@@ -18,7 +18,6 @@ $currentAdminPage = basename($_SERVER['PHP_SELF'] ?? '');
 
 $allDocTypes = ['Certificate of Registration', 'Certificate of Grades', 'Diploma (Copy / Authentication)'];
 
-/* Sidebar status counts — Full Admin only reaches this page, so unscoped */
 $stats = $conn->query("
     SELECT
         SUM(request_status = 'Pending') AS pending,
@@ -43,7 +42,6 @@ while ($s = $scopeRes->fetch_assoc()) {
     }
 }
 
-/* Per-admin stats, scoped to each admin's assigned document types */
 foreach ($admins as $id => &$a) {
     $stats4 = ['pending' => 0, 'processing' => 0, 'ready' => 0, 'claimed' => 0];
 
