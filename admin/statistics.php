@@ -12,9 +12,6 @@ $adminInitial = $firstInitial . $secondInitial;
 $currentAdminPage = basename($_SERVER['PHP_SELF'] ?? '');
 $initialStatusFilter = trim($_GET['status'] ?? '');
 
-/* ---------------------------------------------------------------
-   Top stat cards
-   --------------------------------------------------------------- */
 $scopeIn = documentScopeInClause($conn);
 $scopeWhere = $scopeIn !== null ? " WHERE document_type IN ($scopeIn)" : '';
 $scopeAnd = $scopeIn !== null ? " AND document_type IN ($scopeIn)" : '';
@@ -41,9 +38,6 @@ $claimedTotal = (int)($conn->query(
 
 $submittedTotal = $activeTotal + $claimedTotal;
 
-/* ---------------------------------------------------------------
-   Document type breakdown (current + all-time claimed)
-   --------------------------------------------------------------- */
 $docCounts = [];
 
 $res = $conn->query("SELECT document_type, COUNT(*) AS c FROM requests{$scopeWhere} GROUP BY document_type");
@@ -59,9 +53,6 @@ while ($row = $res->fetch_assoc()) {
 arsort($docCounts);
 $maxDocCount = !empty($docCounts) ? max($docCounts) : 0;
 
-/* ---------------------------------------------------------------
-   Last 14 days — requests submitted vs. documents claimed
-   --------------------------------------------------------------- */
 $days = [];
 for ($i = 13; $i >= 0; $i--) {
     $d = date('Y-m-d', strtotime("-{$i} days"));
@@ -93,9 +84,6 @@ foreach ($days as $v) {
     $maxDayCount = max($maxDayCount, $v['submitted'], $v['claimed']);
 }
 
-/* ---------------------------------------------------------------
-   Recent activity
-   --------------------------------------------------------------- */
 $activityLimit = 5;
 $fullActivityLimit = 200; // sane cap for the "see all" popup
 
@@ -261,7 +249,23 @@ function renderActivityItem(array $a): void
                         <span>Admin Dashboard</span>
                     </a>
 
-                    <!-- Admin profile -->
+                    <!-- Light / dark mode toggle -->
+                    <button type="button" class="theme-toggle" id="themeToggle" role="switch"
+                        aria-checked="false" aria-label="Switch to light mode" title="Toggle light / dark mode">
+                        <span class="theme-toggle-track">
+                            <svg class="theme-toggle-icon theme-toggle-icon-sun" viewBox="0 0 24 24" fill="none">
+                                <circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.8" />
+                                <path d="M12 2.5V5M12 19V21.5M4.5 12H2M22 12H19.5M5.6 5.6L7.3 7.3M18.4 5.6L16.7 7.3M5.6 18.4L7.3 16.7M18.4 18.4L16.7 16.7"
+                                    stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                            </svg>
+                            <svg class="theme-toggle-icon theme-toggle-icon-moon" viewBox="0 0 24 24" fill="none">
+                                <path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a7 7 0 0 0 11 11Z" stroke="currentColor"
+                                    stroke-width="1.8" stroke-linejoin="round" />
+                            </svg>
+                            <span class="theme-toggle-thumb"></span>
+                        </span>
+                    </button>
+
                     <!-- Admin profile -->
                     <div class="topbar-profile" id="profileMenu">
                         <button type="button" class="topbar-profile-trigger" id="profileTrigger"
@@ -315,23 +319,6 @@ function renderActivityItem(array $a): void
                             </div>
                         </div>
                     </div>
-
-                    <!-- Light / dark mode toggle -->
-                    <button type="button" class="theme-toggle" id="themeToggle" role="switch"
-                        aria-checked="false" aria-label="Switch to light mode" title="Toggle light / dark mode">
-                        <span class="theme-toggle-track">
-                            <svg class="theme-toggle-icon theme-toggle-icon-sun" viewBox="0 0 24 24" fill="none">
-                                <circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.8" />
-                                <path d="M12 2.5V5M12 19V21.5M4.5 12H2M22 12H19.5M5.6 5.6L7.3 7.3M18.4 5.6L16.7 7.3M5.6 18.4L7.3 16.7M18.4 18.4L16.7 16.7"
-                                    stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-                            </svg>
-                            <svg class="theme-toggle-icon theme-toggle-icon-moon" viewBox="0 0 24 24" fill="none">
-                                <path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a7 7 0 0 0 11 11Z" stroke="currentColor"
-                                    stroke-width="1.8" stroke-linejoin="round" />
-                            </svg>
-                            <span class="theme-toggle-thumb"></span>
-                        </span>
-                    </button>
                 </div>
             </header>
 

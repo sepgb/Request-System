@@ -20,6 +20,7 @@ svg {
 }
 
 :root {
+  color-scheme: dark;
   --ink-950: #0a0f1c;
   --ink-900: #11182b;
   --paper: #f4f1ea;
@@ -2620,10 +2621,35 @@ body:has(.hero) {
   cursor: pointer;
   appearance: none;
   -webkit-appearance: none;
+  -moz-appearance: none;
+  forced-color-adjust: none;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M5.5 8L10 12.5L14.5 8' stroke='%23c9c6bf' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 10px center;
+  background-size: 14px 14px;
+}
+
+/* Windows "forced colors" (High Contrast) mode makes the browser paint
+   its own native control chrome over author styles — this is the real
+   source of the stray extra arrow on the status pills. Opt this select
+   (and its options) fully out of that substitution. */
+@media (forced-colors: active) {
+
+  .status-select,
+  .status-select option {
+    forced-color-adjust: none;
+  }
+}
+
+/* Chrome's newer "customizable select" ships a built-in ::picker-icon
+   shadow part that appearance:none does not always suppress, which was
+   rendering as an extra native arrow on top of our custom chevron and
+   the option text. Force it off so only our own arrow shows. */
+.status-select::picker-icon,
+.custom-select-trigger::picker-icon,
+select::picker-icon {
+  display: none;
 }
 
 .status-select:hover {
@@ -2841,7 +2867,6 @@ body:has(.hero) {
 
 .topbar-profile {
   position: relative;
-  margin-left: auto;
   padding-left: 14px;
 }
 
@@ -4709,7 +4734,7 @@ body.auth-leaving .auth-intro {
 
 .theme-toggle {
   flex: 0 0 auto;
-  margin-left: 14px;
+  margin-left: auto;
   padding: 0;
   border: none;
   background: none;
@@ -4761,6 +4786,7 @@ body.auth-leaving .auth-intro {
 
 .theme-toggle-thumb {
   position: absolute;
+  z-index: 2;
   top: 2px;
   left: 2px;
   width: 22px;
@@ -4778,13 +4804,17 @@ body.auth-leaving .auth-intro {
 
 @media (max-width: 640px) {
   .theme-toggle {
-    margin-left: 8px;
+    margin-right: 4px;
   }
 }
 
 /* =====================================================================
    LIGHT MODE (admin pages — dashboard.php, statistics.php, manage_admins.php)
    ===================================================================== */
+
+html[data-theme="light"] {
+  color-scheme: light;
+}
 
 html[data-theme="light"] .theme-toggle-track {
   background: rgba(10, 15, 28, 0.06);
@@ -4944,13 +4974,13 @@ html[data-theme="light"] .topbar-search input::placeholder {
 html[data-theme="light"] .status-select,
 html[data-theme="light"] .custom-select-trigger,
 html[data-theme="light"] .custom-select-wrapper .custom-select-trigger {
-  background: #f7f9fc;
+  background-color: #f7f9fc;
   border-color: #dbe2ec;
   color: #1a2233;
 }
 
 html[data-theme="light"] .status-select {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M5.5 8L10 12.5L14.5 8' stroke='%23586176' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M5.5 8L10 12.5L14.5 8' stroke='%239aa2b1' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
 
 html[data-theme="light"] .status-select option,
@@ -4975,19 +5005,38 @@ html[data-theme="light"] .custom-select-option:hover {
 }
 
 html[data-theme="light"] .status-select-pending {
+  background-color: rgba(217, 164, 65, 0.16);
+  border-color: rgba(217, 164, 65, 0.55);
   color: #8a611a;
+  font-weight: 700;
 }
 
 html[data-theme="light"] .status-select-ready-for-pickup {
+  background-color: rgba(31, 138, 86, 0.14);
+  border-color: rgba(31, 138, 86, 0.5);
   color: #1f8a56;
+  font-weight: 700;
 }
 
 html[data-theme="light"] .status-select-processing {
+  background-color: rgba(29, 95, 209, 0.13);
+  border-color: rgba(29, 95, 209, 0.5);
   color: #1d5fd1;
+  font-weight: 700;
 }
 
 html[data-theme="light"] .status-select-rejected {
+  background-color: rgba(194, 59, 59, 0.13);
+  border-color: rgba(194, 59, 59, 0.5);
   color: #c23b3b;
+  font-weight: 700;
+}
+
+html[data-theme="light"] .status-select-cancelled {
+  background-color: rgba(90, 100, 114, 0.13);
+  border-color: rgba(90, 100, 114, 0.4);
+  color: #5b6472;
+  font-weight: 700;
 }
 
 /* ---------- Profile trigger & dropdown ---------- */

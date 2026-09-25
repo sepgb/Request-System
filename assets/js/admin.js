@@ -23,7 +23,6 @@ document.addEventListener('DOMContentLoaded', function () {
     return div.innerHTML;
   }
 
-  // Show/hide the "Claimed" button for a row based on its current status
   function setActionCell(id, status, reference, fullName) {
     const cell = document.getElementById('action-' + id);
     if (!cell) return;
@@ -49,7 +48,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
-  // Inline status dropdown -> quick status update, no page reload
   document.querySelectorAll('.status-select').forEach(function (select) {
     paintStatusSelect(select);
     select.dataset.prevStatus = select.value;
@@ -120,7 +118,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 
-  // ---- Custom "mark as claimed" confirmation modal ----
   const claimModalOverlay = document.getElementById('claimModalOverlay');
   const claimModalText = document.getElementById('claimModalText');
   const claimModalConfirm = document.getElementById('claimModalConfirm');
@@ -210,7 +207,7 @@ document.addEventListener('DOMContentLoaded', function () {
       openClaimModal(id, reference, fullName, btn);
     });
   }
-  // ---- Live filtering: type to search, click a status in the sidebar ----
+
   const filterSearch = document.getElementById('filterSearch');
   const statusLinks = document.querySelectorAll('.sidebar-status-link');
   const emptyRow = document.querySelector('.filter-empty');
@@ -265,7 +262,7 @@ document.addEventListener('DOMContentLoaded', function () {
     applyFilter();
   }
 });
-// ---- Profile dropdown ----
+
 const profileTrigger = document.getElementById('profileTrigger');
 const profileDropdown = document.getElementById('profileDropdown');
 
@@ -294,7 +291,6 @@ if (profileTrigger && profileDropdown) {
   });
 }
 
-// ---- Edit profile modal ----
 const editProfileOverlay = document.getElementById('editProfileOverlay');
 const editProfileForm = document.getElementById('editProfileForm');
 const editProfileAlert = document.getElementById('editProfileAlert');
@@ -512,7 +508,6 @@ if (editProfileForm) {
     });
   });
 
-  // ---- Live username format check (server still re-checks uniqueness on submit) ----
   if (usernameInput) {
     let usernameCheckTimer = null;
 
