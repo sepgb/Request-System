@@ -17,8 +17,8 @@
         <h4>Quick Links</h4>
         <ul>
           <li><a href="<?php echo isset($basePath) ? $basePath : ''; ?>index.php">Home</a></li>
-          <li><a href="<?php echo isset($basePath) ? $basePath : ''; ?>request.php">New Request</a></li>
-          <li><a href="<?php echo isset($basePath) ? $basePath : ''; ?>track.php">Track Request</a></li>
+          <li><a href="<?php echo isset($basePath) ? $basePath : ''; ?>request.php">Request</a></li>
+          <li><a href="<?php echo isset($basePath) ? $basePath : ''; ?>track.php">Track</a></li>
         </ul>
       </div>
 
