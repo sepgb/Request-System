@@ -5179,13 +5179,6 @@ html[data-theme="light"] .status-select-rejected {
   font-weight: 700;
 }
 
-html[data-theme="light"] .status-select-cancelled {
-  background-color: rgba(90, 100, 114, 0.13);
-  border-color: rgba(90, 100, 114, 0.4);
-  color: #5b6472;
-  font-weight: 700;
-}
-
 /* ---------- Profile trigger & dropdown ---------- */
 html[data-theme="light"] .topbar-profile-trigger {
   background: rgba(49, 95, 208, 0.05);

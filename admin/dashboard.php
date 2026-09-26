@@ -532,7 +532,7 @@ $initialStatusFilter = trim($_GET['status'] ?? '');
                       data-id="<?php echo $r['id']; ?>"
                       aria-label="Status for <?php echo htmlspecialchars($r['reference_no']); ?>">
                       <?php foreach (
-                        ['Pending', 'Processing', 'Ready for Pickup', 'Rejected', 'Cancelled']
+                        ['Pending', 'Processing', 'Ready for Pickup', 'Rejected']
                         as $s
                       ): ?>
                         <option
