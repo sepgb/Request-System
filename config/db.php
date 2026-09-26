@@ -1,7 +1,7 @@
 <?php
 
-if ($_SERVER['HTTP_HOST'] === 'localhost' || $_SERVER['HTTP_HOST'] === '127.0.0.1') {
-    $DB_HOST = 'localhost';
+if ($_SERVER['SERVER_NAME'] === 'localhost' || $_SERVER['SERVER_NAME'] === '127.0.0.1') {
+    $DB_HOST = '127.0.0.1';
     $DB_NAME = 'library_request_system';
     $DB_USER = 'root';
     $DB_PASS = '';
