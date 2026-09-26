@@ -425,14 +425,13 @@ $initialStatusFilter = trim($_GET['status'] ?? '');
                 <th>Semester</th>
                 <th>Claim date</th>
                 <th>Status</th>
-                <th></th>
               </tr>
             </thead>
 
             <tbody>
               <tr class="filter-empty"
                 hidden>
-                <td colspan="9"
+                <td colspan="8"
                   class="empty-row">
                   <div class="empty-state">
                     <svg viewBox="0 0 24 24"
@@ -462,7 +461,7 @@ $initialStatusFilter = trim($_GET['status'] ?? '');
 
               <?php if ($requests->num_rows === 0): ?>
                 <tr>
-                  <td colspan="9"
+                  <td colspan="8"
                     class="empty-row">
                     No requests yet. New submissions from the student site will appear here.
                   </td>
@@ -549,32 +548,6 @@ $initialStatusFilter = trim($_GET['status'] ?? '');
                       <?php endforeach; ?>
                     </select>
                   </td>
-
-                  <td
-                    class="cell-action"
-                    id="action-<?php echo $r['id']; ?>">
-                    <?php if (
-                      $r['request_status'] === 'Ready for Pickup'
-                    ): ?>
-                      <button
-                        type="button"
-                        class="btn-claim"
-                        data-id="<?php echo $r['id']; ?>"
-                        data-reference="<?php echo htmlspecialchars($r['reference_no'], ENT_QUOTES, 'UTF-8'); ?>"
-                        data-full-name="<?php echo htmlspecialchars($r['full_name'], ENT_QUOTES, 'UTF-8'); ?>"
-                        title="Mark as claimed"
-                        aria-label="<?php echo htmlspecialchars($r['reference_no'] . ' (' . $r['full_name'] . ')', ENT_QUOTES, 'UTF-8'); ?> as claimed">
-
-                        <svg viewBox="0 0 24 24" fill="none">
-                          <path d="M5 13L9.5 17.5L19 7"
-                            stroke="currentColor"
-                            stroke-width="2.2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round" />
-                        </svg>
-                      </button>
-                    <?php endif; ?>
-                  </td>
                 </tr>
               <?php endwhile; ?>
             </tbody>
@@ -629,6 +602,10 @@ $initialStatusFilter = trim($_GET['status'] ?? '');
           <span class="request-details-label">Semester</span>
           <span class="request-details-value" id="rdSemester"></span>
         </div>
+        <div class="request-details-row" id="rdPurposeRow">
+          <span class="request-details-label">Purpose</span>
+          <span class="request-details-value" id="rdPurpose"></span>
+        </div>
         <div class="request-details-row">
           <span class="request-details-label">Claim Date</span>
           <span class="request-details-value" id="rdClaimDate"></span>
@@ -637,14 +614,11 @@ $initialStatusFilter = trim($_GET['status'] ?? '');
           <span class="request-details-label">Status</span>
           <span class="request-details-value" id="rdStatus"></span>
         </div>
-        <div class="request-details-row" id="rdPurposeRow">
-          <span class="request-details-label">Purpose</span>
-          <span class="request-details-value" id="rdPurpose"></span>
-        </div>
       </div>
 
       <div class="modal-actions">
-        <button type="button" class="btn-modal btn-modal-cancel" id="requestDetailsClose">Close</button>
+        <button type="button" class="btn-modal btn-modal-cancel" id="requestDetailsClose">Cancel</button>
+        <button type="button" class="btn-modal btn-modal-confirm" id="rdMarkClaimed" hidden>Mark as Claimed</button>
       </div>
     </div>
   </div>

@@ -2817,47 +2817,6 @@ select::picker-icon {
   position: relative;
 }
 
-.cell-action {
-  text-align: left;
-}
-
-.action-dash {
-  color: #555d68;
-}
-
-.btn-claim {
-  width: 30px;
-  height: 30px;
-  padding: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: none;
-  border: 1px solid #35c58b;
-  color: #35c58b;
-  cursor: pointer;
-  box-shadow: none;
-  transition:
-    background 0.15s ease,
-    color 0.15s ease;
-}
-
-.btn-claim svg {
-  width: 15px;
-  height: 15px;
-}
-
-.btn-claim:hover {
-  background: #35c58b;
-  color: #0b120f;
-}
-
-.btn-claim:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
 .filter-empty {
   background: #08090b !important;
 }
@@ -3068,7 +3027,6 @@ select::picker-icon {
   background: rgba(214, 84, 84, 0.12);
   border-color: rgba(214, 84, 84, 0.4);
   color: #f4b6b6;
-  transform: translateY(-2px);
 }
 
 .btn-modal-confirm {
@@ -3079,8 +3037,6 @@ select::picker-icon {
 .btn-modal-confirm:hover {
   background: #45d69b;
 }
-
-/* ---------- Request Details modal (receipt-style row summary) ---------- */
 
 .request-details-box {
   width: 400px;
@@ -4389,9 +4345,8 @@ body.admin-body::-webkit-scrollbar {
   height: 0;
 }
 
-
 /* =====================================================================
-   TRACKING RESULT ACTIONS 
+   TRACKING RESULT ACTIONS (track.php — receipt/edit/cancel buttons)
    ===================================================================== */
 
 .tracking-actions {
@@ -5263,6 +5218,7 @@ html[data-theme="light"] .status-select-rejected {
   font-weight: 700;
 }
 
+/* ---------- Profile trigger & dropdown ---------- */
 html[data-theme="light"] .topbar-profile-trigger {
   background: rgba(49, 95, 208, 0.05);
   border-color: rgba(49, 95, 208, 0.14);
@@ -5355,22 +5311,6 @@ html[data-theme="light"] .action-dash {
 
 html[data-theme="light"] .empty-row {
   color: #7c8496;
-}
-
-html[data-theme="light"] .btn-claim {
-  background: #1f8a56;
-  border-color: #1f8a56;
-  color: #ffffff;
-}
-
-html[data-theme="light"] .btn-claim:hover {
-  background: #166a41;
-  border-color: #166a41;
-  color: #ffffff;
-}
-
-html[data-theme="light"] .btn-claim:disabled {
-  opacity: 0.45;
 }
 
 /* ---------- Modals (confirm, edit profile, audit log) ---------- */

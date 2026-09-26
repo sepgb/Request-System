@@ -150,32 +150,6 @@ document.addEventListener('DOMContentLoaded', function () {
     return div.innerHTML;
   }
 
-  // Show/hide the "Claimed" button for a row based on its current status
-  function setActionCell(id, status, reference, fullName) {
-    const cell = document.getElementById('action-' + id);
-    if (!cell) return;
-
-    if (status === 'Ready for Pickup') {
-      cell.innerHTML =
-        '<button type="button" class="btn-claim" ' +
-        'data-id="' + id + '" ' +
-        'data-reference="' + escapeHtml(reference) + '" ' +
-        'data-full-name="' + escapeHtml(fullName) + '" ' +
-        'title="Mark as claimed" ' +
-        'aria-label="Mark ' + escapeHtml(reference) + ' (' + escapeHtml(fullName) + ') as claimed">' +
-
-        '<svg viewBox="0 0 24 24" fill="none">' +
-        '<path d="M5 13L9.5 17.5L19 7" ' +
-        'stroke="currentColor" stroke-width="2.2" ' +
-        'stroke-linecap="round" stroke-linejoin="round"/>' +
-        '</svg>' +
-
-        '</button>';
-    } else {
-      cell.innerHTML = '';
-    }
-  }
-
   // Inline status dropdown -> quick status update, no page reload
   document.querySelectorAll('.status-select').forEach(function (select) {
     enhanceStatusSelect(select);
@@ -185,9 +159,6 @@ document.addEventListener('DOMContentLoaded', function () {
       const id = select.dataset.id;
       const newStatus = select.value;
       const prevStatus = select.dataset.prevStatus;
-      const row = document.getElementById('row-' + id);
-      const reference = row ? row.dataset.reference : '';
-      const fullName = row ? row.dataset.fullName : '';
 
       select.disabled = true;
       if (select._trigger) select._trigger.disabled = true;
@@ -201,7 +172,6 @@ document.addEventListener('DOMContentLoaded', function () {
           if (json.success) {
             paintStatusSelect(select);
             select.dataset.prevStatus = newStatus;
-            setActionCell(id, newStatus, reference, fullName);
             applyFilter();
 
             if (prevStatus !== newStatus) {
@@ -278,7 +248,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function doClaim(id, btn) {
-    btn.disabled = true;
+    if (btn) btn.disabled = true;
 
     fetch('claim_request.php', {
       method: 'POST',
@@ -295,12 +265,12 @@ document.addEventListener('DOMContentLoaded', function () {
           bumpStat(sidebarCountReady, -1);
         } else {
           alert(json.message || 'Could not mark as claimed.');
-          btn.disabled = false;
+          if (btn) btn.disabled = false;
         }
       })
       .catch(function () {
         alert('Network error. Please try again.');
-        btn.disabled = false;
+        if (btn) btn.disabled = false;
       });
   }
 
@@ -330,22 +300,11 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   const tableBody = document.querySelector('.admin-table tbody');
-  if (tableBody) {
-    tableBody.addEventListener('click', function (e) {
-      const btn = e.target.closest('.btn-claim');
-      if (!btn) return;
-
-      const id = btn.dataset.id;
-      const reference = btn.dataset.reference;
-      const fullName = btn.dataset.fullName;
-
-      openClaimModal(id, reference, fullName, btn);
-    });
-  }
 
   // ---- Request details modal: double-click a row to see it like a receipt ----
   const requestDetailsOverlay = document.getElementById('requestDetailsOverlay');
   const requestDetailsClose = document.getElementById('requestDetailsClose');
+  const rdMarkClaimed = document.getElementById('rdMarkClaimed');
   const rdTitle = document.getElementById('requestDetailsTitle');
   const rdStudentNo = document.getElementById('rdStudentNo');
   const rdName = document.getElementById('rdName');
@@ -358,16 +317,23 @@ document.addEventListener('DOMContentLoaded', function () {
   const rdPurpose = document.getElementById('rdPurpose');
   const rdPurposeRow = document.getElementById('rdPurposeRow');
 
+  let currentDetailsRequest = null;
+
   function openRequestDetails(row) {
     const cells = row.querySelectorAll('td');
     const select = row.querySelector('.status-select');
     const status = select ? select.value : (cells[7] ? cells[7].textContent.trim() : '');
     const statusClass = 'status-select-' + status.toLowerCase().replace(/ /g, '-');
+    const id = row.id.replace('row-', '');
+    const reference = row.dataset.reference || '';
+    const fullName = row.dataset.fullName || (cells[2] ? cells[2].textContent.trim() : '');
 
-    if (rdTitle) rdTitle.textContent = row.dataset.reference || '';
+    currentDetailsRequest = { id: id, reference: reference, fullName: fullName };
+
+    if (rdTitle) rdTitle.textContent = reference;
     if (rdDateRequested) rdDateRequested.textContent = row.dataset.dateRequested || '\u2014';
     if (rdStudentNo) rdStudentNo.textContent = cells[1] ? cells[1].textContent.trim() : '';
-    if (rdName) rdName.textContent = row.dataset.fullName || (cells[2] ? cells[2].textContent.trim() : '');
+    if (rdName) rdName.textContent = fullName;
     if (rdDocument) rdDocument.textContent = cells[3] ? cells[3].textContent.trim() : '';
     if (rdYearLevel) rdYearLevel.textContent = cells[4] ? cells[4].textContent.trim() : '';
     if (rdSemester) rdSemester.textContent = cells[5] ? cells[5].textContent.trim() : '';
@@ -381,11 +347,15 @@ document.addEventListener('DOMContentLoaded', function () {
       rdPurpose.textContent = purpose;
       rdPurposeRow.hidden = purpose === '';
     }
+    if (rdMarkClaimed) {
+      rdMarkClaimed.hidden = status !== 'Ready for Pickup';
+    }
 
     if (requestDetailsOverlay) requestDetailsOverlay.hidden = false;
   }
 
   function closeRequestDetails() {
+    currentDetailsRequest = null;
     if (requestDetailsOverlay) requestDetailsOverlay.hidden = true;
   }
 
@@ -399,6 +369,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
   if (requestDetailsClose) {
     requestDetailsClose.addEventListener('click', closeRequestDetails);
+  }
+
+  if (rdMarkClaimed) {
+    rdMarkClaimed.addEventListener('click', function () {
+      if (!currentDetailsRequest) return;
+      const req = currentDetailsRequest;
+      closeRequestDetails();
+      openClaimModal(req.id, req.reference, req.fullName, null);
+    });
   }
 
   if (requestDetailsOverlay) {
