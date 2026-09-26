@@ -2674,41 +2674,10 @@ select::picker-icon {
   color: var(--gold-300);
 }
 
-.status-select-pending {
-  background-color: rgba(227, 197, 137, 0.10);
-  border-color: rgba(227, 197, 137, 0.35);
-  color: var(--gold-300);
-}
-
-.status-select-ready-for-pickup {
-  background-color: rgba(90, 199, 140, 0.16);
-  border-color: rgba(90, 199, 140, 0.4);
-  color: #8fe0b4;
-}
-
-.status-select-processing {
-  background-color: rgba(94, 163, 255, 0.14);
-  border-color: rgba(94, 163, 255, 0.35);
-  color: #9dc4ff;
-}
-
-.status-select-rejected {
-  background-color: rgba(214, 84, 84, 0.14);
-  border-color: rgba(214, 84, 84, 0.35);
-  color: #f4b6b6;
-}
-
-.status-select:disabled {
-  opacity: 0.55;
-  cursor: wait;
-}
-
-.cell-status {
-  position: relative;
-}
-
 /* ---------- Custom status dropdown (replaces the native <select> popup,
-   which can't be styled precisely/consistently across browsers) ---------- */
+   which can't be styled precisely/consistently across browsers). Defined
+   here, BEFORE the status-color classes below, so those classes' colors
+   correctly win the cascade when applied to the trigger button. ---------- */
 
 .status-select-wrapper {
   position: relative;
@@ -2741,7 +2710,7 @@ select::picker-icon {
   padding: 0 12px 0 14px;
   box-sizing: border-box;
   border-radius: 999px;
-  background: var(--field-bg);
+  background-color: var(--field-bg);
   border: 1px solid var(--field-border);
   color: var(--paper);
   font-family: 'Manrope', sans-serif;
@@ -2792,7 +2761,7 @@ select::picker-icon {
   z-index: 500;
   padding: 6px;
   border-radius: 12px;
-  background: #141b30;
+  background-color: #141b30;
   border: 1px solid #202329;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
 }
@@ -2806,13 +2775,46 @@ select::picker-icon {
   color: var(--paper);
   white-space: nowrap;
   cursor: pointer;
-  transition: background 0.1s ease, color 0.1s ease;
+  transition: background-color 0.1s ease, color 0.1s ease;
 }
 
 .status-select-option:hover,
 .status-select-option.is-selected {
-  background: rgba(227, 197, 137, 0.16);
+  background-color: rgba(227, 197, 137, 0.16);
   color: var(--gold-300);
+}
+
+.status-select-pending {
+  background-color: rgba(227, 197, 137, 0.10);
+  border-color: rgba(227, 197, 137, 0.35);
+  color: var(--gold-300);
+}
+
+.status-select-ready-for-pickup {
+  background-color: rgba(90, 199, 140, 0.16);
+  border-color: rgba(90, 199, 140, 0.4);
+  color: #8fe0b4;
+}
+
+.status-select-processing {
+  background-color: rgba(94, 163, 255, 0.14);
+  border-color: rgba(94, 163, 255, 0.35);
+  color: #9dc4ff;
+}
+
+.status-select-rejected {
+  background-color: rgba(214, 84, 84, 0.14);
+  border-color: rgba(214, 84, 84, 0.35);
+  color: #f4b6b6;
+}
+
+.status-select:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.cell-status {
+  position: relative;
 }
 
 .cell-action {
@@ -5115,6 +5117,10 @@ html[data-theme="light"] .custom-select-list {
   color: #1a2233;
   border-color: #e4e8f0;
   box-shadow: 0 16px 40px rgba(20, 30, 60, 0.14);
+}
+
+html[data-theme="light"] .status-select-option {
+  color: #1a2233;
 }
 
 html[data-theme="light"] .status-select option:checked,
