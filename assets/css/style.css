@@ -1483,7 +1483,6 @@ body:has(.hero) {
   color: var(--paper-dim);
 }
 
-.badge-cancelled,
 .badge-rejected {
   background: rgba(214, 84, 84, 0.14);
   border-color: rgba(214, 84, 84, 0.35);
@@ -3162,8 +3161,7 @@ select::picker-icon {
 .request-details-value.status-select-pending,
 .request-details-value.status-select-processing,
 .request-details-value.status-select-ready-for-pickup,
-.request-details-value.status-select-rejected,
-.request-details-value.status-select-cancelled {
+.request-details-value.status-select-rejected {
   display: inline-flex;
   padding: 4px 12px;
   border-radius: 999px;
@@ -4391,14 +4389,9 @@ body.admin-body::-webkit-scrollbar {
   height: 0;
 }
 
-.status-select-cancelled {
-  background-color: rgba(148, 152, 166, 0.16);
-  border-color: rgba(148, 152, 166, 0.35);
-  color: #aeb9c9;
-}
 
 /* =====================================================================
-   TRACKING RESULT ACTIONS (track.php — receipt/edit/cancel buttons)
+   TRACKING RESULT ACTIONS 
    ===================================================================== */
 
 .tracking-actions {
@@ -5270,14 +5263,6 @@ html[data-theme="light"] .status-select-rejected {
   font-weight: 700;
 }
 
-html[data-theme="light"] .status-select-cancelled {
-  background-color: rgba(90, 100, 114, 0.13);
-  border-color: rgba(90, 100, 114, 0.4);
-  color: #5b6472;
-  font-weight: 700;
-}
-
-/* ---------- Profile trigger & dropdown ---------- */
 html[data-theme="light"] .topbar-profile-trigger {
   background: rgba(49, 95, 208, 0.05);
   border-color: rgba(49, 95, 208, 0.14);
