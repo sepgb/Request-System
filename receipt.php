@@ -50,7 +50,7 @@ include 'includes/header.php';
   <section class="form-section receipt-page">
     <div class="receipt-header">
       <h1>Document Claim Receipt</h1>
-      <p>Present this receipt together with the Cashier's receipt at the <br> Registrar's Office to claim your document.</p>
+      <p>Present this receipt together with the Cashier's receipt at the Registrar's Office to claim your document.</p>
     </div>
     <div class="receipt-box" id="receiptBox">
       <table class="detail-table">
