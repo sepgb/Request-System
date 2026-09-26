@@ -112,8 +112,20 @@ include 'includes/header.php';
       var receiptBox = document.getElementById('receiptBox');
       if (!btn || !receiptBox) return;
 
+      function resetButton(originalLabel) {
+        receiptBox.classList.remove('pdf-mode');
+        btn.disabled = false;
+        btn.textContent = originalLabel;
+      }
+
       btn.addEventListener('click', function() {
         var originalLabel = btn.textContent;
+
+        if (typeof html2pdf === 'undefined') {
+          alert('The PDF tool could not load (likely a network/connection issue). Please check your internet connection and try again, or use Print Receipt instead.');
+          return;
+        }
+
         btn.disabled = true;
         btn.textContent = 'Preparing PDF…';
 
@@ -122,56 +134,65 @@ include 'includes/header.php';
         var filename = <?php echo json_encode('receipt.pdf'); ?>;
 
         function generate() {
-          html2pdf()
-            .set({
-              margin: 10,
-              filename: filename,
-              image: {
-                type: 'jpeg',
-                quality: 0.98
-              },
-              html2canvas: {
-                scale: 2,
-                backgroundColor: '#ffffff',
-                useCORS: true,
-                scrollX: 0,
-                scrollY: 0,
-                windowWidth: document.documentElement.scrollWidth,
-                windowHeight: document.documentElement.scrollHeight
-              },
-              jsPDF: {
-                unit: 'mm',
-                format: 'a4',
-                orientation: 'portrait'
-              },
-              pagebreak: {
-                mode: ['avoid-all', 'css', 'legacy']
-              }
-            })
-            .from(receiptBox)
-            .save()
-            .then(function() {
-              receiptBox.classList.remove('pdf-mode');
-              btn.disabled = false;
-              btn.textContent = originalLabel;
-            })
-            .catch(function() {
-              receiptBox.classList.remove('pdf-mode');
-              btn.disabled = false;
-              btn.textContent = originalLabel;
-              alert('Sorry, the PDF could not be generated. Please try again or use Print Receipt instead.');
-            });
+          try {
+            html2pdf()
+              .set({
+                margin: 10,
+                filename: filename,
+                image: {
+                  type: 'jpeg',
+                  quality: 0.98
+                },
+                html2canvas: {
+                  scale: 2,
+                  backgroundColor: '#ffffff',
+                  useCORS: true,
+                  scrollX: 0,
+                  scrollY: 0,
+                  windowWidth: document.documentElement.scrollWidth,
+                  windowHeight: document.documentElement.scrollHeight
+                },
+                jsPDF: {
+                  unit: 'mm',
+                  format: 'a4',
+                  orientation: 'portrait'
+                },
+                pagebreak: {
+                  mode: ['avoid-all', 'css', 'legacy']
+                }
+              })
+              .from(receiptBox)
+              .save()
+              .then(function() {
+                resetButton(originalLabel);
+              })
+              .catch(function(err) {
+                resetButton(originalLabel);
+                console.error('PDF generation failed:', err);
+                alert('Sorry, the PDF could not be generated. Please try again or use Print Receipt instead.');
+              });
+          } catch (err) {
+            resetButton(originalLabel);
+            console.error('PDF generation failed:', err);
+            alert('Sorry, the PDF could not be generated. Please try again or use Print Receipt instead.');
+          }
         }
 
         var fontsReady = (document.fonts && document.fonts.ready) ?
           document.fonts.ready :
           Promise.resolve();
 
-        fontsReady.then(function() {
-          requestAnimationFrame(function() {
-            requestAnimationFrame(generate);
+        fontsReady
+          .then(function() {
+            requestAnimationFrame(function() {
+              requestAnimationFrame(generate);
+            });
+          })
+          .catch(function(err) {
+            resetButton(originalLabel);
+            console.error('PDF generation failed:', err);
+            alert('Sorry, the PDF could not be generated. Please try again or use Print Receipt instead.');
           });
-        });
       });
     })();
   </script>
