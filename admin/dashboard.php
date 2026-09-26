@@ -8,6 +8,7 @@ $scopeWhere = $scopeIn !== null ? " WHERE document_type IN ($scopeIn)" : '';
 
 $requests = $conn->query("SELECT * FROM requests{$scopeWhere} ORDER BY date_requested DESC");
 
+/* Quick stats — scoped to this admin's document types, if restricted */
 $stats = $conn->query("
     SELECT
         SUM(request_status = 'Pending') AS pending,
@@ -71,6 +72,10 @@ $initialStatusFilter = trim($_GET['status'] ?? '');
       </div>
 
       <!-- General -->
+      <div class="sidebar-section-label">
+        General
+      </div>
+
       <nav class="sidebar-nav sidebar-nav-general">
         <a href="statistics.php" class="sidebar-link<?php echo $currentAdminPage === 'statistics.php' ? ' active' : ''; ?>">
           <svg viewBox="0 0 24 24" fill="none">
@@ -527,7 +532,7 @@ $initialStatusFilter = trim($_GET['status'] ?? '');
                       data-id="<?php echo $r['id']; ?>"
                       aria-label="Status for <?php echo htmlspecialchars($r['reference_no']); ?>">
                       <?php foreach (
-                        ['Pending', 'Processing', 'Ready for Pickup', 'Rejected',]
+                        ['Pending', 'Processing', 'Ready for Pickup', 'Rejected', 'Cancelled']
                         as $s
                       ): ?>
                         <option

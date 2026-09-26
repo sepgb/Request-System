@@ -13,7 +13,134 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function paintStatusSelect(select) {
-    select.className = 'status-select status-select-' + select.value.toLowerCase().replace(/ /g, '-');
+    var cls = 'status-select-' + select.value.toLowerCase().replace(/ /g, '-');
+
+    Array.prototype.slice.call(select.classList).forEach(function (c) {
+      if (c.indexOf('status-select-') === 0 && c !== 'status-select-native') {
+        select.classList.remove(c);
+      }
+    });
+    select.classList.add('status-select');
+    select.classList.add(cls);
+
+    if (select._trigger) {
+      select._trigger.className = 'status-select-trigger ' + cls;
+      select._trigger.querySelector('.status-select-trigger-label').textContent = select.value;
+    }
+
+    if (select._list) {
+      select._list.querySelectorAll('.status-select-option').forEach(function (opt) {
+        var selected = opt.dataset.value === select.value;
+        opt.classList.toggle('is-selected', selected);
+        opt.setAttribute('aria-selected', selected ? 'true' : 'false');
+      });
+    }
+  }
+
+  // Build a fully custom dropdown UI for a status <select>, so the popup
+  // list can be styled precisely (native <select> popups can't be). The
+  // original <select> stays in the DOM (visually hidden) as the source of
+  // truth for .value / dataset / the 'change' event, so every bit of
+  // existing update/filter logic below keeps working untouched.
+  function enhanceStatusSelect(select) {
+    var wrapper = document.createElement('div');
+    wrapper.className = 'status-select-wrapper';
+    select.parentNode.insertBefore(wrapper, select);
+    wrapper.appendChild(select);
+    select.classList.add('status-select-native');
+
+    var trigger = document.createElement('button');
+    trigger.type = 'button';
+    trigger.className = 'status-select-trigger';
+    trigger.setAttribute('aria-haspopup', 'listbox');
+    trigger.setAttribute('aria-expanded', 'false');
+    if (select.getAttribute('aria-label')) {
+      trigger.setAttribute('aria-label', select.getAttribute('aria-label'));
+    }
+    trigger.innerHTML =
+      '<span class="status-select-trigger-label"></span>' +
+      '<svg class="status-select-trigger-caret" viewBox="0 0 20 20" fill="none">' +
+      '<path d="M5.5 8L10 12.5L14.5 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '</svg>';
+    wrapper.appendChild(trigger);
+
+    var list = document.createElement('div');
+    list.className = 'status-select-list';
+    list.setAttribute('role', 'listbox');
+    list.hidden = true;
+
+    Array.prototype.forEach.call(select.options, function (opt) {
+      var item = document.createElement('div');
+      item.className = 'status-select-option';
+      item.setAttribute('role', 'option');
+      item.dataset.value = opt.value;
+      item.textContent = opt.textContent.trim();
+      list.appendChild(item);
+    });
+
+    // Appended to <body> so the popup can never be clipped by the
+    // table's horizontal-scroll container, regardless of which row it's in.
+    document.body.appendChild(list);
+
+    select._trigger = trigger;
+    select._list = list;
+
+    function positionList() {
+      var rect = trigger.getBoundingClientRect();
+      list.style.position = 'fixed';
+      list.style.top = (rect.bottom + 6) + 'px';
+      list.style.left = rect.left + 'px';
+      list.style.minWidth = rect.width + 'px';
+    }
+
+    function closeList() {
+      list.hidden = true;
+      trigger.setAttribute('aria-expanded', 'false');
+    }
+
+    function openList() {
+      document.querySelectorAll('.status-select-list').forEach(function (l) {
+        if (l !== list) l.hidden = true;
+      });
+      positionList();
+      list.hidden = false;
+      trigger.setAttribute('aria-expanded', 'true');
+    }
+
+    trigger.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (trigger.disabled) return;
+      if (list.hidden) openList(); else closeList();
+    });
+
+    list.addEventListener('click', function (e) {
+      var item = e.target.closest('.status-select-option');
+      if (!item) return;
+      closeList();
+      if (item.dataset.value === select.value) return;
+      select.value = item.dataset.value;
+      select.dispatchEvent(new Event('change'));
+    });
+
+    document.addEventListener('click', function (e) {
+      if (!list.hidden && !e.target.closest('.status-select-wrapper') && !e.target.closest('.status-select-list')) {
+        closeList();
+      }
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !list.hidden) closeList();
+    });
+
+    window.addEventListener('scroll', function () {
+      if (!list.hidden) closeList();
+    }, true);
+
+    window.addEventListener('resize', function () {
+      if (!list.hidden) closeList();
+    });
+
+    paintStatusSelect(select);
   }
 
   function escapeHtml(str) {
@@ -23,6 +150,7 @@ document.addEventListener('DOMContentLoaded', function () {
     return div.innerHTML;
   }
 
+  // Show/hide the "Claimed" button for a row based on its current status
   function setActionCell(id, status, reference, fullName) {
     const cell = document.getElementById('action-' + id);
     if (!cell) return;
@@ -48,8 +176,9 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
+  // Inline status dropdown -> quick status update, no page reload
   document.querySelectorAll('.status-select').forEach(function (select) {
-    paintStatusSelect(select);
+    enhanceStatusSelect(select);
     select.dataset.prevStatus = select.value;
 
     select.addEventListener('change', function () {
@@ -61,6 +190,7 @@ document.addEventListener('DOMContentLoaded', function () {
       const fullName = row ? row.dataset.fullName : '';
 
       select.disabled = true;
+      if (select._trigger) select._trigger.disabled = true;
 
       fetch('quick_status.php', {
         method: 'POST',
@@ -107,17 +237,22 @@ document.addEventListener('DOMContentLoaded', function () {
           } else {
             alert(json.message || 'Could not update status.');
             select.value = prevStatus;
+            paintStatusSelect(select);
           }
           select.disabled = false;
+          if (select._trigger) select._trigger.disabled = false;
         })
         .catch(function () {
           alert('Network error. Please try again.');
           select.value = prevStatus;
+          paintStatusSelect(select);
           select.disabled = false;
+          if (select._trigger) select._trigger.disabled = false;
         });
     });
   });
 
+  // ---- Custom "mark as claimed" confirmation modal ----
   const claimModalOverlay = document.getElementById('claimModalOverlay');
   const claimModalText = document.getElementById('claimModalText');
   const claimModalConfirm = document.getElementById('claimModalConfirm');
@@ -207,7 +342,7 @@ document.addEventListener('DOMContentLoaded', function () {
       openClaimModal(id, reference, fullName, btn);
     });
   }
-
+  // ---- Live filtering: type to search, click a status in the sidebar ----
   const filterSearch = document.getElementById('filterSearch');
   const statusLinks = document.querySelectorAll('.sidebar-status-link');
   const emptyRow = document.querySelector('.filter-empty');
@@ -262,7 +397,7 @@ document.addEventListener('DOMContentLoaded', function () {
     applyFilter();
   }
 });
-
+// ---- Profile dropdown ----
 const profileTrigger = document.getElementById('profileTrigger');
 const profileDropdown = document.getElementById('profileDropdown');
 
@@ -291,6 +426,7 @@ if (profileTrigger && profileDropdown) {
   });
 }
 
+// ---- Edit profile modal ----
 const editProfileOverlay = document.getElementById('editProfileOverlay');
 const editProfileForm = document.getElementById('editProfileForm');
 const editProfileAlert = document.getElementById('editProfileAlert');
@@ -508,6 +644,7 @@ if (editProfileForm) {
     });
   });
 
+  // ---- Live username format check (server still re-checks uniqueness on submit) ----
   if (usernameInput) {
     let usernameCheckTimer = null;
 

@@ -110,6 +110,10 @@ unset($a);
             </div>
 
             <!-- General -->
+            <div class="sidebar-section-label">
+                General
+            </div>
+
             <nav class="sidebar-nav sidebar-nav-general">
                 <a href="statistics.php" class="sidebar-link<?php echo $currentAdminPage === 'statistics.php' ? ' active' : ''; ?>">
                     <svg viewBox="0 0 24 24" fill="none">

@@ -12,6 +12,9 @@ $adminInitial = $firstInitial . $secondInitial;
 $currentAdminPage = basename($_SERVER['PHP_SELF'] ?? '');
 $initialStatusFilter = trim($_GET['status'] ?? '');
 
+/* ---------------------------------------------------------------
+   Top stat cards
+   --------------------------------------------------------------- */
 $scopeIn = documentScopeInClause($conn);
 $scopeWhere = $scopeIn !== null ? " WHERE document_type IN ($scopeIn)" : '';
 $scopeAnd = $scopeIn !== null ? " AND document_type IN ($scopeIn)" : '';
@@ -38,6 +41,9 @@ $claimedTotal = (int)($conn->query(
 
 $submittedTotal = $activeTotal + $claimedTotal;
 
+/* ---------------------------------------------------------------
+   Document type breakdown (current + all-time claimed)
+   --------------------------------------------------------------- */
 $docCounts = [];
 
 $res = $conn->query("SELECT document_type, COUNT(*) AS c FROM requests{$scopeWhere} GROUP BY document_type");
@@ -53,6 +59,9 @@ while ($row = $res->fetch_assoc()) {
 arsort($docCounts);
 $maxDocCount = !empty($docCounts) ? max($docCounts) : 0;
 
+/* ---------------------------------------------------------------
+   Last 14 days — requests submitted vs. documents claimed
+   --------------------------------------------------------------- */
 $days = [];
 for ($i = 13; $i >= 0; $i--) {
     $d = date('Y-m-d', strtotime("-{$i} days"));
@@ -84,6 +93,9 @@ foreach ($days as $v) {
     $maxDayCount = max($maxDayCount, $v['submitted'], $v['claimed']);
 }
 
+/* ---------------------------------------------------------------
+   Recent activity
+   --------------------------------------------------------------- */
 $activityLimit = 5;
 $fullActivityLimit = 200; // sane cap for the "see all" popup
 
@@ -152,6 +164,10 @@ function renderActivityItem(array $a): void
             </div>
 
             <!-- General -->
+            <div class="sidebar-section-label">
+                General
+            </div>
+
             <nav class="sidebar-nav sidebar-nav-general">
                 <a href="statistics.php" class="sidebar-link<?php echo $currentAdminPage === 'statistics.php' ? ' active' : ''; ?>">
                     <svg viewBox="0 0 24 24" fill="none">

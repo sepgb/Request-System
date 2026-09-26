@@ -2664,6 +2664,14 @@ select::picker-icon {
 .status-select option {
   background: #141b30;
   color: var(--paper);
+  padding: 12px 14px;
+  font-weight: 500;
+}
+
+.status-select option:checked,
+.status-select option:hover {
+  background: rgba(227, 197, 137, 0.16);
+  color: var(--gold-300);
 }
 
 .status-select-pending {
@@ -2697,6 +2705,114 @@ select::picker-icon {
 
 .cell-status {
   position: relative;
+}
+
+/* ---------- Custom status dropdown (replaces the native <select> popup,
+   which can't be styled precisely/consistently across browsers) ---------- */
+
+.status-select-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+/* The real <select> stays in the DOM (value / dataset / change event still
+   work exactly as before) but is visually hidden; the button below it is
+   what's actually shown and interacted with. */
+.status-select-native {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+  background: none !important;
+}
+
+.status-select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 150px;
+  height: 31px;
+  padding: 0 12px 0 14px;
+  box-sizing: border-box;
+  border-radius: 999px;
+  background: var(--field-bg);
+  border: 1px solid var(--field-border);
+  color: var(--paper);
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.70rem;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.status-select-trigger:hover {
+  border-color: rgba(227, 197, 137, 0.4);
+}
+
+.status-select-trigger:focus-visible,
+.status-select-trigger[aria-expanded="true"] {
+  border-color: var(--gold-300);
+  box-shadow: 0 0 0 3px rgba(227, 197, 137, 0.16);
+}
+
+.status-select-trigger:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.status-select-trigger-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-select-trigger-caret {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  color: #c9c6bf;
+  transition: transform 0.15s ease;
+}
+
+.status-select-trigger[aria-expanded="true"] .status-select-trigger-caret {
+  transform: rotate(180deg);
+}
+
+/* Appended to <body> at runtime and positioned via JS, so it always
+   renders above the table and is never clipped by its horizontal scroll. */
+.status-select-list {
+  position: fixed;
+  z-index: 500;
+  padding: 6px;
+  border-radius: 12px;
+  background: #141b30;
+  border: 1px solid #202329;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+}
+
+.status-select-option {
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.86rem;
+  font-weight: 500;
+  color: var(--paper);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.1s ease, color 0.1s ease;
+}
+
+.status-select-option:hover,
+.status-select-option.is-selected {
+  background: rgba(227, 197, 137, 0.16);
+  color: var(--gold-300);
 }
 
 .cell-action {
@@ -4972,6 +5088,7 @@ html[data-theme="light"] .topbar-search input::placeholder {
 
 /* ---------- Custom / status selects ---------- */
 html[data-theme="light"] .status-select,
+html[data-theme="light"] .status-select-trigger,
 html[data-theme="light"] .custom-select-trigger,
 html[data-theme="light"] .custom-select-wrapper .custom-select-trigger {
   background-color: #f7f9fc;
@@ -4983,12 +5100,36 @@ html[data-theme="light"] .status-select {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M5.5 8L10 12.5L14.5 8' stroke='%239aa2b1' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
 
+html[data-theme="light"] .status-select-trigger-caret {
+  color: #9aa2b1;
+}
+
+html[data-theme="light"] .status-select-trigger:hover {
+  border-color: rgba(217, 164, 65, 0.5);
+}
+
 html[data-theme="light"] .status-select option,
+html[data-theme="light"] .status-select-list,
 html[data-theme="light"] .custom-select-list {
   background: #ffffff;
   color: #1a2233;
   border-color: #e4e8f0;
   box-shadow: 0 16px 40px rgba(20, 30, 60, 0.14);
+}
+
+html[data-theme="light"] .status-select option:checked,
+html[data-theme="light"] .status-select option:hover,
+html[data-theme="light"] .status-select-option:hover,
+html[data-theme="light"] .status-select-option.is-selected {
+  background: rgba(217, 164, 65, 0.16);
+  color: #8a611a;
+}
+
+html[data-theme="light"] .status-select:focus,
+html[data-theme="light"] .status-select-trigger:focus-visible,
+html[data-theme="light"] .status-select-trigger[aria-expanded="true"] {
+  border-color: #b98b2b;
+  box-shadow: 0 0 0 3px rgba(217, 164, 65, 0.22);
 }
 
 html[data-theme="light"] .custom-select-caret {
