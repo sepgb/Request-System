@@ -5273,6 +5273,22 @@ html[data-theme="light"] .empty-row {
   color: #7c8496;
 }
 
+html[data-theme="light"] .btn-claim {
+  background: #1f8a56;
+  border-color: #1f8a56;
+  color: #ffffff;
+}
+
+html[data-theme="light"] .btn-claim:hover {
+  background: #166a41;
+  border-color: #166a41;
+  color: #ffffff;
+}
+
+html[data-theme="light"] .btn-claim:disabled {
+  opacity: 0.45;
+}
+
 /* ---------- Modals (confirm, edit profile, audit log) ---------- */
 html[data-theme="light"] .modal-box,
 html[data-theme="light"] .edit-profile-box,
