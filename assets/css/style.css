@@ -2583,6 +2583,7 @@ body:has(.hero) {
 
 .admin-table tbody tr:hover td {
   background: #161c29 !important;
+  cursor: pointer;
 }
 
 .admin-table tbody tr:last-child td {
@@ -3078,6 +3079,92 @@ select::picker-icon {
 
 .btn-modal-confirm:hover {
   background: #45d69b;
+}
+
+/* ---------- Request Details modal (receipt-style row summary) ---------- */
+
+.request-details-box {
+  width: 400px;
+  max-width: 90vw;
+  padding: 30px;
+  border-radius: 10px;
+  background: #14161a;
+  border: 1px solid #202329;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.request-details-header {
+  margin-bottom: 20px;
+  padding-bottom: 18px;
+  border-bottom: 1px dashed #262a32;
+}
+
+.request-details-eyebrow {
+  display: block;
+  margin-bottom: 6px;
+  color: #74787f;
+  font-family: 'Manrope', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.request-details-header h3 {
+  margin: 0;
+  color: #e8ebef;
+  font-family: 'Manrope', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.request-details-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 22px;
+}
+
+.request-details-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0;
+  border-bottom: 1px dashed #1d2027;
+}
+
+.request-details-row:last-child {
+  border-bottom: none;
+}
+
+.request-details-label {
+  flex: 0 0 auto;
+  color: #74787f;
+  font-family: 'Manrope', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.request-details-value {
+  color: #d0d4da;
+  font-family: 'Manrope', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: right;
+}
+
+.request-details-value.status-select-pending,
+.request-details-value.status-select-processing,
+.request-details-value.status-select-ready-for-pickup,
+.request-details-value.status-select-rejected,
+.request-details-value.status-select-cancelled {
+  display: inline-flex;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 12px;
 }
 
 .admin-body,
@@ -5179,6 +5266,13 @@ html[data-theme="light"] .status-select-rejected {
   font-weight: 700;
 }
 
+html[data-theme="light"] .status-select-cancelled {
+  background-color: rgba(90, 100, 114, 0.13);
+  border-color: rgba(90, 100, 114, 0.4);
+  color: #5b6472;
+  font-weight: 700;
+}
+
 /* ---------- Profile trigger & dropdown ---------- */
 html[data-theme="light"] .topbar-profile-trigger {
   background: rgba(49, 95, 208, 0.05);
@@ -5201,8 +5295,16 @@ html[data-theme="light"] .profile-dropdown {
   box-shadow: 0 20px 50px rgba(20, 30, 60, 0.14);
 }
 
+html[data-theme="light"] .profile-dropdown-header {
+  background: linear-gradient(240deg, #dce8fb, #eef4fd);
+}
+
 html[data-theme="light"] .profile-dropdown-name {
   color: #1a2233;
+}
+
+html[data-theme="light"] .profile-dropdown-role {
+  color: #2f5fc4;
 }
 
 html[data-theme="light"] .profile-dropdown-office {
@@ -5332,6 +5434,35 @@ html[data-theme="light"] .btn-modal-confirm {
 
 html[data-theme="light"] .btn-modal-confirm:hover {
   background: #166a41;
+}
+
+html[data-theme="light"] .request-details-box {
+  background: #ffffff;
+  border-color: #e4e8f0;
+}
+
+html[data-theme="light"] .request-details-header {
+  border-bottom-color: #dbe2ec;
+}
+
+html[data-theme="light"] .request-details-eyebrow {
+  color: #9aa2b1;
+}
+
+html[data-theme="light"] .request-details-header h3 {
+  color: #1a2233;
+}
+
+html[data-theme="light"] .request-details-row {
+  border-bottom-color: #eef1f7;
+}
+
+html[data-theme="light"] .request-details-label {
+  color: #9aa2b1;
+}
+
+html[data-theme="light"] .request-details-value {
+  color: #2c3648;
 }
 
 html[data-theme="light"] .edit-profile-avatar-row {

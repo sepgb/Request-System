@@ -1,7 +1,7 @@
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
+/*
+Registration key: URS-REGISTRAR-2026
+*/
 session_start();
 require_once '../config/db.php';
 require_once '../includes/functions.php';
