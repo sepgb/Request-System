@@ -5332,6 +5332,15 @@ html[data-theme="light"] .btn-modal-save:hover {
   background: #1d4bb0;
 }
 
+html[data-theme="light"] .btn-modal-confirm {
+  background: #1f8a56;
+  color: #ffffff;
+}
+
+html[data-theme="light"] .btn-modal-confirm:hover {
+  background: #166a41;
+}
+
 html[data-theme="light"] .edit-profile-avatar-row {
   background: #f7f9fc;
   border-color: #e4e8f0;
