@@ -342,6 +342,77 @@ document.addEventListener('DOMContentLoaded', function () {
       openClaimModal(id, reference, fullName, btn);
     });
   }
+
+  // ---- Request details modal: double-click a row to see it like a receipt ----
+  const requestDetailsOverlay = document.getElementById('requestDetailsOverlay');
+  const requestDetailsClose = document.getElementById('requestDetailsClose');
+  const rdTitle = document.getElementById('requestDetailsTitle');
+  const rdStudentNo = document.getElementById('rdStudentNo');
+  const rdName = document.getElementById('rdName');
+  const rdDocument = document.getElementById('rdDocument');
+  const rdYearLevel = document.getElementById('rdYearLevel');
+  const rdSemester = document.getElementById('rdSemester');
+  const rdClaimDate = document.getElementById('rdClaimDate');
+  const rdStatus = document.getElementById('rdStatus');
+  const rdDateRequested = document.getElementById('rdDateRequested');
+  const rdPurpose = document.getElementById('rdPurpose');
+  const rdPurposeRow = document.getElementById('rdPurposeRow');
+
+  function openRequestDetails(row) {
+    const cells = row.querySelectorAll('td');
+    const select = row.querySelector('.status-select');
+    const status = select ? select.value : (cells[7] ? cells[7].textContent.trim() : '');
+    const statusClass = 'status-select-' + status.toLowerCase().replace(/ /g, '-');
+
+    if (rdTitle) rdTitle.textContent = row.dataset.reference || '';
+    if (rdDateRequested) rdDateRequested.textContent = row.dataset.dateRequested || '\u2014';
+    if (rdStudentNo) rdStudentNo.textContent = cells[1] ? cells[1].textContent.trim() : '';
+    if (rdName) rdName.textContent = row.dataset.fullName || (cells[2] ? cells[2].textContent.trim() : '');
+    if (rdDocument) rdDocument.textContent = cells[3] ? cells[3].textContent.trim() : '';
+    if (rdYearLevel) rdYearLevel.textContent = cells[4] ? cells[4].textContent.trim() : '';
+    if (rdSemester) rdSemester.textContent = cells[5] ? cells[5].textContent.trim() : '';
+    if (rdClaimDate) rdClaimDate.textContent = cells[6] ? cells[6].textContent.trim() : '';
+    if (rdStatus) {
+      rdStatus.textContent = status;
+      rdStatus.className = 'request-details-value ' + statusClass;
+    }
+    if (rdPurpose && rdPurposeRow) {
+      const purpose = row.dataset.purpose || '';
+      rdPurpose.textContent = purpose;
+      rdPurposeRow.hidden = purpose === '';
+    }
+
+    if (requestDetailsOverlay) requestDetailsOverlay.hidden = false;
+  }
+
+  function closeRequestDetails() {
+    if (requestDetailsOverlay) requestDetailsOverlay.hidden = true;
+  }
+
+  if (tableBody) {
+    tableBody.addEventListener('dblclick', function (e) {
+      if (e.target.closest('a, button, .status-select-wrapper')) return;
+      const row = e.target.closest('tr[id^="row-"]');
+      if (row) openRequestDetails(row);
+    });
+  }
+
+  if (requestDetailsClose) {
+    requestDetailsClose.addEventListener('click', closeRequestDetails);
+  }
+
+  if (requestDetailsOverlay) {
+    requestDetailsOverlay.addEventListener('click', function (e) {
+      if (e.target === requestDetailsOverlay) closeRequestDetails();
+    });
+  }
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && requestDetailsOverlay && !requestDetailsOverlay.hidden) {
+      closeRequestDetails();
+    }
+  });
+
   // ---- Live filtering: type to search, click a status in the sidebar ----
   const filterSearch = document.getElementById('filterSearch');
   const statusLinks = document.querySelectorAll('.sidebar-status-link');

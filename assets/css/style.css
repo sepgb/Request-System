@@ -3139,6 +3139,10 @@ select::picker-icon {
   border-bottom: none;
 }
 
+.request-details-row[hidden] {
+  display: none;
+}
+
 .request-details-label {
   flex: 0 0 auto;
   color: #74787f;

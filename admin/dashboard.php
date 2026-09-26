@@ -473,7 +473,9 @@ $initialStatusFilter = trim($_GET['status'] ?? '');
                 <tr
                   id="row-<?php echo $r['id']; ?>"
                   data-reference="<?php echo htmlspecialchars($r['reference_no'], ENT_QUOTES, 'UTF-8'); ?>"
-                  data-full-name="<?php echo htmlspecialchars($r['full_name'], ENT_QUOTES, 'UTF-8'); ?>">
+                  data-full-name="<?php echo htmlspecialchars($r['full_name'], ENT_QUOTES, 'UTF-8'); ?>"
+                  data-date-requested="<?php echo $r['date_requested'] ? date('M d, Y g:i A', strtotime($r['date_requested'])) : ''; ?>"
+                  data-purpose="<?php echo htmlspecialchars($r['purpose'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
                   <td data-label="Reference no.">
                     <span class="cell-ref">
                       <?php echo htmlspecialchars($r['reference_no']); ?>
@@ -532,7 +534,7 @@ $initialStatusFilter = trim($_GET['status'] ?? '');
                       data-id="<?php echo $r['id']; ?>"
                       aria-label="Status for <?php echo htmlspecialchars($r['reference_no']); ?>">
                       <?php foreach (
-                        ['Pending', 'Processing', 'Ready for Pickup', 'Rejected']
+                        ['Pending', 'Processing', 'Ready for Pickup', 'Rejected', 'Cancelled']
                         as $s
                       ): ?>
                         <option
@@ -590,6 +592,59 @@ $initialStatusFilter = trim($_GET['status'] ?? '');
       <div class="modal-actions">
         <button type="button" class="btn-modal btn-modal-cancel" id="claimModalCancel">Cancel</button>
         <button type="button" class="btn-modal btn-modal-confirm" id="claimModalConfirm">Yes, mark claimed</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- REQUEST DETAILS MODAL -->
+  <div class="modal-overlay" id="requestDetailsOverlay" hidden>
+    <div class="request-details-box" role="dialog" aria-modal="true" aria-labelledby="requestDetailsTitle">
+      <div class="request-details-header">
+        <span class="request-details-eyebrow">Request Details</span>
+        <h3 id="requestDetailsTitle"></h3>
+      </div>
+
+      <div class="request-details-list">
+        <div class="request-details-row">
+          <span class="request-details-label">Date Requested</span>
+          <span class="request-details-value" id="rdDateRequested"></span>
+        </div>
+        <div class="request-details-row">
+          <span class="request-details-label">Student No.</span>
+          <span class="request-details-value" id="rdStudentNo"></span>
+        </div>
+        <div class="request-details-row">
+          <span class="request-details-label">Name</span>
+          <span class="request-details-value" id="rdName"></span>
+        </div>
+        <div class="request-details-row">
+          <span class="request-details-label">Document</span>
+          <span class="request-details-value" id="rdDocument"></span>
+        </div>
+        <div class="request-details-row">
+          <span class="request-details-label">Year Level</span>
+          <span class="request-details-value" id="rdYearLevel"></span>
+        </div>
+        <div class="request-details-row">
+          <span class="request-details-label">Semester</span>
+          <span class="request-details-value" id="rdSemester"></span>
+        </div>
+        <div class="request-details-row">
+          <span class="request-details-label">Claim Date</span>
+          <span class="request-details-value" id="rdClaimDate"></span>
+        </div>
+        <div class="request-details-row">
+          <span class="request-details-label">Status</span>
+          <span class="request-details-value" id="rdStatus"></span>
+        </div>
+        <div class="request-details-row" id="rdPurposeRow">
+          <span class="request-details-label">Purpose</span>
+          <span class="request-details-value" id="rdPurpose"></span>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-modal btn-modal-cancel" id="requestDetailsClose">Close</button>
       </div>
     </div>
   </div>
