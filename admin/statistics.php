@@ -422,7 +422,8 @@ function renderActivityItem(array $a): void
                             <span class="stat-card-hero-title">Request Claimed</span>
                             <span class="stat-card-hero-icon stat-card-hero-icon-green">
                                 <svg viewBox="0 0 24 24" fill="currentColor">
-                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" />
+                                    <path d="M12 2.5a.9.9 0 0 1 .9.9v9.19l2.13-2.13a.9.9 0 1 1 1.27 1.28l-3.66 3.66a.9.9 0 0 1-1.28 0L7.7 11.74a.9.9 0 1 1 1.27-1.28l2.13 2.13V3.4a.9.9 0 0 1 .9-.9Z" />
+                                    <path d="M4.5 14.5a1 1 0 0 1 1-1h2.1c.32 0 .62.16.8.43l1.08 1.6c.2.3.53.47.89.47h3.26c.36 0 .69-.18.89-.47l1.08-1.6c.18-.27.48-.43.8-.43h2.1a1 1 0 0 1 1 1v3.2c0 1.82-1.48 3.3-3.3 3.3H7.8a3.3 3.3 0 0 1-3.3-3.3v-3.2Z" />
                                 </svg>
                             </span>
                         </div>
