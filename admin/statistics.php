@@ -42,6 +42,40 @@ $claimedTotal = (int)($conn->query(
 $submittedTotal = $activeTotal + $claimedTotal;
 
 /* ---------------------------------------------------------------
+   This week vs. last week trend (for the two hero stat cards).
+   These are running, all-time totals, so the trend compares the
+   total as of now against the total as it stood a week ago
+   (i.e. minus what came in during the last 7 days) — not two
+   separate weekly counts, which could misleadingly show a
+   cumulative total as "down" even though it can only ever grow.
+   --------------------------------------------------------------- */
+function weekTrend($current, $previous)
+{
+    if ($previous == 0) {
+        $pct = $current > 0 ? 100 : 0;
+    } else {
+        $pct = round((($current - $previous) / $previous) * 100, 1);
+    }
+    return ['pct' => abs($pct), 'up' => $current >= $previous];
+}
+
+$submittedThisWeek = (int)($conn->query("
+    SELECT COUNT(*) AS c FROM requests
+    WHERE date_requested >= (CURDATE() - INTERVAL 6 DAY){$scopeAnd}
+")->fetch_assoc()['c'] ?? 0);
+
+$claimedThisWeek = (int)($conn->query("
+    SELECT COUNT(*) AS c FROM audit_log
+    WHERE action = 'claimed' AND created_at >= (CURDATE() - INTERVAL 6 DAY){$scopeAnd}
+")->fetch_assoc()['c'] ?? 0);
+
+$submittedTotalLastWeek = max(0, $submittedTotal - $submittedThisWeek);
+$claimedTotalLastWeek = max(0, $claimedTotal - $claimedThisWeek);
+
+$submittedTrend = weekTrend($submittedTotal, $submittedTotalLastWeek);
+$claimedTrend = weekTrend($claimedTotal, $claimedTotalLastWeek);
+
+/* ---------------------------------------------------------------
    Document type breakdown (current + all-time claimed)
    --------------------------------------------------------------- */
 $docCounts = [];
@@ -144,7 +178,7 @@ function renderActivityItem(array $a): void
             } catch (e) {}
         })();
     </script>
-    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/style.css?v=20260928">
 </head>
 
 <body class="admin-body">
@@ -353,17 +387,46 @@ function renderActivityItem(array $a): void
 
                 <!-- Stat cards -->
                 <div class="stats-grid">
-                    <div class="stat-card">
-                        <span class="stat-card-icon">
-                            <svg viewBox="0 0 24 24" fill="none">
-                                <rect x="5" y="3" width="14" height="18" rx="2" stroke="currentColor" stroke-width="1.6" />
-                                <path d="M8.5 8H15.5M8.5 12H15.5M8.5 16H13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
-                            </svg>
-                        </span>
-                        <div>
-                            <span class="stat-card-value"><?php echo $submittedTotal; ?></span>
-                            <span class="stat-card-label">Total submitted</span>
+                    <div class="stat-card-hero">
+                        <div class="stat-card-hero-top">
+                            <span class="stat-card-hero-title">Total Request</span>
+                            <span class="stat-card-hero-icon stat-card-hero-icon-blue">
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M7.5 3.75A1.5 1.5 0 0 1 9 2.25h6a1.5 1.5 0 0 1 1.5 1.5v.75h.75A2.25 2.25 0 0 1 19.5 6.75v12a2.25 2.25 0 0 1-2.25 2.25h-10.5A2.25 2.25 0 0 1 4.5 18.75v-12A2.25 2.25 0 0 1 6.75 4.5h.75v-.75Zm2.25 6a.75.75 0 0 0 0 1.5h4.5a.75.75 0 0 0 0-1.5h-4.5Zm0 3a.75.75 0 0 0 0 1.5h4.5a.75.75 0 0 0 0-1.5h-4.5Zm0 3a.75.75 0 0 0 0 1.5h2.25a.75.75 0 0 0 0-1.5H9.75Z" />
+                                </svg>
+                            </span>
                         </div>
+                        <div class="stat-card-hero-value-row">
+                            <span class="stat-card-hero-value"><?php echo $submittedTotal; ?></span>
+                            <span class="stat-card-hero-trend <?php echo $submittedTrend['up'] ? 'is-up' : 'is-down'; ?>">
+                                <svg class="stat-card-hero-trend-arrow" viewBox="0 0 12 12" fill="none">
+                                    <path d="M6 2V10M6 2L2.5 5.5M6 2L9.5 5.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                                <?php echo $submittedTrend['pct']; ?>%
+                            </span>
+                        </div>
+                        <span class="stat-card-hero-caption">vs. <?php echo number_format($submittedTotalLastWeek); ?> last week</span>
+                    </div>
+
+                    <div class="stat-card-hero">
+                        <div class="stat-card-hero-top">
+                            <span class="stat-card-hero-title">Request Claimed</span>
+                            <span class="stat-card-hero-icon stat-card-hero-icon-green">
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" />
+                                </svg>
+                            </span>
+                        </div>
+                        <div class="stat-card-hero-value-row">
+                            <span class="stat-card-hero-value"><?php echo $claimedTotal; ?></span>
+                            <span class="stat-card-hero-trend <?php echo $claimedTrend['up'] ? 'is-up' : 'is-down'; ?>">
+                                <svg class="stat-card-hero-trend-arrow" viewBox="0 0 12 12" fill="none">
+                                    <path d="M6 2V10M6 2L2.5 5.5M6 2L9.5 5.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                                <?php echo $claimedTrend['pct']; ?>%
+                            </span>
+                        </div>
+                        <span class="stat-card-hero-caption">vs. <?php echo number_format($claimedTotalLastWeek); ?> last week</span>
                     </div>
 
                     <div class="stat-card stat-card-pending">
@@ -405,18 +468,6 @@ function renderActivityItem(array $a): void
                         <div>
                             <span class="stat-card-value"><?php echo $ready; ?></span>
                             <span class="stat-card-label">Ready for pickup</span>
-                        </div>
-                    </div>
-
-                    <div class="stat-card stat-card-claimed">
-                        <span class="stat-card-icon">
-                            <svg viewBox="0 0 24 24" fill="none">
-                                <path d="M4 12.5L9.5 18L20 6.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
-                            </svg>
-                        </span>
-                        <div>
-                            <span class="stat-card-value"><?php echo $claimedTotal; ?></span>
-                            <span class="stat-card-label">Claimed (all-time)</span>
                         </div>
                     </div>
                 </div>
