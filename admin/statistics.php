@@ -35,19 +35,13 @@ $ready = (int)($statusCounts['ready'] ?? 0);
 $rejected = (int)($statusCounts['rejected'] ?? 0);
 $activeTotal = (int)($statusCounts['active_total'] ?? 0);
 
-$claimedTotal = (int)($conn->query(
-    "SELECT COUNT(*) AS c FROM audit_log WHERE action = 'claimed'{$scopeAnd}"
-)->fetch_assoc()['c'] ?? 0);
-
-$submittedTotal = $activeTotal + $claimedTotal;
-
 /* ---------------------------------------------------------------
-   This week vs. last week trend (for the two hero stat cards).
-   These are running, all-time totals, so the trend compares the
-   total as of now against the total as it stood a week ago
-   (i.e. minus what came in during the last 7 days) — not two
-   separate weekly counts, which could misleadingly show a
-   cumulative total as "down" even though it can only ever grow.
+   This week vs. last week (for the two hero stat cards).
+   "This week" is a calendar week that starts on Monday and
+   resets to 0 every Monday — it is NOT the running, all-time
+   total of requests/claims in the system. "vs. X last week"
+   compares against the count for the previous full Monday-Sunday
+   week.
    --------------------------------------------------------------- */
 function weekTrend($current, $previous)
 {
@@ -59,21 +53,36 @@ function weekTrend($current, $previous)
     return ['pct' => abs($pct), 'up' => $current >= $previous];
 }
 
+// Monday of the current week, and Monday of the previous week.
+// Pinned explicitly so the week boundary lines up with local time
+// regardless of the server's default PHP timezone (often UTC).
+date_default_timezone_set('Asia/Manila');
+$todayDow = (int)date('N'); // 1 = Monday ... 7 = Sunday
+$mondayThisWeek = date('Y-m-d', strtotime('-' . ($todayDow - 1) . ' days'));
+$mondayLastWeek = date('Y-m-d', strtotime($mondayThisWeek . ' -7 days'));
+
 $submittedThisWeek = (int)($conn->query("
     SELECT COUNT(*) AS c FROM requests
-    WHERE date_requested >= (CURDATE() - INTERVAL 6 DAY){$scopeAnd}
+    WHERE date_requested >= '{$mondayThisWeek}'{$scopeAnd}
 ")->fetch_assoc()['c'] ?? 0);
 
 $claimedThisWeek = (int)($conn->query("
     SELECT COUNT(*) AS c FROM audit_log
-    WHERE action = 'claimed' AND created_at >= (CURDATE() - INTERVAL 6 DAY){$scopeAnd}
+    WHERE action = 'claimed' AND created_at >= '{$mondayThisWeek}'{$scopeAnd}
 ")->fetch_assoc()['c'] ?? 0);
 
-$submittedTotalLastWeek = max(0, $submittedTotal - $submittedThisWeek);
-$claimedTotalLastWeek = max(0, $claimedTotal - $claimedThisWeek);
+$submittedLastWeek = (int)($conn->query("
+    SELECT COUNT(*) AS c FROM requests
+    WHERE date_requested >= '{$mondayLastWeek}' AND date_requested < '{$mondayThisWeek}'{$scopeAnd}
+")->fetch_assoc()['c'] ?? 0);
 
-$submittedTrend = weekTrend($submittedTotal, $submittedTotalLastWeek);
-$claimedTrend = weekTrend($claimedTotal, $claimedTotalLastWeek);
+$claimedLastWeek = (int)($conn->query("
+    SELECT COUNT(*) AS c FROM audit_log
+    WHERE action = 'claimed' AND created_at >= '{$mondayLastWeek}' AND created_at < '{$mondayThisWeek}'{$scopeAnd}
+")->fetch_assoc()['c'] ?? 0);
+
+$submittedTrend = weekTrend($submittedThisWeek, $submittedLastWeek);
+$claimedTrend = weekTrend($claimedThisWeek, $claimedLastWeek);
 
 /* ---------------------------------------------------------------
    Document type breakdown (current + all-time claimed)
@@ -397,7 +406,7 @@ function renderActivityItem(array $a): void
                             </span>
                         </div>
                         <div class="stat-card-hero-value-row">
-                            <span class="stat-card-hero-value"><?php echo $submittedTotal; ?></span>
+                            <span class="stat-card-hero-value"><?php echo $submittedThisWeek; ?></span>
                             <span class="stat-card-hero-trend <?php echo $submittedTrend['up'] ? 'is-up' : 'is-down'; ?>">
                                 <svg class="stat-card-hero-trend-arrow" viewBox="0 0 12 12" fill="none">
                                     <path d="M6 2V10M6 2L2.5 5.5M6 2L9.5 5.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
@@ -405,7 +414,7 @@ function renderActivityItem(array $a): void
                                 <?php echo $submittedTrend['pct']; ?>%
                             </span>
                         </div>
-                        <span class="stat-card-hero-caption">vs. <?php echo number_format($submittedTotalLastWeek); ?> last week</span>
+                        <span class="stat-card-hero-caption">vs. <?php echo number_format($submittedLastWeek); ?> last week</span>
                     </div>
 
                     <div class="stat-card-hero">
@@ -418,7 +427,7 @@ function renderActivityItem(array $a): void
                             </span>
                         </div>
                         <div class="stat-card-hero-value-row">
-                            <span class="stat-card-hero-value"><?php echo $claimedTotal; ?></span>
+                            <span class="stat-card-hero-value"><?php echo $claimedThisWeek; ?></span>
                             <span class="stat-card-hero-trend <?php echo $claimedTrend['up'] ? 'is-up' : 'is-down'; ?>">
                                 <svg class="stat-card-hero-trend-arrow" viewBox="0 0 12 12" fill="none">
                                     <path d="M6 2V10M6 2L2.5 5.5M6 2L9.5 5.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
@@ -426,7 +435,7 @@ function renderActivityItem(array $a): void
                                 <?php echo $claimedTrend['pct']; ?>%
                             </span>
                         </div>
-                        <span class="stat-card-hero-caption">vs. <?php echo number_format($claimedTotalLastWeek); ?> last week</span>
+                        <span class="stat-card-hero-caption">vs. <?php echo number_format($claimedLastWeek); ?> last week</span>
                     </div>
 
                     <div class="stat-card stat-card-pending">
