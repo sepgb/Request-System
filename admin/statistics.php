@@ -45,12 +45,12 @@ $activeTotal = (int)($statusCounts['active_total'] ?? 0);
    --------------------------------------------------------------- */
 function weekTrend($current, $previous)
 {
-    if ($previous == 0) {
-        $pct = $current > 0 ? 100 : 0;
-    } else {
-        $pct = round((($current - $previous) / $previous) * 100, 1);
-    }
-    return ['pct' => abs($pct), 'up' => $current >= $previous, 'flat' => $current == $previous];
+    // % change from 0 is mathematically undefined, so when last week was 0
+    // we treat the baseline as 1 (e.g. 2 vs 0 shows 200%, 5 vs 0 shows 500%).
+    $baseline = $previous == 0 ? 1 : $previous;
+    $pct = round((($current - $previous) / $baseline) * 100, 1);
+    $label = abs($pct) . '%';
+    return ['pct' => abs($pct), 'label' => $label, 'up' => $current >= $previous, 'flat' => $current == $previous];
 }
 
 // CSS class for the trend pill: green up / red down, neutral when nothing changed
@@ -449,7 +449,7 @@ function renderActivityItem(array $a): void
                                 <svg class="stat-card-hero-trend-arrow" viewBox="0 0 12 12" fill="none">
                                     <path d="M6 2V10M6 2L2.5 5.5M6 2L9.5 5.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
                                 </svg>
-                                <?php echo $submittedTrend['pct']; ?>%
+                                <?php echo $submittedTrend['label']; ?>
                             </span>
                         </div>
                         <span class="stat-card-hero-caption">vs. <?php echo number_format($submittedLastWeek); ?> last week</span>
@@ -481,7 +481,7 @@ function renderActivityItem(array $a): void
                                 <svg class="stat-card-hero-trend-arrow" viewBox="0 0 12 12" fill="none">
                                     <path d="M6 2V10M6 2L2.5 5.5M6 2L9.5 5.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
                                 </svg>
-                                <?php echo $claimedTrend['pct']; ?>%
+                                <?php echo $claimedTrend['label']; ?>
                             </span>
                         </div>
                         <span class="stat-card-hero-caption">vs. <?php echo number_format($claimedLastWeek); ?> last week</span>
@@ -513,7 +513,7 @@ function renderActivityItem(array $a): void
                                 <svg class="stat-card-hero-trend-arrow" viewBox="0 0 12 12" fill="none">
                                     <path d="M6 2V10M6 2L2.5 5.5M6 2L9.5 5.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
                                 </svg>
-                                <?php echo $rejectedTrend['pct']; ?>%
+                                <?php echo $rejectedTrend['label']; ?>
                             </span>
                         </div>
                         <span class="stat-card-hero-caption">vs. <?php echo number_format($rejectedLastWeek); ?> last week</span>
