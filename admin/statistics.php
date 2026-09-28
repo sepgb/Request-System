@@ -431,8 +431,15 @@ function renderActivityItem(array $a): void
                         <div class="stat-card-hero-top">
                             <span class="stat-card-hero-title">Total Request</span>
                             <span class="stat-card-hero-icon stat-card-hero-icon-blue">
-                                <svg viewBox="0 0 24 24" fill="currentColor">
-                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M7.5 3.75A1.5 1.5 0 0 1 9 2.25h6a1.5 1.5 0 0 1 1.5 1.5v.75h.75A2.25 2.25 0 0 1 19.5 6.75v12a2.25 2.25 0 0 1-2.25 2.25h-10.5A2.25 2.25 0 0 1 4.5 18.75v-12A2.25 2.25 0 0 1 6.75 4.5h.75v-.75Zm2.25 6a.75.75 0 0 0 0 1.5h4.5a.75.75 0 0 0 0-1.5h-4.5Zm0 3a.75.75 0 0 0 0 1.5h4.5a.75.75 0 0 0 0-1.5h-4.5Zm0 3a.75.75 0 0 0 0 1.5h2.25a.75.75 0 0 0 0-1.5H9.75Z" />
+                                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                    <mask id="hiTotalDoc" maskUnits="userSpaceOnUse" x="-5" y="-5" width="34" height="34">
+                                        <rect x="-5" y="-5" width="34" height="34" fill="#fff" />
+                                        <path d="M14 0.5V8H21.5" stroke="#000" stroke-width="1.2" fill="none" />
+                                        <path d="M9.5 11.2H17.5M9.5 14.4H17.5M9.5 17.6H17.5" stroke="#000" stroke-width="1.5" stroke-linecap="round" fill="none" />
+                                    </mask>
+                                    <g transform="translate(-1.5 1)">
+                                        <path d="M8.7 1.5H14L20.5 8V18.3A2.2 2.2 0 0 1 18.3 20.5H8.7A2.2 2.2 0 0 1 6.5 18.3V3.7A2.2 2.2 0 0 1 8.7 1.5Z" fill="currentColor" mask="url(#hiTotalDoc)" />
+                                    </g>
                                 </svg>
                             </span>
                         </div>
@@ -452,9 +459,19 @@ function renderActivityItem(array $a): void
                         <div class="stat-card-hero-top">
                             <span class="stat-card-hero-title">Request Claimed</span>
                             <span class="stat-card-hero-icon stat-card-hero-icon-green">
-                                <svg viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M12 2.5a.9.9 0 0 1 .9.9v9.19l2.13-2.13a.9.9 0 1 1 1.27 1.28l-3.66 3.66a.9.9 0 0 1-1.28 0L7.7 11.74a.9.9 0 1 1 1.27-1.28l2.13 2.13V3.4a.9.9 0 0 1 .9-.9Z" />
-                                    <path d="M4.5 14.5a1 1 0 0 1 1-1h2.1c.32 0 .62.16.8.43l1.08 1.6c.2.3.53.47.89.47h3.26c.36 0 .69-.18.89-.47l1.08-1.6c.18-.27.48-.43.8-.43h2.1a1 1 0 0 1 1 1v3.2c0 1.82-1.48 3.3-3.3 3.3H7.8a3.3 3.3 0 0 1-3.3-3.3v-3.2Z" />
+                                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                    <mask id="hiClaimedDoc" maskUnits="userSpaceOnUse" x="-5" y="-5" width="34" height="34">
+                                        <rect x="-5" y="-5" width="34" height="34" fill="#fff" />
+                                        <path d="M14 0.5V8H21.5" stroke="#000" stroke-width="1.2" fill="none" />
+                                        <path d="M9.5 11.2H17.5M9.5 14.4H17.5M9.5 17.6H17.5" stroke="#000" stroke-width="1.5" stroke-linecap="round" fill="none" />
+                                        <circle cx="6.5" cy="17.5" r="6.1" fill="#000" />
+                                    </mask>
+                                    <mask id="hiClaimedBadge" maskUnits="userSpaceOnUse" x="-5" y="-5" width="34" height="34">
+                                        <rect x="-5" y="-5" width="34" height="34" fill="#fff" />
+                                        <path d="M4.4 17.6L6 19.2L8.8 15.9" stroke="#000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+                                    </mask>
+                                    <path d="M8.7 1.5H14L20.5 8V18.3A2.2 2.2 0 0 1 18.3 20.5H8.7A2.2 2.2 0 0 1 6.5 18.3V3.7A2.2 2.2 0 0 1 8.7 1.5Z" fill="currentColor" mask="url(#hiClaimedDoc)" />
+                                    <circle cx="6.5" cy="17.5" r="4.7" fill="currentColor" mask="url(#hiClaimedBadge)" />
                                 </svg>
                             </span>
                         </div>
@@ -474,8 +491,19 @@ function renderActivityItem(array $a): void
                         <div class="stat-card-hero-top">
                             <span class="stat-card-hero-title">Request Rejected</span>
                             <span class="stat-card-hero-icon stat-card-hero-icon-red">
-                                <svg viewBox="0 0 24 24" fill="currentColor">
-                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25Zm-1.72 6.97a.75.75 0 1 0-1.06 1.06L10.94 12l-1.72 1.72a.75.75 0 1 0 1.06 1.06L12 13.06l1.72 1.72a.75.75 0 1 0 1.06-1.06L13.06 12l1.72-1.72a.75.75 0 1 0-1.06-1.06L12 10.94l-1.72-1.72Z" />
+                                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                    <mask id="hiRejectedDoc" maskUnits="userSpaceOnUse" x="-5" y="-5" width="34" height="34">
+                                        <rect x="-5" y="-5" width="34" height="34" fill="#fff" />
+                                        <path d="M14 0.5V8H21.5" stroke="#000" stroke-width="1.2" fill="none" />
+                                        <path d="M9.5 11.2H17.5M9.5 14.4H17.5M9.5 17.6H17.5" stroke="#000" stroke-width="1.5" stroke-linecap="round" fill="none" />
+                                        <circle cx="6.5" cy="17.5" r="6.1" fill="#000" />
+                                    </mask>
+                                    <mask id="hiRejectedBadge" maskUnits="userSpaceOnUse" x="-5" y="-5" width="34" height="34">
+                                        <rect x="-5" y="-5" width="34" height="34" fill="#fff" />
+                                        <path d="M4.9 15.9L8.1 19.1M8.1 15.9L4.9 19.1" stroke="#000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+                                    </mask>
+                                    <path d="M8.7 1.5H14L20.5 8V18.3A2.2 2.2 0 0 1 18.3 20.5H8.7A2.2 2.2 0 0 1 6.5 18.3V3.7A2.2 2.2 0 0 1 8.7 1.5Z" fill="currentColor" mask="url(#hiRejectedDoc)" />
+                                    <circle cx="6.5" cy="17.5" r="4.7" fill="currentColor" mask="url(#hiRejectedBadge)" />
                                 </svg>
                             </span>
                         </div>
