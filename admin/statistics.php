@@ -50,7 +50,13 @@ function weekTrend($current, $previous)
     } else {
         $pct = round((($current - $previous) / $previous) * 100, 1);
     }
-    return ['pct' => abs($pct), 'up' => $current >= $previous];
+    return ['pct' => abs($pct), 'up' => $current >= $previous, 'flat' => $current == $previous];
+}
+
+// CSS class for the trend pill: green up / red down, neutral when nothing changed
+function trendClass(array $t): string
+{
+    return $t['flat'] ? 'is-flat' : ($t['up'] ? 'is-up' : 'is-down');
 }
 
 // Monday of the current week, and Monday of the previous week.
@@ -81,8 +87,33 @@ $claimedLastWeek = (int)($conn->query("
     WHERE action = 'claimed' AND created_at >= '{$mondayLastWeek}' AND created_at < '{$mondayThisWeek}'{$scopeAnd}
 ")->fetch_assoc()['c'] ?? 0);
 
+// "Request Rejected" only counts requests that are STILL rejected right now,
+// bucketed by when they were rejected (latest Rejected entry in audit_log,
+// falling back to the submission date if none was logged). If an admin moves
+// a request out of Rejected, it drops out of the card immediately.
+$rejectedThisWeek = 0;
+$rejectedLastWeek = 0;
+$rejRes = $conn->query("
+    SELECT COALESCE(
+        (SELECT MAX(a.created_at) FROM audit_log a
+         WHERE a.reference_no = r.reference_no AND a.new_status = 'Rejected'),
+        r.date_requested
+    ) AS rejected_at
+    FROM requests r
+    WHERE r.request_status = 'Rejected'{$scopeAnd}
+");
+while ($rj = $rejRes->fetch_assoc()) {
+    $rejectedDay = substr((string)$rj['rejected_at'], 0, 10);
+    if ($rejectedDay >= $mondayThisWeek) {
+        $rejectedThisWeek++;
+    } elseif ($rejectedDay >= $mondayLastWeek) {
+        $rejectedLastWeek++;
+    }
+}
+
 $submittedTrend = weekTrend($submittedThisWeek, $submittedLastWeek);
 $claimedTrend = weekTrend($claimedThisWeek, $claimedLastWeek);
+$rejectedTrend = weekTrend($rejectedThisWeek, $rejectedLastWeek);
 
 /* ---------------------------------------------------------------
    Document type breakdown (current + all-time claimed)
@@ -407,7 +438,7 @@ function renderActivityItem(array $a): void
                         </div>
                         <div class="stat-card-hero-value-row">
                             <span class="stat-card-hero-value"><?php echo $submittedThisWeek; ?></span>
-                            <span class="stat-card-hero-trend <?php echo $submittedTrend['up'] ? 'is-up' : 'is-down'; ?>">
+                            <span class="stat-card-hero-trend <?php echo trendClass($submittedTrend); ?>">
                                 <svg class="stat-card-hero-trend-arrow" viewBox="0 0 12 12" fill="none">
                                     <path d="M6 2V10M6 2L2.5 5.5M6 2L9.5 5.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
                                 </svg>
@@ -429,7 +460,7 @@ function renderActivityItem(array $a): void
                         </div>
                         <div class="stat-card-hero-value-row">
                             <span class="stat-card-hero-value"><?php echo $claimedThisWeek; ?></span>
-                            <span class="stat-card-hero-trend <?php echo $claimedTrend['up'] ? 'is-up' : 'is-down'; ?>">
+                            <span class="stat-card-hero-trend <?php echo trendClass($claimedTrend); ?>">
                                 <svg class="stat-card-hero-trend-arrow" viewBox="0 0 12 12" fill="none">
                                     <path d="M6 2V10M6 2L2.5 5.5M6 2L9.5 5.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
                                 </svg>
@@ -439,45 +470,68 @@ function renderActivityItem(array $a): void
                         <span class="stat-card-hero-caption">vs. <?php echo number_format($claimedLastWeek); ?> last week</span>
                     </div>
 
-                    <div class="stat-card stat-card-pending">
-                        <span class="stat-card-icon">
-                            <svg viewBox="0 0 24 24" fill="none">
-                                <circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.7" />
-                                <path d="M12 7V12L15 14" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
-                            </svg>
-                        </span>
-                        <div>
-                            <span class="stat-card-value"><?php echo $pending; ?></span>
-                            <span class="stat-card-label">Pending</span>
+                    <div class="stat-card-hero">
+                        <div class="stat-card-hero-top">
+                            <span class="stat-card-hero-title">Request Rejected</span>
+                            <span class="stat-card-hero-icon stat-card-hero-icon-red">
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25Zm-1.72 6.97a.75.75 0 1 0-1.06 1.06L10.94 12l-1.72 1.72a.75.75 0 1 0 1.06 1.06L12 13.06l1.72 1.72a.75.75 0 1 0 1.06-1.06L13.06 12l1.72-1.72a.75.75 0 1 0-1.06-1.06L12 10.94l-1.72-1.72Z" />
+                                </svg>
+                            </span>
                         </div>
+                        <div class="stat-card-hero-value-row">
+                            <span class="stat-card-hero-value"><?php echo $rejectedThisWeek; ?></span>
+                            <span class="stat-card-hero-trend <?php echo trendClass($rejectedTrend); ?>">
+                                <svg class="stat-card-hero-trend-arrow" viewBox="0 0 12 12" fill="none">
+                                    <path d="M6 2V10M6 2L2.5 5.5M6 2L9.5 5.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                                <?php echo $rejectedTrend['pct']; ?>%
+                            </span>
+                        </div>
+                        <span class="stat-card-hero-caption">vs. <?php echo number_format($rejectedLastWeek); ?> last week</span>
                     </div>
 
-                    <div class="stat-card stat-card-processing">
-                        <span class="stat-card-icon">
-                            <svg viewBox="0 0 24 24" fill="none">
-                                <path d="M12 5V12L16.5 14.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
-                                <path d="M4 12C4 7.6 7.6 4 12 4C15.2 4 18 5.9 19.3 8.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
-                                <path d="M20 12C20 16.4 16.4 20 12 20C8.8 20 6 18.1 4.7 15.4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
-                                <path d="M19.3 5.5V8.6H16.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
-                                <path d="M4.7 18.5V15.4H7.8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
-                            </svg>
-                        </span>
-                        <div>
-                            <span class="stat-card-value"><?php echo $processing; ?></span>
-                            <span class="stat-card-label">Processing</span>
+                    <?php
+                    $statusTotal = $pending + $processing + $ready;
+                    $donutR = 42;
+                    $donutC = 2 * M_PI * $donutR;
+                    $donutSegs = [
+                        ['label' => 'Pending', 'short' => 'Pending', 'value' => $pending, 'color' => '#e3c589'],
+                        ['label' => 'Processing', 'short' => 'Processing', 'value' => $processing, 'color' => '#9dc4ff'],
+                        ['label' => 'Ready for pickup', 'short' => 'Ready', 'value' => $ready, 'color' => '#8fe0b4'],
+                    ];
+                    ?>
+                    <div class="stat-card-status">
+                        <div class="stat-card-status-summary">
+                            <span class="stat-card-status-total"><?php echo $statusTotal; ?></span>
+                            <span class="stat-card-status-name">Open Requests</span>
                         </div>
-                    </div>
-
-                    <div class="stat-card stat-card-ready">
-                        <span class="stat-card-icon">
-                            <svg viewBox="0 0 24 24" fill="none">
-                                <circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.7" />
-                                <path d="M8.5 12L11 14.5L15.5 9.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+                        <span class="stat-card-status-divider"></span>
+                        <div class="stat-card-status-chart">
+                            <svg class="stat-card-status-donut" viewBox="0 0 100 100" role="img" aria-label="Open requests by status">
+                                <circle class="stat-card-status-donut-bg" cx="50" cy="50" r="<?php echo $donutR; ?>" fill="none" stroke-width="14" />
+                                <?php if ($statusTotal > 0): $offset = 0;
+                                    foreach ($donutSegs as $seg):
+                                        if ($seg['value'] <= 0) continue;
+                                        $len = ($seg['value'] / $statusTotal) * $donutC; ?>
+                                        <circle cx="50" cy="50" r="<?php echo $donutR; ?>" fill="none" stroke="<?php echo $seg['color']; ?>" stroke-width="14"
+                                            stroke-dasharray="<?php echo round($len, 2); ?> <?php echo round($donutC - $len, 2); ?>"
+                                            stroke-dashoffset="<?php echo round(-$offset, 2); ?>"
+                                            transform="rotate(-90 50 50)">
+                                            <title><?php echo $seg['label'] . ': ' . $seg['value']; ?></title>
+                                        </circle>
+                                <?php $offset += $len;
+                                    endforeach;
+                                endif; ?>
                             </svg>
-                        </span>
-                        <div>
-                            <span class="stat-card-value"><?php echo $ready; ?></span>
-                            <span class="stat-card-label">Ready for pickup</span>
+                            <div class="stat-card-status-legend">
+                                <?php foreach ($donutSegs as $seg): ?>
+                                    <span class="stat-card-status-legend-item">
+                                        <span class="stat-card-status-swatch" style="background:<?php echo $seg['color']; ?>;"></span>
+                                        <?php echo $seg['value'] . ' ' . $seg['label']; ?>
+                                    </span>
+                                <?php endforeach; ?>
+                            </div>
                         </div>
                     </div>
                 </div>

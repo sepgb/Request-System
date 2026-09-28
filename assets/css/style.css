@@ -3960,6 +3960,30 @@ select::picker-icon {
   transform: rotate(180deg);
 }
 
+.stat-card-hero-trend.is-flat {
+  background: rgba(148, 152, 166, 0.16);
+  color: #aeb9c9;
+}
+
+.stat-card-hero-trend.is-flat .stat-card-hero-trend-arrow {
+  display: none;
+}
+
+/* Inverse trend (a rise is bad, a drop is good) — e.g. Request Rejected */
+.stat-card-hero-trend.is-inverse.is-up {
+  background: rgba(214, 84, 84, 0.16);
+  color: #f4b6b6;
+}
+
+.stat-card-hero-trend.is-inverse.is-down {
+  background: rgba(143, 224, 180, 0.16);
+  color: #8fe0b4;
+}
+
+.stat-card-hero-icon-red {
+  color: #f08a8a;
+}
+
 .stat-card-hero-caption {
   font-family: 'Manrope', sans-serif;
   font-size: 0.78rem;
@@ -4216,6 +4240,127 @@ select::picker-icon {
   height: 0;
 }
 
+/* ---------- Combined status card (Pending / Processing / Ready) ---------- */
+
+.stat-card-status {
+  grid-column: span 2;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: #111317;
+  border: 1px solid #202329;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.stat-card-status:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.35);
+}
+
+.stat-card-status-summary {
+  flex: 0 0 auto;
+  min-width: 120px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stat-card-status-total {
+  font-family: 'Manrope', sans-serif;
+  font-size: 2.2rem;
+  font-weight: 800;
+  line-height: 1;
+  color: #f1f2f4;
+}
+
+.stat-card-status-name {
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: #d0d4da;
+}
+
+.stat-card-status-divider {
+  align-self: stretch;
+  width: 1px;
+  background: #262a35;
+}
+
+.stat-card-status-chart {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+
+.stat-card-status-donut {
+  flex: 0 0 auto;
+  width: 76px;
+  height: 76px;
+}
+
+.stat-card-status-donut-bg {
+  stroke: #1c1f27;
+}
+
+.stat-card-status-legend {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-card-status-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #9aa1ad;
+  white-space: nowrap;
+}
+
+.stat-card-status-swatch {
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
+  flex: 0 0 auto;
+}
+
+html[data-theme="light"] .stat-card-status {
+  background: #ffffff;
+  border-color: #e4e8f0;
+}
+
+html[data-theme="light"] .stat-card-status:hover {
+  box-shadow: 0 14px 30px rgba(20, 30, 60, 0.1);
+}
+
+html[data-theme="light"] .stat-card-status-name {
+  color: #586176;
+}
+
+html[data-theme="light"] .stat-card-status-total {
+  color: #1a2233;
+}
+
+html[data-theme="light"] .stat-card-status-divider {
+  background: #e4e8f0;
+}
+
+html[data-theme="light"] .stat-card-status-donut-bg {
+  stroke: #eef1f7;
+}
+
+html[data-theme="light"] .stat-card-status-legend-item {
+  color: #7c8496;
+}
+
 /* ---------- Bar chart (requests / claims per day) ---------- */
 .bar-chart {
   display: flex;
@@ -4413,9 +4558,13 @@ select::picker-icon {
   font-size: 0.85rem;
 }
 
-@media (max-width: 1300px) {
+@media (max-width: 1500px) {
   .stats-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .stat-card-status {
+    grid-column: 1 / -1;
   }
 }
 
@@ -5691,6 +5840,21 @@ html[data-theme="light"] .stat-card-hero-trend.is-up {
 html[data-theme="light"] .stat-card-hero-trend.is-down {
   background: rgba(194, 59, 59, 0.12);
   color: #c23b3b;
+}
+
+html[data-theme="light"] .stat-card-hero-trend.is-flat {
+  background: rgba(90, 100, 114, 0.12);
+  color: #5b6472;
+}
+
+html[data-theme="light"] .stat-card-hero-trend.is-inverse.is-up {
+  background: rgba(194, 59, 59, 0.12);
+  color: #c23b3b;
+}
+
+html[data-theme="light"] .stat-card-hero-trend.is-inverse.is-down {
+  background: rgba(31, 138, 86, 0.12);
+  color: #1f8a56;
 }
 
 html[data-theme="light"] .panel {
