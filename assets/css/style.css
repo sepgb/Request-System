@@ -3040,6 +3040,17 @@ select::picker-icon {
   background: #45d69b;
 }
 
+.btn-modal-danger {
+  background: #d65454;
+  color: #ffffff;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.btn-modal-danger:hover {
+  background: #e36868;
+  transform: translateY(-2px);
+}
+
 /* ---------- Request Details modal (receipt-style row summary) ---------- */
 
 .request-details-box {
@@ -3958,15 +3969,6 @@ select::picker-icon {
 
 .stat-card-hero-trend.is-down .stat-card-hero-trend-arrow {
   transform: rotate(180deg);
-}
-
-.stat-card-hero-trend.is-flat {
-  background: rgba(148, 152, 166, 0.16);
-  color: #aeb9c9;
-}
-
-.stat-card-hero-trend.is-flat .stat-card-hero-trend-arrow {
-  display: none;
 }
 
 /* Inverse trend (a rise is bad, a drop is good) — e.g. Request Rejected */
@@ -5661,6 +5663,15 @@ html[data-theme="light"] .btn-modal-confirm:hover {
   background: #166a41;
 }
 
+html[data-theme="light"] .btn-modal-danger {
+  background: #c23b3b;
+  color: #ffffff;
+}
+
+html[data-theme="light"] .btn-modal-danger:hover {
+  background: #a82f2f;
+}
+
 html[data-theme="light"] .request-details-box {
   background: #ffffff;
   border-color: #e4e8f0;
@@ -5840,11 +5851,6 @@ html[data-theme="light"] .stat-card-hero-trend.is-up {
 html[data-theme="light"] .stat-card-hero-trend.is-down {
   background: rgba(194, 59, 59, 0.12);
   color: #c23b3b;
-}
-
-html[data-theme="light"] .stat-card-hero-trend.is-flat {
-  background: rgba(90, 100, 114, 0.12);
-  color: #5b6472;
 }
 
 html[data-theme="light"] .stat-card-hero-trend.is-inverse.is-up {

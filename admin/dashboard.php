@@ -569,6 +569,18 @@ $initialStatusFilter = trim($_GET['status'] ?? '');
     </div>
   </div>
 
+  <!-- DELETE CONFIRMATION MODAL (rejected requests only) -->
+  <div class="modal-overlay" id="deleteModalOverlay" hidden>
+    <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+      <h3 id="deleteModalTitle">Delete request?</h3>
+      <p id="deleteModalText">This will permanently delete the rejected request from the system.</p>
+      <div class="modal-actions">
+        <button type="button" class="btn-modal btn-modal-cancel" id="deleteModalCancel">Cancel</button>
+        <button type="button" class="btn-modal btn-modal-danger" id="deleteModalConfirm">Yes, delete</button>
+      </div>
+    </div>
+  </div>
+
   <!-- REQUEST DETAILS MODAL -->
   <div class="modal-overlay" id="requestDetailsOverlay" hidden>
     <div class="request-details-box" role="dialog" aria-modal="true" aria-labelledby="requestDetailsTitle">
@@ -619,6 +631,7 @@ $initialStatusFilter = trim($_GET['status'] ?? '');
       <div class="modal-actions">
         <button type="button" class="btn-modal btn-modal-cancel" id="requestDetailsClose">Cancel</button>
         <button type="button" class="btn-modal btn-modal-confirm" id="rdMarkClaimed" hidden>Mark as Claimed</button>
+        <button type="button" class="btn-modal btn-modal-danger" id="rdDelete" hidden>Delete Request</button>
       </div>
     </div>
   </div>
