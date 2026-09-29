@@ -4466,6 +4466,8 @@ html[data-theme="light"] .stat-card-status-legend-item {
 .panel-docs {
   display: flex;
   flex-direction: column;
+  height: 400px;
+  overflow: hidden;
 }
 
 .docs-header {
@@ -4478,9 +4480,6 @@ html[data-theme="light"] .stat-card-status-legend-item {
 .docs-header .panel-title {
   flex: 1;
   margin: 0;
-  font-size: 0.82rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
 }
 
 .docs-header-icon {
@@ -4570,8 +4569,27 @@ html[data-theme="light"] .stat-card-status-legend-item {
   display: none;
 }
 
+.docs-period {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.docs-period .stats-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin: 0;
+}
+
 .dchart-scroll {
+  flex: 1;
+  min-height: 0;
   overflow-x: auto;
+  overflow-y: hidden;
   padding: 12px 0 4px;
 }
 

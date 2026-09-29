@@ -35,33 +35,19 @@ $ready = (int)($statusCounts['ready'] ?? 0);
 $rejected = (int)($statusCounts['rejected'] ?? 0);
 $activeTotal = (int)($statusCounts['active_total'] ?? 0);
 
-/* ---------------------------------------------------------------
-   This week vs. last week (for the two hero stat cards).
-   "This week" is a calendar week that starts on Monday and
-   resets to 0 every Monday — it is NOT the running, all-time
-   total of requests/claims in the system. "vs. X last week"
-   compares against the count for the previous full Monday-Sunday
-   week.
-   --------------------------------------------------------------- */
 function weekTrend($current, $previous)
 {
-    // % change from 0 is mathematically undefined, so when last week was 0
-    // we treat the baseline as 1 (e.g. 2 vs 0 shows 200%, 5 vs 0 shows 500%).
     $baseline = $previous == 0 ? 1 : $previous;
     $pct = round((($current - $previous) / $baseline) * 100, 1);
     $label = abs($pct) . '%';
     return ['pct' => abs($pct), 'label' => $label, 'up' => $current >= $previous, 'flat' => $current == $previous];
 }
 
-// CSS class for the trend pill: green up / red down, neutral when nothing changed
 function trendClass(array $t): string
 {
     return $t['flat'] ? 'is-flat' : ($t['up'] ? 'is-up' : 'is-down');
 }
 
-// Monday of the current week, and Monday of the previous week.
-// Pinned explicitly so the week boundary lines up with local time
-// regardless of the server's default PHP timezone (often UTC).
 date_default_timezone_set('Asia/Manila');
 $todayDow = (int)date('N'); // 1 = Monday ... 7 = Sunday
 $mondayThisWeek = date('Y-m-d', strtotime('-' . ($todayDow - 1) . ' days'));
@@ -87,10 +73,6 @@ $claimedLastWeek = (int)($conn->query("
     WHERE action = 'claimed' AND created_at >= '{$mondayLastWeek}' AND created_at < '{$mondayThisWeek}'{$scopeAnd}
 ")->fetch_assoc()['c'] ?? 0);
 
-// "Request Rejected" only counts requests that are STILL rejected right now,
-// bucketed by when they were rejected (latest Rejected entry in audit_log,
-// falling back to the submission date if none was logged). If an admin moves
-// a request out of Rejected, it drops out of the card immediately.
 $rejectedThisWeek = 0;
 $rejectedLastWeek = 0;
 $rejRes = $conn->query("
@@ -119,10 +101,10 @@ $rejectedTrend = weekTrend($rejectedThisWeek, $rejectedLastWeek);
    Top requested documents (daily / weekly)
    --------------------------------------------------------------- */
 $topDocLimit = 3;
-function docCountsSince($conn, $scopeAnd, $since = null, $limit = 5)
+function docCountsSince($conn, $scopeAnd, $since = null)
 {
     $counts = [];
-    $reqWhere = $since !== null ? "WHERE date_requested >= '" . $conn->real_escape_string($since) . "'{$scopeAnd}" : '';
+    $reqWhere = "WHERE 1=1" . ($since !== null ? " AND date_requested >= '" . $conn->real_escape_string($since) . "'" : '') . $scopeAnd;
     $logWhere = "WHERE action = 'claimed'" . ($since !== null ? " AND created_at >= '" . $conn->real_escape_string($since) . "'" : '') . $scopeAnd;
 
     $res = $conn->query("SELECT document_type, COUNT(*) AS c FROM requests {$reqWhere} GROUP BY document_type");
@@ -134,20 +116,29 @@ function docCountsSince($conn, $scopeAnd, $since = null, $limit = 5)
         $counts[$row['document_type']] = ($counts[$row['document_type']] ?? 0) + (int)$row['c'];
     }
     arsort($counts);
-    return array_slice($counts, 0, $limit, true);
+    return $counts;
+}
+function topDocs(array $periodCounts, array $allTime, int $limit): array
+{
+    $top = array_slice($periodCounts, 0, $limit, true);
+    foreach ($allTime as $type => $c) {
+        if (count($top) >= $limit) break;
+        if (!isset($top[$type])) $top[$type] = 0;
+    }
+    return $top;
 }
 
+$allTimeDocs = docCountsSince($conn, $scopeAnd, null);
 $docPeriods = [
-    'daily'  => docCountsSince($conn, $scopeAnd, date('Y-m-d'), $topDocLimit),                       // today
-    'weekly' => docCountsSince($conn, $scopeAnd, date('Y-m-d', strtotime('monday this week')), $topDocLimit), // Mon–today
+    'daily'  => topDocs(docCountsSince($conn, $scopeAnd, date('Y-m-d')), $allTimeDocs, $topDocLimit),                        // today
+    'weekly' => topDocs(docCountsSince($conn, $scopeAnd, date('Y-m-d', strtotime('-6 days'))), $allTimeDocs, $topDocLimit),  // trailing 7 days
 ];
 $docPeriodEmpty = [
     'daily'  => 'No requests today.',
-    'weekly' => 'No requests this week.',
+    'weekly' => 'No requests in the last 7 days.',
 ];
 $docAxisSteps = 5;
 
-/* Renders the bar chart (y-axis, bars, labels) for one period */
 function renderDocChart(array $counts, int $steps): void
 {
     $max = !empty($counts) ? max($counts) : 0;
@@ -625,7 +616,6 @@ function renderActivityItem(array $a): void
                     <!-- Top requested documents -->
                     <div class="panel panel-docs" id="topDocsPanel">
                         <div class="docs-header">
-
                             <h2 class="panel-title">Top requested document</h2>
                             <div class="docs-filter">
                                 <button type="button" class="docs-filter-btn" id="docsFilterBtn" aria-haspopup="listbox" aria-expanded="false">
@@ -1169,34 +1159,43 @@ function renderActivityItem(array $a): void
             var panel = document.getElementById('topDocsPanel');
             if (!btn || !menu || !panel) return;
 
-            function close() {
-                menu.hidden = true;
-                btn.setAttribute('aria-expanded', 'false');
-            }
-            btn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                var open = menu.hidden;
-                menu.hidden = !open;
+            function setOpen(open) {
+                if (open) {
+                    menu.removeAttribute('hidden');
+                } else {
+                    menu.setAttribute('hidden', '');
+                }
                 btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+            }
+
+            document.addEventListener('click', function(e) {
+                var li = e.target.closest ? e.target.closest('#docsFilterMenu li[data-period]') : null;
+                if (li) {
+                    var period = li.getAttribute('data-period');
+                    menu.querySelectorAll('li').forEach(function(x) {
+                        var on = x === li;
+                        x.classList.toggle('is-active', on);
+                        x.setAttribute('aria-selected', on ? 'true' : 'false');
+                    });
+                    panel.querySelectorAll('.docs-period').forEach(function(el) {
+                        if (el.getAttribute('data-period') === period) {
+                            el.removeAttribute('hidden');
+                        } else {
+                            el.setAttribute('hidden', '');
+                        }
+                    });
+                    label.textContent = li.textContent.trim();
+                    setOpen(false);
+                    return;
+                }
+                if (e.target.closest && e.target.closest('#docsFilterBtn')) {
+                    setOpen(menu.hasAttribute('hidden'));
+                    return;
+                }
+                setOpen(false);
             });
-            menu.addEventListener('click', function(e) {
-                var li = e.target.closest('li[data-period]');
-                if (!li) return;
-                var period = li.getAttribute('data-period');
-                menu.querySelectorAll('li').forEach(function(x) {
-                    var on = x === li;
-                    x.classList.toggle('is-active', on);
-                    x.setAttribute('aria-selected', on ? 'true' : 'false');
-                });
-                panel.querySelectorAll('.docs-period').forEach(function(el) {
-                    el.hidden = el.getAttribute('data-period') !== period;
-                });
-                label.textContent = li.textContent;
-                close();
-            });
-            document.addEventListener('click', close);
             document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape') close();
+                if (e.key === 'Escape') setOpen(false);
             });
         })();
     </script>
