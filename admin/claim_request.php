@@ -5,53 +5,67 @@ require_once '../includes/functions.php';
 
 header('Content-Type: application/json');
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    echo json_encode(['success' => false, 'message' => 'Invalid request method.']);
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+
+function respond(array $payload): void
+{
+    echo json_encode($payload);
     exit;
+}
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    respond(['success' => false, 'message' => 'Invalid request method.']);
 }
 
 if (!csrf_verify($_POST['csrf_token'] ?? null)) {
-    echo json_encode(['success' => false, 'message' => 'Your session expired. Please refresh the page.']);
-    exit;
+    respond(['success' => false, 'message' => 'Your session expired. Please refresh the page.']);
 }
+
+session_write_close();
 
 $id = (int)($_POST['id'] ?? 0);
-
 if ($id <= 0) {
-    echo json_encode(['success' => false, 'message' => 'Invalid request.']);
-    exit;
+    respond(['success' => false, 'message' => 'Invalid request.']);
 }
 
-// Snapshot the row BEFORE deleting it — this is the only record that
-// survives once the row is gone.
-$snap = $conn->prepare(
-    "SELECT id, reference_no, student_number, full_name, document_type, request_status
-       FROM requests WHERE id = ? AND request_status = 'Ready for Pickup'"
-);
-$snap->bind_param('i', $id);
-$snap->execute();
-$before = $snap->get_result()->fetch_assoc();
-$snap->close();
+try {
+    $conn->query('SET SESSION innodb_lock_wait_timeout = 5');
+    $snap = $conn->prepare(
+        "SELECT id, reference_no, student_number, full_name, document_type, request_status
+           FROM requests WHERE id = ? AND request_status = 'Ready for Pickup'"
+    );
+    $snap->bind_param('i', $id);
+    $snap->execute();
+    $before = $snap->get_result()->fetch_assoc();
+    $snap->close();
 
-if (!$before) {
-    echo json_encode(['success' => false, 'message' => 'Request not found or not yet Ready for Pickup.']);
-    exit;
+    if (!$before) {
+        respond(['success' => false, 'message' => 'Request not found or not yet Ready for Pickup.']);
+    }
+
+    $scope = getAdminDocumentScope();
+    if ($scope !== null && !in_array($before['document_type'], $scope, true)) {
+        respond(['success' => false, 'message' => 'You do not have permission to manage this document type.']);
+    }
+
+    $stmt = $conn->prepare("DELETE FROM requests WHERE id = ? AND request_status = 'Ready for Pickup'");
+    $stmt->bind_param('i', $id);
+    $stmt->execute();
+    $deleted = ($stmt->affected_rows === 1);
+    $stmt->close();
+
+    if (!$deleted) {
+        respond(['success' => false, 'message' => 'Request not found or not yet Ready for Pickup.']);
+    }
+
+    try {
+        logAudit($conn, $before, 'claimed', $before['request_status'], null);
+    } catch (Throwable $e) {
+        error_log('claim_request.php audit log failed: ' . $e->getMessage());
+    }
+
+    respond(['success' => true, 'message' => 'Request marked as claimed and removed.', 'data' => ['id' => $id]]);
+} catch (Throwable $e) {
+    error_log('claim_request.php failed: ' . $e->getMessage());
+    respond(['success' => false, 'message' => 'Database error: ' . $e->getMessage()]);
 }
-
-$scope = getAdminDocumentScope();
-if ($scope !== null && !in_array($before['document_type'], $scope, true)) {
-    echo json_encode(['success' => false, 'message' => 'You do not have permission to manage this document type.']);
-    exit;
-}
-
-$stmt = $conn->prepare("DELETE FROM requests WHERE id = ? AND request_status = 'Ready for Pickup'");
-$stmt->bind_param('i', $id);
-$stmt->execute();
-
-if ($stmt->affected_rows === 1) {
-    logAudit($conn, $before, 'claimed', $before['request_status'], null);
-    echo json_encode(['success' => true, 'message' => 'Request marked as claimed and removed.', 'data' => ['id' => $id]]);
-} else {
-    echo json_encode(['success' => false, 'message' => 'Request not found or not yet Ready for Pickup.']);
-}
-$stmt->close();

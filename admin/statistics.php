@@ -116,22 +116,79 @@ $claimedTrend = weekTrend($claimedThisWeek, $claimedLastWeek);
 $rejectedTrend = weekTrend($rejectedThisWeek, $rejectedLastWeek);
 
 /* ---------------------------------------------------------------
-   Document type breakdown (current + all-time claimed)
+   Top requested documents (daily / weekly)
    --------------------------------------------------------------- */
-$docCounts = [];
+$topDocLimit = 3;
+function docCountsSince($conn, $scopeAnd, $since = null, $limit = 5)
+{
+    $counts = [];
+    $reqWhere = $since !== null ? "WHERE date_requested >= '" . $conn->real_escape_string($since) . "'{$scopeAnd}" : '';
+    $logWhere = "WHERE action = 'claimed'" . ($since !== null ? " AND created_at >= '" . $conn->real_escape_string($since) . "'" : '') . $scopeAnd;
 
-$res = $conn->query("SELECT document_type, COUNT(*) AS c FROM requests{$scopeWhere} GROUP BY document_type");
-while ($row = $res->fetch_assoc()) {
-    $docCounts[$row['document_type']] = ($docCounts[$row['document_type']] ?? 0) + (int)$row['c'];
+    $res = $conn->query("SELECT document_type, COUNT(*) AS c FROM requests {$reqWhere} GROUP BY document_type");
+    while ($row = $res->fetch_assoc()) {
+        $counts[$row['document_type']] = ($counts[$row['document_type']] ?? 0) + (int)$row['c'];
+    }
+    $res = $conn->query("SELECT document_type, COUNT(*) AS c FROM audit_log {$logWhere} GROUP BY document_type");
+    while ($row = $res->fetch_assoc()) {
+        $counts[$row['document_type']] = ($counts[$row['document_type']] ?? 0) + (int)$row['c'];
+    }
+    arsort($counts);
+    return array_slice($counts, 0, $limit, true);
 }
 
-$res = $conn->query("SELECT document_type, COUNT(*) AS c FROM audit_log WHERE action = 'claimed'{$scopeAnd} GROUP BY document_type");
-while ($row = $res->fetch_assoc()) {
-    $docCounts[$row['document_type']] = ($docCounts[$row['document_type']] ?? 0) + (int)$row['c'];
-}
+$docPeriods = [
+    'daily'  => docCountsSince($conn, $scopeAnd, date('Y-m-d'), $topDocLimit),                       // today
+    'weekly' => docCountsSince($conn, $scopeAnd, date('Y-m-d', strtotime('monday this week')), $topDocLimit), // Mon–today
+];
+$docPeriodEmpty = [
+    'daily'  => 'No requests today.',
+    'weekly' => 'No requests this week.',
+];
+$docAxisSteps = 5;
 
-arsort($docCounts);
-$maxDocCount = !empty($docCounts) ? max($docCounts) : 0;
+/* Renders the bar chart (y-axis, bars, labels) for one period */
+function renderDocChart(array $counts, int $steps): void
+{
+    $max = !empty($counts) ? max($counts) : 0;
+    $raw = max(1, $max) / $steps;
+    $mag = pow(10, floor(log10($raw)));
+    $step = $mag;
+    foreach ([1, 2, 2.5, 5, 10] as $m) {
+        $step = $m * $mag;
+        if ($step >= $raw) break;
+    }
+    $step = max(1, (int)ceil($step));
+    $axisMax = $step * $steps;
+?>
+    <div class="dchart-scroll">
+        <div class="dchart" style="min-width:<?php echo 44 + count($counts) * 76; ?>px;">
+            <div class="dchart-plot">
+                <?php for ($i = 0; $i <= $steps; $i++): ?>
+                    <div class="dchart-tick" style="bottom:<?php echo ($i / $steps) * 100; ?>%;">
+                        <span><?php echo $i * $step; ?></span>
+                        <i></i>
+                    </div>
+                <?php endfor; ?>
+                <div class="dchart-bars">
+                    <?php foreach ($counts as $type => $count): ?>
+                        <div class="dchart-col">
+                            <div class="dchart-bar" style="height:<?php echo round(($count / $axisMax) * 100, 2); ?>%;">
+                                <span><?php echo $count; ?></span>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <div class="dchart-labels">
+                <?php foreach ($counts as $type => $count): ?>
+                    <span title="<?php echo htmlspecialchars($type); ?>"><?php echo htmlspecialchars($type); ?></span>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    </div>
+<?php
+}
 
 /* ---------------------------------------------------------------
    Last 14 days — requests submitted vs. documents claimed
@@ -430,16 +487,10 @@ function renderActivityItem(array $a): void
                     <div class="stat-card-hero">
                         <div class="stat-card-hero-top">
                             <span class="stat-card-hero-title">Total Request</span>
-                            <span class="stat-card-hero-icon stat-card-hero-icon-blue">
+                            <span class="stat-card-hero-icon">
                                 <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                    <mask id="hiTotalDoc" maskUnits="userSpaceOnUse" x="-5" y="-5" width="34" height="34">
-                                        <rect x="-5" y="-5" width="34" height="34" fill="#fff" />
-                                        <path d="M14 0.5V8H21.5" stroke="#000" stroke-width="1.2" fill="none" />
-                                        <path d="M9.5 11.2H17.5M9.5 14.4H17.5M9.5 17.6H17.5" stroke="#000" stroke-width="1.5" stroke-linecap="round" fill="none" />
-                                    </mask>
-                                    <g transform="translate(-1.5 1)">
-                                        <path d="M8.7 1.5H14L20.5 8V18.3A2.2 2.2 0 0 1 18.3 20.5H8.7A2.2 2.2 0 0 1 6.5 18.3V3.7A2.2 2.2 0 0 1 8.7 1.5Z" fill="currentColor" mask="url(#hiTotalDoc)" />
-                                    </g>
+                                    <path d="M14 3H7.5A2.5 2.5 0 0 0 5 5.5v13A2.5 2.5 0 0 0 7.5 21h9a2.5 2.5 0 0 0 2.5-2.5V8zM14 3v5h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                                    <path d="M9 13h6M9 16.5h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
                                 </svg>
                             </span>
                         </div>
@@ -458,20 +509,10 @@ function renderActivityItem(array $a): void
                     <div class="stat-card-hero">
                         <div class="stat-card-hero-top">
                             <span class="stat-card-hero-title">Request Claimed</span>
-                            <span class="stat-card-hero-icon stat-card-hero-icon-green">
+                            <span class="stat-card-hero-icon">
                                 <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                    <mask id="hiClaimedDoc" maskUnits="userSpaceOnUse" x="-5" y="-5" width="34" height="34">
-                                        <rect x="-5" y="-5" width="34" height="34" fill="#fff" />
-                                        <path d="M14 0.5V8H21.5" stroke="#000" stroke-width="1.2" fill="none" />
-                                        <path d="M9.5 11.2H17.5M9.5 14.4H17.5M9.5 17.6H17.5" stroke="#000" stroke-width="1.5" stroke-linecap="round" fill="none" />
-                                        <circle cx="6.5" cy="17.5" r="6.1" fill="#000" />
-                                    </mask>
-                                    <mask id="hiClaimedBadge" maskUnits="userSpaceOnUse" x="-5" y="-5" width="34" height="34">
-                                        <rect x="-5" y="-5" width="34" height="34" fill="#fff" />
-                                        <path d="M4.4 17.6L6 19.2L8.8 15.9" stroke="#000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
-                                    </mask>
-                                    <path d="M8.7 1.5H14L20.5 8V18.3A2.2 2.2 0 0 1 18.3 20.5H8.7A2.2 2.2 0 0 1 6.5 18.3V3.7A2.2 2.2 0 0 1 8.7 1.5Z" fill="currentColor" mask="url(#hiClaimedDoc)" />
-                                    <circle cx="6.5" cy="17.5" r="4.7" fill="currentColor" mask="url(#hiClaimedBadge)" />
+                                    <path d="M14 3H7.5A2.5 2.5 0 0 0 5 5.5v13A2.5 2.5 0 0 0 7.5 21h9a2.5 2.5 0 0 0 2.5-2.5V8zM14 3v5h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                                    <path d="M9 15l2.2 2.2L15.5 12.8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
                                 </svg>
                             </span>
                         </div>
@@ -490,20 +531,10 @@ function renderActivityItem(array $a): void
                     <div class="stat-card-hero">
                         <div class="stat-card-hero-top">
                             <span class="stat-card-hero-title">Request Rejected</span>
-                            <span class="stat-card-hero-icon stat-card-hero-icon-red">
+                            <span class="stat-card-hero-icon">
                                 <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                    <mask id="hiRejectedDoc" maskUnits="userSpaceOnUse" x="-5" y="-5" width="34" height="34">
-                                        <rect x="-5" y="-5" width="34" height="34" fill="#fff" />
-                                        <path d="M14 0.5V8H21.5" stroke="#000" stroke-width="1.2" fill="none" />
-                                        <path d="M9.5 11.2H17.5M9.5 14.4H17.5M9.5 17.6H17.5" stroke="#000" stroke-width="1.5" stroke-linecap="round" fill="none" />
-                                        <circle cx="6.5" cy="17.5" r="6.1" fill="#000" />
-                                    </mask>
-                                    <mask id="hiRejectedBadge" maskUnits="userSpaceOnUse" x="-5" y="-5" width="34" height="34">
-                                        <rect x="-5" y="-5" width="34" height="34" fill="#fff" />
-                                        <path d="M4.9 15.9L8.1 19.1M8.1 15.9L4.9 19.1" stroke="#000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
-                                    </mask>
-                                    <path d="M8.7 1.5H14L20.5 8V18.3A2.2 2.2 0 0 1 18.3 20.5H8.7A2.2 2.2 0 0 1 6.5 18.3V3.7A2.2 2.2 0 0 1 8.7 1.5Z" fill="currentColor" mask="url(#hiRejectedDoc)" />
-                                    <circle cx="6.5" cy="17.5" r="4.7" fill="currentColor" mask="url(#hiRejectedBadge)" />
+                                    <path d="M14 3H7.5A2.5 2.5 0 0 0 5 5.5v13A2.5 2.5 0 0 0 7.5 21h9a2.5 2.5 0 0 0 2.5-2.5V8zM14 3v5h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                                    <path d="M9.5 12.5l5 5M14.5 12.5l-5 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
                                 </svg>
                             </span>
                         </div>
@@ -569,41 +600,55 @@ function renderActivityItem(array $a): void
                     <!-- Last 14 days chart -->
                     <div class="panel panel-chart">
                         <h2 class="panel-title">Last 14 days</h2>
-                        <div class="bar-chart">
-                            <?php foreach ($days as $date => $counts): ?>
-                                <div class="bar-chart-col">
-                                    <div class="bar-chart-bar" style="height:<?php echo max(2, round(($counts['claimed'] / $maxDayCount) * 100)); ?>%; background:#8fe0b4;"
-                                        title="Claimed: <?php echo $counts['claimed']; ?>"></div>
-                                    <div class="bar-chart-bar" style="height:<?php echo max(2, round(($counts['submitted'] / $maxDayCount) * 100)); ?>%;"
-                                        title="Submitted: <?php echo $counts['submitted']; ?>"></div>
-                                    <span class="bar-chart-label"><?php echo date('M j', strtotime($date)); ?></span>
-                                </div>
-                            <?php endforeach; ?>
+                        <?php
+                        $chartData = [
+                            'labels'    => array_map(function ($d) {
+                                return date('M j', strtotime($d));
+                            }, array_keys($days)),
+                            'submitted' => array_values(array_map(function ($c) {
+                                return $c['submitted'];
+                            }, $days)),
+                            'claimed'   => array_values(array_map(function ($c) {
+                                return $c['claimed'];
+                            }, $days)),
+                        ];
+                        ?>
+                        <div class="line-chart" id="dayChart" data-chart="<?php echo htmlspecialchars(json_encode($chartData), ENT_QUOTES, 'UTF-8'); ?>">
+                            <div class="lc-tooltip" role="status"></div>
                         </div>
                         <div class="chart-legend">
                             <span class="chart-legend-item"><span class="chart-legend-swatch" style="background:var(--admin-blue-300);"></span> Submitted</span>
-                            <span class="chart-legend-item"><span class="chart-legend-swatch" style="background:#8fe0b4;"></span> Claimed</span>
+                            <span class="chart-legend-item"><span class="chart-legend-swatch" style="background:#3fb984;"></span> Claimed</span>
                         </div>
                     </div>
 
-                    <!-- Document type breakdown -->
-                    <div class="panel panel-docs">
-                        <h2 class="panel-title">By document type</h2>
-                        <?php if (empty($docCounts)): ?>
-                            <p class="stats-empty">No requests yet.</p>
-                        <?php else: ?>
-                            <?php foreach ($docCounts as $type => $count): ?>
-                                <div class="doc-breakdown-row">
-                                    <div class="doc-breakdown-top">
-                                        <span class="doc-breakdown-name"><?php echo htmlspecialchars($type); ?></span>
-                                        <span class="doc-breakdown-count"><?php echo $count; ?></span>
-                                    </div>
-                                    <div class="doc-breakdown-track">
-                                        <div class="doc-breakdown-fill" style="width:<?php echo $maxDocCount > 0 ? round(($count / $maxDocCount) * 100) : 0; ?>%;"></div>
-                                    </div>
-                                </div>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
+                    <!-- Top requested documents -->
+                    <div class="panel panel-docs" id="topDocsPanel">
+                        <div class="docs-header">
+
+                            <h2 class="panel-title">Top requested document</h2>
+                            <div class="docs-filter">
+                                <button type="button" class="docs-filter-btn" id="docsFilterBtn" aria-haspopup="listbox" aria-expanded="false">
+                                    <span id="docsFilterLabel">Daily</span>
+                                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                        <path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                    </svg>
+                                </button>
+                                <ul class="docs-filter-menu" id="docsFilterMenu" role="listbox" hidden>
+                                    <li role="option" class="is-active" aria-selected="true" data-period="daily">Daily</li>
+                                    <li role="option" aria-selected="false" data-period="weekly">Weekly</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <?php foreach ($docPeriods as $period => $counts): ?>
+                            <div class="docs-period" data-period="<?php echo $period; ?>" <?php echo $period !== 'daily' ? 'hidden' : ''; ?>>
+                                <?php if (empty($counts)): ?>
+                                    <p class="stats-empty"><?php echo $docPeriodEmpty[$period]; ?></p>
+                                <?php else: ?>
+                                    <?php renderDocChart($counts, $docAxisSteps); ?>
+                                <?php endif; ?>
+                            </div>
+                        <?php endforeach; ?>
                     </div>
 
                 </div>
@@ -774,6 +819,318 @@ function renderActivityItem(array $a): void
     </script>
     <script src="../assets/js/admin.js"></script>
 
+    <!-- LAST 14 DAYS LINE CHART -->
+    <script>
+        (function() {
+            var el = document.getElementById('dayChart');
+            if (!el) return;
+            var data;
+            try {
+                data = JSON.parse(el.getAttribute('data-chart'));
+            } catch (e) {
+                return;
+            }
+
+            var NS = 'http://www.w3.org/2000/svg';
+            var COLORS = {
+                submitted: '#5c7fd6',
+                claimed: '#3fb984'
+            };
+            var tip = el.querySelector('.lc-tooltip');
+            var svg = null,
+                geo = null;
+
+            function mk(name, attrs) {
+                var n = document.createElementNS(NS, name);
+                for (var k in attrs) n.setAttribute(k, attrs[k]);
+                return n;
+            }
+
+            function niceTicks(max) {
+                var step = 1,
+                    cands = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000];
+                for (var i = 0; i < cands.length; i++) {
+                    step = cands[i];
+                    if (max / step <= 4) break;
+                }
+                var top = Math.max(step, Math.ceil(max / step) * step),
+                    t = [];
+                for (var v = 0; v <= top; v += step) t.push(v);
+                return t;
+            }
+
+            // Smooth, overshoot-free curve (monotone cubic) through the points
+            function smoothPath(p) {
+                var n = p.length,
+                    dx = [],
+                    m = [],
+                    t = [],
+                    i;
+                for (i = 0; i < n - 1; i++) {
+                    dx[i] = p[i + 1].x - p[i].x;
+                    m[i] = (p[i + 1].y - p[i].y) / dx[i];
+                }
+                t[0] = m[0];
+                t[n - 1] = m[n - 2];
+                for (i = 1; i < n - 1; i++) {
+                    t[i] = (m[i - 1] * m[i] <= 0) ? 0 : (m[i - 1] + m[i]) / 2;
+                }
+                for (i = 0; i < n - 1; i++) {
+                    if (m[i] === 0) {
+                        t[i] = 0;
+                        t[i + 1] = 0;
+                        continue;
+                    }
+                    var a = t[i] / m[i],
+                        b = t[i + 1] / m[i],
+                        q = a * a + b * b;
+                    if (q > 9) {
+                        var tau = 3 / Math.sqrt(q);
+                        t[i] = tau * a * m[i];
+                        t[i + 1] = tau * b * m[i];
+                    }
+                }
+                var d = 'M' + p[0].x + ' ' + p[0].y;
+                for (i = 0; i < n - 1; i++) {
+                    d += ' C' + (p[i].x + dx[i] / 3) + ' ' + (p[i].y + t[i] * dx[i] / 3) +
+                        ' ' + (p[i + 1].x - dx[i] / 3) + ' ' + (p[i + 1].y - t[i + 1] * dx[i] / 3) +
+                        ' ' + p[i + 1].x + ' ' + p[i + 1].y;
+                }
+                return d;
+            }
+
+            function draw() {
+                var W = el.clientWidth,
+                    H = 230;
+                if (!W) return;
+                var pad = {
+                    l: 30,
+                    r: 18,
+                    t: 16,
+                    b: 30
+                };
+                var n = data.labels.length;
+                var maxV = Math.max(1, Math.max.apply(null, data.submitted.concat(data.claimed)));
+                var ticks = niceTicks(maxV);
+                var yTop = ticks[ticks.length - 1];
+                var iw = W - pad.l - pad.r,
+                    ih = H - pad.t - pad.b;
+
+                function X(i) {
+                    return pad.l + (n === 1 ? iw / 2 : i * iw / (n - 1));
+                }
+
+                function Y(v) {
+                    return pad.t + ih - (v / yTop) * ih;
+                }
+
+                if (svg) el.removeChild(svg);
+                svg = mk('svg', {
+                    width: W,
+                    height: H,
+                    viewBox: '0 0 ' + W + ' ' + H,
+                    'class': 'lc-svg'
+                });
+
+                var defs = mk('defs', {});
+                ['submitted', 'claimed'].forEach(function(k) {
+                    var g = mk('linearGradient', {
+                        id: 'lcFill-' + k,
+                        x1: 0,
+                        y1: 0,
+                        x2: 0,
+                        y2: 1
+                    });
+                    g.appendChild(mk('stop', {
+                        offset: '0%',
+                        'stop-color': COLORS[k],
+                        'stop-opacity': 0.32
+                    }));
+                    g.appendChild(mk('stop', {
+                        offset: '100%',
+                        'stop-color': COLORS[k],
+                        'stop-opacity': 0
+                    }));
+                    defs.appendChild(g);
+                });
+                svg.appendChild(defs);
+
+                // horizontal grid + y labels
+                ticks.forEach(function(v) {
+                    svg.appendChild(mk('line', {
+                        x1: pad.l,
+                        x2: W - pad.r,
+                        y1: Y(v),
+                        y2: Y(v),
+                        'class': 'lc-hgrid'
+                    }));
+                    var tx = mk('text', {
+                        x: pad.l - 8,
+                        y: Y(v) + 3.5,
+                        'text-anchor': 'end',
+                        'class': 'lc-axis'
+                    });
+                    tx.textContent = v;
+                    svg.appendChild(tx);
+                });
+
+                // vertical grid + x labels (every day; every 2nd on narrow screens)
+                var skip = W < 560 ? 2 : 1;
+                for (var i = 0; i < n; i++) {
+                    svg.appendChild(mk('line', {
+                        x1: X(i),
+                        x2: X(i),
+                        y1: pad.t,
+                        y2: pad.t + ih,
+                        'class': 'lc-vgrid'
+                    }));
+                    if (i % skip === 0) {
+                        var lb = mk('text', {
+                            x: X(i),
+                            y: H - 8,
+                            'text-anchor': 'middle',
+                            'class': 'lc-axis'
+                        });
+                        lb.textContent = data.labels[i];
+                        svg.appendChild(lb);
+                    }
+                }
+
+                // series: claimed behind, submitted in front
+                var pts = {};
+                ['claimed', 'submitted'].forEach(function(k) {
+                    pts[k] = data[k].map(function(v, i) {
+                        return {
+                            x: X(i),
+                            y: Y(v)
+                        };
+                    });
+                    var line = smoothPath(pts[k]);
+                    var area = line + ' L' + X(n - 1) + ' ' + Y(0) + ' L' + X(0) + ' ' + Y(0) + ' Z';
+                    svg.appendChild(mk('path', {
+                        d: area,
+                        fill: 'url(#lcFill-' + k + ')',
+                        stroke: 'none'
+                    }));
+                    svg.appendChild(mk('path', {
+                        d: line,
+                        'class': 'lc-line',
+                        stroke: COLORS[k]
+                    }));
+                });
+
+                // hover visuals
+                var guide = mk('line', {
+                    x1: 0,
+                    x2: 0,
+                    y1: pad.t,
+                    y2: pad.t + ih,
+                    'class': 'lc-guide'
+                });
+                var dotS = mk('circle', {
+                    r: 4.5,
+                    'class': 'lc-dot',
+                    stroke: COLORS.submitted
+                });
+                var dotC = mk('circle', {
+                    r: 4.5,
+                    'class': 'lc-dot',
+                    stroke: COLORS.claimed
+                });
+                svg.appendChild(guide);
+                svg.appendChild(dotC);
+                svg.appendChild(dotS);
+
+                var hit = mk('rect', {
+                    x: pad.l - 8,
+                    y: 0,
+                    width: iw + 16,
+                    height: H,
+                    fill: 'transparent',
+                    'class': 'lc-hit'
+                });
+                svg.appendChild(hit);
+                el.insertBefore(svg, tip);
+
+                geo = {
+                    W: W,
+                    X: X,
+                    pts: pts,
+                    guide: guide,
+                    dotS: dotS,
+                    dotC: dotC,
+                    n: n,
+                    pad: pad,
+                    iw: iw
+                };
+
+                function idxFromEvent(e) {
+                    var r = svg.getBoundingClientRect();
+                    var cx = (e.touches ? e.touches[0].clientX : e.clientX) - r.left;
+                    var i = Math.round((cx - pad.l) / (n === 1 ? 1 : iw / (n - 1)));
+                    return Math.max(0, Math.min(n - 1, i));
+                }
+
+                function onMove(e) {
+                    show(idxFromEvent(e));
+                }
+                hit.addEventListener('mousemove', onMove);
+                hit.addEventListener('touchstart', onMove, {
+                    passive: true
+                });
+                hit.addEventListener('touchmove', onMove, {
+                    passive: true
+                });
+                hit.addEventListener('mouseleave', hide);
+                hit.addEventListener('touchend', hide);
+            }
+
+            function show(i) {
+                if (!geo) return;
+                var x = geo.X(i),
+                    ps = geo.pts.submitted[i],
+                    pc = geo.pts.claimed[i];
+                geo.guide.setAttribute('x1', x);
+                geo.guide.setAttribute('x2', x);
+                geo.dotS.setAttribute('cx', x);
+                geo.dotS.setAttribute('cy', ps.y);
+                geo.dotC.setAttribute('cx', x);
+                geo.dotC.setAttribute('cy', pc.y);
+                geo.guide.style.opacity = 1;
+                geo.dotS.style.opacity = 1;
+                geo.dotC.style.opacity = 1;
+
+                tip.innerHTML =
+                    '<div class="lc-tip-date">' + data.labels[i] + '</div>' +
+                    '<div class="lc-tip-row"><span class="lc-tip-dot" style="background:' + COLORS.submitted + '"></span>Submitted<b>' + data.submitted[i] + '</b></div>' +
+                    '<div class="lc-tip-row"><span class="lc-tip-dot" style="background:' + COLORS.claimed + '"></span>Claimed<b>' + data.claimed[i] + '</b></div>';
+
+                var tw = tip.offsetWidth,
+                    th = tip.offsetHeight;
+                var left = Math.max(tw / 2 + 4, Math.min(geo.W - tw / 2 - 4, x));
+                var top = Math.max(th + 16, Math.min(ps.y, pc.y));
+                tip.style.left = left + 'px';
+                tip.style.top = top + 'px';
+                tip.style.opacity = 1;
+            }
+
+            function hide() {
+                if (!geo) return;
+                geo.guide.style.opacity = 0;
+                geo.dotS.style.opacity = 0;
+                geo.dotC.style.opacity = 0;
+                tip.style.opacity = 0;
+            }
+
+            draw();
+            var raf = null;
+            window.addEventListener('resize', function() {
+                if (raf) cancelAnimationFrame(raf);
+                raf = requestAnimationFrame(draw);
+            });
+        })();
+    </script>
+
     <!-- THEME TOGGLE -->
     <script>
         (function() {
@@ -804,6 +1161,45 @@ function renderActivityItem(array $a): void
         })();
     </script>
 
+    <script>
+        (function() {
+            var btn = document.getElementById('docsFilterBtn');
+            var menu = document.getElementById('docsFilterMenu');
+            var label = document.getElementById('docsFilterLabel');
+            var panel = document.getElementById('topDocsPanel');
+            if (!btn || !menu || !panel) return;
+
+            function close() {
+                menu.hidden = true;
+                btn.setAttribute('aria-expanded', 'false');
+            }
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                var open = menu.hidden;
+                menu.hidden = !open;
+                btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+            });
+            menu.addEventListener('click', function(e) {
+                var li = e.target.closest('li[data-period]');
+                if (!li) return;
+                var period = li.getAttribute('data-period');
+                menu.querySelectorAll('li').forEach(function(x) {
+                    var on = x === li;
+                    x.classList.toggle('is-active', on);
+                    x.setAttribute('aria-selected', on ? 'true' : 'false');
+                });
+                panel.querySelectorAll('.docs-period').forEach(function(el) {
+                    el.hidden = el.getAttribute('data-period') !== period;
+                });
+                label.textContent = li.textContent;
+                close();
+            });
+            document.addEventListener('click', close);
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') close();
+            });
+        })();
+    </script>
 </body>
 
 </html>
