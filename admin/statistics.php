@@ -404,6 +404,47 @@ function renderActivityItem(array $a): void
                         </span>
                     </button>
 
+                    <!-- Notifications (Full Admin only) -->
+                    <?php if (isFullAdmin()): ?>
+                        <div class="notif-menu" id="notifMenu">
+                            <button type="button" class="notif-bell" id="notifTrigger"
+                                aria-haspopup="true" aria-expanded="false" aria-label="Notifications">
+                                <svg viewBox="0 0 24 24" fill="none">
+                                    <path d="M6 9.5a6 6 0 1 1 12 0v3.7c0 .5.16 1 .46 1.4L19.5 16.5a1 1 0 0 1-.8 1.6H5.3a1 1 0 0 1-.8-1.6l1.04-1.9c.3-.4.46-.9.46-1.4V9.5Z"
+                                        stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+                                    <path d="M9.5 19.5a2.5 2.5 0 0 0 5 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+                                </svg>
+                                <?php if (!empty($activityRows)): ?>
+                                    <span class="notif-badge"><?php echo count($activityRows) > 9 ? '9+' : count($activityRows); ?></span>
+                                <?php endif; ?>
+                            </button>
+
+                            <div class="notif-dropdown" id="notifDropdown" hidden>
+                                <div class="notif-dropdown-header">
+                                    <span>Notifications</span>
+                                </div>
+                                <div class="notif-list">
+                                    <?php if (empty($activityRows)): ?>
+                                        <p class="stats-empty">No activity recorded yet.</p>
+                                    <?php else: ?>
+                                        <div class="activity-list">
+                                            <?php foreach ($activityRows as $a): renderActivityItem($a);
+                                            endforeach; ?>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                                <?php if ($hasMoreActivity): ?>
+                                    <button type="button" class="notif-see-all" id="openAuditLogModal">
+                                        See all recent activity
+                                        <svg viewBox="0 0 24 24" fill="none">
+                                            <path d="M9 6L15 12L9 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                        </svg>
+                                    </button>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
                     <!-- Admin profile -->
                     <div class="topbar-profile" id="profileMenu">
                         <button type="button" class="topbar-profile-trigger" id="profileTrigger"
@@ -643,31 +684,6 @@ function renderActivityItem(array $a): void
 
                 </div>
 
-                <!-- Recent activity (Full Admin only) -->
-                <?php if (isFullAdmin()): ?>
-                    <div class="panel panel-activity">
-                        <div class="panel-header-row">
-                            <h2 class="panel-title">Recent activity</h2>
-                            <?php if ($hasMoreActivity): ?>
-                                <button type="button" class="panel-see-all" id="openAuditLogModal">
-                                    See all recent activity
-                                    <svg viewBox="0 0 24 24" fill="none">
-                                        <path d="M9 6L15 12L9 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                    </svg>
-                                </button>
-                            <?php endif; ?>
-                        </div>
-
-                        <?php if (empty($activityRows)): ?>
-                            <p class="stats-empty">No activity recorded yet.</p>
-                        <?php else: ?>
-                            <div class="activity-list">
-                                <?php foreach ($activityRows as $a): renderActivityItem($a);
-                                endforeach; ?>
-                            </div>
-                        <?php endif; ?>
-                    </div>
-                <?php endif; ?>
             </main>
         </div>
     </div>
