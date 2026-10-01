@@ -73,6 +73,42 @@ foreach ($admins as $id => &$a) {
     $a['stats'] = $stats4;
 }
 unset($a);
+
+$scopeIn = documentScopeInClause($conn);
+/* ---------------------------------------------------------------
+   Recent activity
+   --------------------------------------------------------------- */
+$activityLimit = 5;
+$fullActivityLimit = 200;
+
+$activityWhere = $scopeIn !== null ? "WHERE document_type IN ($scopeIn) " : '';
+$fullActivity = $conn->query("SELECT * FROM audit_log {$activityWhere}ORDER BY created_at DESC LIMIT {$fullActivityLimit}");
+$allActivityRows = [];
+while ($row = $fullActivity->fetch_assoc()) {
+    $allActivityRows[] = $row;
+}
+
+$activityRows = array_slice($allActivityRows, 0, $activityLimit);
+$hasMoreActivity = count($allActivityRows) > $activityLimit;
+function renderActivityItem(array $a): void
+{
+    $isClaimed = $a['action'] === 'claimed';
+    echo '<div class="activity-item">';
+    echo '<span class="activity-dot' . ($isClaimed ? ' is-claimed' : '') . '"></span>';
+    echo '<div class="activity-text">';
+    if ($isClaimed) {
+        echo '<p><strong>' . htmlspecialchars($a['performed_by_username'] ?? 'Admin') . '</strong>'
+            . ' marked <strong>' . htmlspecialchars($a['reference_no']) . '</strong>'
+            . ' (' . htmlspecialchars($a['full_name']) . ') as claimed</p>';
+    } else {
+        echo '<p><strong>' . htmlspecialchars($a['performed_by_username'] ?? 'Admin') . '</strong>'
+            . ' changed <strong>' . htmlspecialchars($a['reference_no']) . '</strong>'
+            . ' from ' . htmlspecialchars($a['old_status'] ?? '—')
+            . ' to ' . htmlspecialchars($a['new_status'] ?? '—') . '</p>';
+    }
+    echo '<span class="activity-meta">' . date('M j, Y \a\t g:i A', strtotime($a['created_at'])) . '</span>';
+    echo '</div></div>';
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -178,19 +214,57 @@ unset($a);
                     <!-- Light / dark mode toggle -->
                     <button type="button" class="theme-toggle" id="themeToggle" role="switch"
                         aria-checked="false" aria-label="Switch to light mode" title="Toggle light / dark mode">
-                        <span class="theme-toggle-track">
-                            <svg class="theme-toggle-icon theme-toggle-icon-sun" viewBox="0 0 24 24" fill="none">
-                                <circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.8" />
-                                <path d="M12 2.5V5M12 19V21.5M4.5 12H2M22 12H19.5M5.6 5.6L7.3 7.3M18.4 5.6L16.7 7.3M5.6 18.4L7.3 16.7M18.4 18.4L16.7 16.7"
-                                    stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-                            </svg>
-                            <svg class="theme-toggle-icon theme-toggle-icon-moon" viewBox="0 0 24 24" fill="none">
-                                <path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a7 7 0 0 0 11 11Z" stroke="currentColor"
-                                    stroke-width="1.8" stroke-linejoin="round" />
-                            </svg>
-                            <span class="theme-toggle-thumb"></span>
-                        </span>
+                        <svg class="theme-toggle-icon theme-toggle-icon-sun" viewBox="0 0 24 24" fill="none">
+                            <circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.8" />
+                            <path d="M12 2.5V5M12 19V21.5M4.5 12H2M22 12H19.5M5.6 5.6L7.3 7.3M18.4 5.6L16.7 7.3M5.6 18.4L7.3 16.7M18.4 18.4L16.7 16.7"
+                                stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                        </svg>
+                        <svg class="theme-toggle-icon theme-toggle-icon-moon" viewBox="0 0 24 24" fill="none">
+                            <path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a7 7 0 0 0 11 11Z" stroke="currentColor"
+                                stroke-width="1.8" stroke-linejoin="round" />
+                        </svg>
                     </button>
+
+                    <!-- Notifications -->
+                    <?php if (isFullAdmin()): ?>
+                        <div class="notif-menu" id="notifMenu">
+                            <button type="button" class="notif-bell" id="notifTrigger"
+                                aria-haspopup="true" aria-expanded="false" aria-label="Notifications">
+                                <svg viewBox="0 0 24 24" fill="none">
+                                    <path d="M6 9.5a6 6 0 1 1 12 0v3.7c0 .5.16 1 .46 1.4L19.5 16.5a1 1 0 0 1-.8 1.6H5.3a1 1 0 0 1-.8-1.6l1.04-1.9c.3-.4.46-.9.46-1.4V9.5Z"
+                                        stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+                                    <path d="M9.5 19.5a2.5 2.5 0 0 0 5 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+                                </svg>
+                                <?php if (!empty($activityRows)): ?>
+                                    <span class="notif-badge"><?php echo count($activityRows) > 9 ? '9+' : count($activityRows); ?></span>
+                                <?php endif; ?>
+                            </button>
+
+                            <div class="notif-dropdown" id="notifDropdown" hidden>
+                                <div class="notif-dropdown-header">
+                                    <span>Notifications</span>
+                                </div>
+                                <div class="notif-list">
+                                    <?php if (empty($activityRows)): ?>
+                                        <p class="stats-empty">No activity recorded yet.</p>
+                                    <?php else: ?>
+                                        <div class="activity-list">
+                                            <?php foreach ($activityRows as $a): renderActivityItem($a);
+                                            endforeach; ?>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                                <?php if ($hasMoreActivity): ?>
+                                    <button type="button" class="notif-see-all" id="openAuditLogModal">
+                                        See all recent activity
+                                        <svg viewBox="0 0 24 24" fill="none">
+                                            <path d="M9 6L15 12L9 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                        </svg>
+                                    </button>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
 
                     <!-- Admin profile -->
                     <div class="topbar-profile" id="profileMenu">
@@ -337,6 +411,36 @@ unset($a);
             </main>
         </div>
     </div>
+
+    <!-- AUDIT LOG MODAL (Full Admin only) -->
+    <?php if (isFullAdmin()): ?>
+        <div class="modal-overlay" id="auditLogOverlay" hidden>
+            <div class="audit-log-box" role="dialog" aria-modal="true" aria-labelledby="auditLogTitle">
+                <div class="audit-log-header">
+                    <div>
+                        <h3 id="auditLogTitle">All Recent Activity</h3>
+                        <p>Showing the last <?php echo count($allActivityRows); ?> logged actions.</p>
+                    </div>
+                    <button type="button" class="edit-profile-close" id="auditLogClose" aria-label="Close">
+                        <svg viewBox="0 0 24 24" fill="none">
+                            <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div class="audit-log-body">
+                    <?php if (empty($allActivityRows)): ?>
+                        <p class="stats-empty">No activity recorded yet.</p>
+                    <?php else: ?>
+                        <div class="activity-list">
+                            <?php foreach ($allActivityRows as $a): renderActivityItem($a);
+                            endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
 
     <!-- EDIT PROFILE MODAL -->
     <div class="modal-overlay" id="editProfileOverlay" hidden>

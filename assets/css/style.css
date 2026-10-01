@@ -2945,7 +2945,7 @@ select::picker-icon {
 
 .topbar-profile {
   position: relative;
-  padding-left: 14px;
+  padding-left: 8px;
 }
 
 .topbar-status-row .sidebar-profile {
@@ -5486,104 +5486,57 @@ body.auth-leaving .auth-intro {
    ===================================================================== */
 
 .theme-toggle {
+  position: relative;
   flex: 0 0 auto;
   margin-left: auto;
+  margin-right: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
   padding: 0;
-  border: none;
-  background: none;
+  border-radius: 50%;
+  background: rgba(244, 241, 234, 0.05);
+  border: 1px solid rgba(244, 241, 234, 0.08);
+  color: #9aa1ad;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
-/* Outer bordered pill */
-.theme-toggle-track {
-  position: relative;
-  width: 78px;
-  height: 34px;
-  display: flex;
-  align-items: center;
-  box-sizing: border-box;
-  border-radius: 999px;
-  background: #14161d;
-  border: 1px solid #262a35;
-  transition: background 0.3s ease, border-color 0.3s ease;
+.theme-toggle:hover {
+  background: rgba(92, 127, 214, 0.1);
+  border-color: rgba(92, 127, 214, 0.35);
+  color: #e6e8ec;
 }
 
-/* Inner switch track */
-.theme-toggle-track::before {
-  content: "";
-  position: absolute;
-  left: 9px;
-  top: 50%;
-  width: 36px;
-  height: 20px;
-  margin-top: -10px;
-  border-radius: 999px;
-  background: #2a2d3b;
-  transition: background 0.3s ease;
-}
-
-/* Hover — border only */
-.theme-toggle:hover .theme-toggle-track {
-  border-color: #6a5cf0;
-}
-
-.theme-toggle:focus-visible .theme-toggle-track {
+.theme-toggle:focus-visible {
   outline: 2px solid #7c6cf0;
   outline-offset: 2px;
 }
 
-/* Only one icon shows at a time, to the right of the switch */
+/* Only one icon shows at a time, centered in the circle */
 .theme-toggle-icon {
   position: absolute;
-  right: 11px;
   top: 50%;
-  width: 16px;
-  height: 16px;
-  margin-top: -8px;
+  left: 50%;
+  width: 19px;
+  height: 19px;
+  margin: -9.5px 0 0 -9.5px;
   pointer-events: none;
   transition: opacity 0.3s ease;
 }
 
 .theme-toggle-icon-sun {
-  color: #c9ccd8;
   opacity: 1;
 }
 
 .theme-toggle-icon-moon {
-  color: #2c3648;
   opacity: 0;
 }
 
-/* White knob */
-.theme-toggle-thumb {
-  position: absolute;
-  z-index: 2;
-  top: 50%;
-  left: 12px;
-  width: 14px;
-  height: 14px;
-  margin-top: -7px;
-  border-radius: 50%;
-  background: #ffffff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
-  transition: transform 0.3s ease;
-}
-
 /* aria-checked="true" = light mode */
-.theme-toggle[aria-checked="true"] .theme-toggle-track {
-  background: #f4f2ff;
-  border-color: #b9aefa;
-}
-
-.theme-toggle[aria-checked="true"] .theme-toggle-track::before {
-  background: #5b47e0;
-}
-
-.theme-toggle[aria-checked="true"] .theme-toggle-thumb {
-  transform: translateX(16px);
-}
-
 .theme-toggle[aria-checked="true"] .theme-toggle-icon-sun {
   opacity: 0;
 }
@@ -5592,13 +5545,9 @@ body.auth-leaving .auth-intro {
   opacity: 1;
 }
 
-.theme-toggle[aria-checked="true"]:hover .theme-toggle-track {
-  border-color: #5b47e0;
-}
-
 @media (max-width: 640px) {
   .theme-toggle {
-    margin-right: 4px;
+    margin-right: 8px;
   }
 }
 
@@ -5864,6 +5813,18 @@ html[data-theme="light"] .topbar-profile-trigger[aria-expanded="true"] {
 
 html[data-theme="light"] .topbar-profile-chevron {
   color: #7c8496;
+}
+
+html[data-theme="light"] .theme-toggle {
+  background: rgba(15, 23, 40, 0.04);
+  border-color: rgba(15, 23, 40, 0.08);
+  color: #5b6579;
+}
+
+html[data-theme="light"] .theme-toggle:hover {
+  background: rgba(92, 127, 214, 0.1);
+  border-color: rgba(92, 127, 214, 0.35);
+  color: #1a2233;
 }
 
 html[data-theme="light"] .notif-bell {
