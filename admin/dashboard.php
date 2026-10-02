@@ -58,6 +58,13 @@ while ($row = $fullActivity->fetch_assoc()) {
 
 $activityRows = $allActivityRows;   // every notification — the dropdown list scrolls
 
+// Facebook-style sections: anything logged today vs. everything before
+$notifToday = date('Y-m-d');
+$notifGroups = ['Today' => [], 'Earlier' => []];
+foreach ($allActivityRows as $act) {
+  $notifGroups[date('Y-m-d', strtotime($act['created_at'])) === $notifToday ? 'Today' : 'Earlier'][] = $act;
+}
+
 $unreadWhere = $activityWhere === '' ? 'WHERE is_read = 0' : $activityWhere . 'AND is_read = 0';
 $unreadCount = (int)($conn->query("SELECT COUNT(*) AS c FROM audit_log {$unreadWhere}")->fetch_assoc()['c'] ?? 0);
 
@@ -309,16 +316,44 @@ function renderActivityItem(array $a): void
               <div class="notif-dropdown" id="notifDropdown" hidden>
                 <div class="notif-dropdown-header">
                   <span>Notifications</span>
-                  <button type="button" class="notif-mark-all" id="notifMarkAllRead" <?php echo $unreadCount > 0 ? '' : ' hidden'; ?>>Mark all as read</button>
+                  <div class="notif-more-wrap">
+                    <button type="button" class="notif-more" id="notifMoreBtn"
+                      aria-haspopup="true" aria-expanded="false" aria-label="More options">
+                      <svg viewBox="0 0 24 24" fill="currentColor">
+                        <circle cx="5" cy="12" r="1.8" />
+                        <circle cx="12" cy="12" r="1.8" />
+                        <circle cx="19" cy="12" r="1.8" />
+                      </svg>
+                    </button>
+                    <div class="notif-more-menu" id="notifMoreMenu" hidden>
+                      <button type="button" class="notif-menu-item" id="notifMarkAllRead" <?php echo $unreadCount > 0 ? '' : ' disabled'; ?>>
+                        <svg viewBox="0 0 24 24" fill="none">
+                          <path d="M5 12.5L9.5 17L19 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        Mark all as read
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                <div class="notif-list">
+                <div class="notif-tabs" role="tablist">
+                  <button type="button" class="notif-tab is-active" data-filter="all" role="tab" aria-selected="true">All</button>
+                  <button type="button" class="notif-tab" data-filter="unread" role="tab" aria-selected="false">Unread</button>
+                </div>
+                <div class="notif-list" id="notifList">
                   <?php if (empty($activityRows)): ?>
                     <p class="stats-empty">No activity recorded yet.</p>
                   <?php else: ?>
-                    <div class="activity-list">
-                      <?php foreach ($activityRows as $a): renderActivityItem($a);
-                      endforeach; ?>
-                    </div>
+                    <?php foreach ($notifGroups as $groupLabel => $groupRows): ?>
+                      <?php if (empty($groupRows)) continue; ?>
+                      <div class="notif-group">
+                        <h4 class="notif-group-title"><?php echo $groupLabel; ?></h4>
+                        <div class="activity-list">
+                          <?php foreach ($groupRows as $a): renderActivityItem($a);
+                          endforeach; ?>
+                        </div>
+                      </div>
+                    <?php endforeach; ?>
+                    <p class="stats-empty" id="notifEmptyUnread" hidden>You're all caught up.</p>
                   <?php endif; ?>
                 </div>
               </div>

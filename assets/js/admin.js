@@ -493,6 +493,7 @@ const notifDropdown = document.getElementById('notifDropdown');
 function closeNotifDropdown() {
   if (!notifDropdown) return;
   notifDropdown.hidden = true;
+  closeNotifMenu();
   if (notifTrigger) notifTrigger.setAttribute('aria-expanded', 'false');
 }
 
@@ -536,7 +537,67 @@ function updateNotifBadge(count) {
 
   // "Mark all as read" only makes sense while something is unread
   const markAll = document.getElementById('notifMarkAllRead');
-  if (markAll) markAll.hidden = !(count > 0);
+  if (markAll) markAll.disabled = !(count > 0);
+}
+
+// ---- Notification tabs (All / Unread) ----
+let notifFilter = 'all';
+
+function applyNotifFilter() {
+  const list = document.getElementById('notifList');
+  if (!list) return;
+
+  let anyShown = false;
+  list.querySelectorAll('.notif-group').forEach(function (group) {
+    let shown = 0;
+    group.querySelectorAll('.activity-item').forEach(function (item) {
+      const show = notifFilter === 'all' || item.dataset.read === '0';
+      item.hidden = !show;
+      if (show) shown++;
+    });
+    group.hidden = shown === 0;          // hide "Today" / "Earlier" when empty
+    if (shown > 0) anyShown = true;
+  });
+
+  const empty = document.getElementById('notifEmptyUnread');
+  if (empty) empty.hidden = !(notifFilter === 'unread' && !anyShown);
+}
+
+document.querySelectorAll('.notif-tab').forEach(function (tab) {
+  tab.addEventListener('click', function () {
+    notifFilter = tab.dataset.filter;
+    document.querySelectorAll('.notif-tab').forEach(function (t) {
+      const active = t === tab;
+      t.classList.toggle('is-active', active);
+      t.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    applyNotifFilter();
+  });
+});
+
+// ---- Three-dot menu (holds "Mark all as read") ----
+const notifMoreBtn = document.getElementById('notifMoreBtn');
+const notifMoreMenu = document.getElementById('notifMoreMenu');
+
+function closeNotifMenu() {
+  if (!notifMoreMenu) return;
+  notifMoreMenu.hidden = true;
+  if (notifMoreBtn) notifMoreBtn.setAttribute('aria-expanded', 'false');
+}
+
+if (notifMoreBtn && notifMoreMenu) {
+  notifMoreBtn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    const willOpen = notifMoreMenu.hidden;
+    notifMoreMenu.hidden = !willOpen;
+    notifMoreBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+  });
+
+  document.addEventListener('click', function (e) {
+    if (!notifMoreMenu.hidden && !e.target.closest('.notif-more-wrap')) {
+      closeNotifMenu();
+    }
+  });
 }
 
 // ---- Notification items: double-click to open the request or mark read ----
@@ -568,6 +629,7 @@ document.addEventListener('dblclick', function (e) {
         item.classList.remove('is-unread');
         item.dataset.read = '1';
         updateNotifBadge(json.unread);
+        applyNotifFilter();
       }
     });
 });
@@ -588,7 +650,9 @@ if (notifMarkAllBtn) {
             el.dataset.read = '1';
           });
           updateNotifBadge(json.unread);
-          notifMarkAllBtn.hidden = true;
+          notifMarkAllBtn.disabled = true;
+          closeNotifMenu();
+          applyNotifFilter();
         }
       });
   });
