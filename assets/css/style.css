@@ -6555,11 +6555,12 @@ html[data-theme="light"] .dchart-tick i {
   border-top-color: #d5dae4;
 }
 
+/* Top requested document (light mode): blue ramp, strongest = most requested */
 html[data-theme="light"] .dchart-bar {
-  background-color: #2b2d31;
+  background-color: #3f65c8;
   background-image: repeating-linear-gradient(45deg,
-      rgba(255, 255, 255, 0.14) 0,
-      rgba(255, 255, 255, 0.14) 1px,
+      rgba(255, 255, 255, 0.2) 0,
+      rgba(255, 255, 255, 0.2) 1px,
       transparent 1px,
       transparent 8px);
   box-shadow: none;
@@ -6570,21 +6571,30 @@ html[data-theme="light"] .dchart-bar span {
 }
 
 html[data-theme="light"] .dchart-col:nth-child(n+2) .dchart-bar {
-  background-color: #c4c6ca;
+  background-color: #a9bef0;
   background-image: repeating-linear-gradient(45deg,
-      rgba(0, 0, 0, 0.14) 0,
-      rgba(0, 0, 0, 0.14) 1px,
+      rgba(36, 66, 140, 0.18) 0,
+      rgba(36, 66, 140, 0.18) 1px,
       transparent 1px,
       transparent 8px);
   box-shadow: none;
 }
 
 html[data-theme="light"] .dchart-col:nth-child(n+2) .dchart-bar span {
-  color: #1c2333;
+  color: #1f3a7a;
 }
 
 html[data-theme="light"] .dchart-col:nth-child(n+3) .dchart-bar {
-  background-color: #dcdde0;
+  background-color: #d6e1fa;
+  background-image: repeating-linear-gradient(45deg,
+      rgba(47, 95, 196, 0.16) 0,
+      rgba(47, 95, 196, 0.16) 1px,
+      transparent 1px,
+      transparent 8px);
+}
+
+html[data-theme="light"] .dchart-col:nth-child(n+3) .dchart-bar span {
+  color: #2f4a8f;
 }
 
 html[data-theme="light"] .activity-item {
