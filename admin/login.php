@@ -125,10 +125,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           $newId = $ins->insert_id;
           $ins->close();
 
-          // Document type scope (for document_admin accounts) is no longer
-          // chosen at signup — it starts empty and is assigned afterward
-          // by a Full Admin via manage_admins.php.
-
           startAdminSession([
             'id'        => $newId,
             'username'  => $username,
@@ -156,21 +152,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <body class="auth-body">
   <main class="auth-page">
-    <div class="auth-shell">
-
-      <div class="auth-intro" id="authIntro" <?php echo $activeTab === 'signup' ? ' hidden' : ''; ?>>
-        <h1> <span class="brand-icon" aria-hidden="true"></span>
-          Registrar Admin</h1>
-        <p>Review document requests, mark them ready for pickup, and close them out
-          once a student has claimed their copy.</p>
-      </div>
+    <div class="auth-shell<?php echo $activeTab === 'signup' ? ' auth-shell-signup' : ''; ?>">
 
       <section class="auth-card<?php echo $activeTab === 'signup' ? ' auth-card-wide' : ''; ?>" id="authCard" aria-labelledby="authHeading">
-        <h2 id="authHeading" class="auth-card-title">Registrar Admin Access</h2>
 
+        <div class="auth-brand">
+          <img src="../assets/images/logo.png" alt="" class="auth-brand-logo">
+          <h1 id="authHeading">University of Rizal System</h1>
+          <p>Document Request System &middot; Office of the Registrar</p>
+        </div>
 
         <!-- ---------------- Log in ---------------- -->
-        <div class="auth-panel" id="panel-login" role="tabpanel" aria-labelledby="tab-login">
+        <div class="auth-panel" id="panel-login" role="tabpanel" <?php echo $activeTab === 'signup' ? ' hidden' : ''; ?>>
           <?php if ($loginError): ?>
             <div class="alert alert-error auth-alert"><?php echo htmlspecialchars($loginError); ?></div>
           <?php elseif (isset($_GET['reset'])): ?>
@@ -206,7 +199,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
 
         <!-- ---------------- Create account ---------------- -->
-        <div class="auth-panel" id="panel-signup" role="tabpanel" aria-labelledby="tab-signup" hidden>
+        <div class="auth-panel" id="panel-signup" role="tabpanel" <?php echo $activeTab === 'login' ? ' hidden' : ''; ?>>
           <?php if ($signupError): ?>
             <div class="alert alert-error auth-alert"><?php echo htmlspecialchars($signupError); ?></div>
           <?php endif; ?>
