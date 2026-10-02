@@ -78,22 +78,57 @@ $scopeIn = documentScopeInClause($conn);
 /* ---------------------------------------------------------------
    Recent activity
    --------------------------------------------------------------- */
-$activityLimit = 5;
 $fullActivityLimit = 200;
 
 $activityWhere = $scopeIn !== null ? "WHERE document_type IN ($scopeIn) " : '';
+$activityAnd = $scopeIn !== null ? "AND document_type IN ($scopeIn) " : '';
+
+/* A notification double-click lands back here with ?read_notif=<id> —
+mark that one entry read before we compute the unread count below.
+Assumes audit_log has an auto-increment `id` primary key and an
+`is_read` TINYINT(1) DEFAULT 0 column. */
+if (!empty($_GET['read_notif'])) {
+    $readId = (int)$_GET['read_notif'];
+    if ($readId > 0) {
+        $rstmt = $conn->prepare("UPDATE audit_log SET is_read = 1 WHERE id = ? {$activityAnd}");
+        $rstmt->bind_param('i', $readId);
+        $rstmt->execute();
+        $rstmt->close();
+    }
+}
+
 $fullActivity = $conn->query("SELECT * FROM audit_log {$activityWhere}ORDER BY created_at DESC LIMIT {$fullActivityLimit}");
 $allActivityRows = [];
 while ($row = $fullActivity->fetch_assoc()) {
     $allActivityRows[] = $row;
 }
 
-$activityRows = array_slice($allActivityRows, 0, $activityLimit);
-$hasMoreActivity = count($allActivityRows) > $activityLimit;
+$activityRows = $allActivityRows;   // every notification — the dropdown list scrolls
+
+$unreadWhere = $activityWhere === '' ? 'WHERE is_read = 0' : $activityWhere . 'AND is_read = 0';
+$unreadCount = (int)($conn->query("SELECT COUNT(*) AS c FROM audit_log {$unreadWhere}")->fetch_assoc()['c'] ?? 0);
+
+// 'claimed' and 'deleted' remove the request row, so there's nothing left
+// to open on the dashboard for those — only status-change entries link out.
 function renderActivityItem(array $a): void
 {
     $isClaimed = $a['action'] === 'claimed';
-    echo '<div class="activity-item">';
+    $isUnread = empty($a['is_read']);
+    $canOpen = !in_array($a['action'], ['claimed', 'deleted'], true);
+
+    $classes = 'activity-item';
+    if ($isUnread) {
+        $classes .= ' is-unread';
+    }
+
+    echo '<div class="' . $classes . '"'
+        . ' data-notif-id="' . (int)$a['id'] . '"'
+        . ' data-read="' . ($isUnread ? '0' : '1') . '"';
+    if ($canOpen) {
+        echo ' data-reference="' . htmlspecialchars($a['reference_no'], ENT_QUOTES, 'UTF-8') . '"';
+    }
+    echo ' title="Double-click to ' . ($canOpen ? 'open this request' : 'mark as read') . '">';
+
     echo '<span class="activity-dot' . ($isClaimed ? ' is-claimed' : '') . '"></span>';
     echo '<div class="activity-text">';
     if ($isClaimed) {
@@ -106,7 +141,7 @@ function renderActivityItem(array $a): void
             . ' from ' . htmlspecialchars($a['old_status'] ?? '—')
             . ' to ' . htmlspecialchars($a['new_status'] ?? '—') . '</p>';
     }
-    echo '<span class="activity-meta">' . date('M j, Y \a\t g:i A', strtotime($a['created_at'])) . '</span>';
+    echo '<span class="activity-meta">' . date('M j, Y \\a\\t g:i A', strtotime($a['created_at'])) . '</span>';
     echo '</div></div>';
 }
 ?>
@@ -126,7 +161,7 @@ function renderActivityItem(array $a): void
             } catch (e) {}
         })();
     </script>
-    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/style.css?v=<?php echo @filemtime(__DIR__ . '/../assets/css/style.css'); ?>">
 </head>
 
 <body class="admin-body">
@@ -235,14 +270,15 @@ function renderActivityItem(array $a): void
                                         stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
                                     <path d="M9.5 19.5a2.5 2.5 0 0 0 5 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
                                 </svg>
-                                <?php if (!empty($activityRows)): ?>
-                                    <span class="notif-badge"><?php echo count($activityRows) > 9 ? '9+' : count($activityRows); ?></span>
+                                <?php if ($unreadCount > 0): ?>
+                                    <span class="notif-badge" id="notifBadge"><?php echo $unreadCount > 9 ? '9+' : $unreadCount; ?></span>
                                 <?php endif; ?>
                             </button>
 
                             <div class="notif-dropdown" id="notifDropdown" hidden>
                                 <div class="notif-dropdown-header">
                                     <span>Notifications</span>
+                                    <button type="button" class="notif-mark-all" id="notifMarkAllRead" <?php echo $unreadCount > 0 ? '' : ' hidden'; ?>>Mark all as read</button>
                                 </div>
                                 <div class="notif-list">
                                     <?php if (empty($activityRows)): ?>
@@ -254,14 +290,6 @@ function renderActivityItem(array $a): void
                                         </div>
                                     <?php endif; ?>
                                 </div>
-                                <?php if ($hasMoreActivity): ?>
-                                    <button type="button" class="notif-see-all" id="openAuditLogModal">
-                                        See all recent activity
-                                        <svg viewBox="0 0 24 24" fill="none">
-                                            <path d="M9 6L15 12L9 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                        </svg>
-                                    </button>
-                                <?php endif; ?>
                             </div>
                         </div>
                     <?php endif; ?>
@@ -412,36 +440,6 @@ function renderActivityItem(array $a): void
         </div>
     </div>
 
-    <!-- AUDIT LOG MODAL (Full Admin only) -->
-    <?php if (isFullAdmin()): ?>
-        <div class="modal-overlay" id="auditLogOverlay" hidden>
-            <div class="audit-log-box" role="dialog" aria-modal="true" aria-labelledby="auditLogTitle">
-                <div class="audit-log-header">
-                    <div>
-                        <h3 id="auditLogTitle">All Recent Activity</h3>
-                        <p>Showing the last <?php echo count($allActivityRows); ?> logged actions.</p>
-                    </div>
-                    <button type="button" class="edit-profile-close" id="auditLogClose" aria-label="Close">
-                        <svg viewBox="0 0 24 24" fill="none">
-                            <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-                        </svg>
-                    </button>
-                </div>
-
-                <div class="audit-log-body">
-                    <?php if (empty($allActivityRows)): ?>
-                        <p class="stats-empty">No activity recorded yet.</p>
-                    <?php else: ?>
-                        <div class="activity-list">
-                            <?php foreach ($allActivityRows as $a): renderActivityItem($a);
-                            endforeach; ?>
-                        </div>
-                    <?php endif; ?>
-                </div>
-            </div>
-        </div>
-    <?php endif; ?>
-
     <!-- EDIT PROFILE MODAL -->
     <div class="modal-overlay" id="editProfileOverlay" hidden>
         <div class="edit-profile-box" role="dialog" aria-modal="true" aria-labelledby="editProfileTitle">
@@ -541,7 +539,7 @@ function renderActivityItem(array $a): void
     <script>
         window.CSRF_TOKEN = <?php echo json_encode(csrf_token()); ?>;
     </script>
-    <script src="../assets/js/admin.js"></script>
+    <script src="../assets/js/admin.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/admin.js'); ?>"></script>
     <script src="../assets/js/manage_admins.js"></script>
 
     <!-- THEME TOGGLE -->

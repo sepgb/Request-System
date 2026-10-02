@@ -2586,6 +2586,22 @@ body:has(.hero) {
   cursor: pointer;
 }
 
+/* Request linked from a notification: stays highlighted, then fades out.
+   (A CSS animation can't beat the `background ... !important` on table cells,
+   so this is a class the script adds and later removes.) */
+.admin-table tbody td {
+  transition: background-color 0.6s ease, box-shadow 0.6s ease;
+}
+
+.admin-table tbody tr.row-highlight td {
+  background: rgba(92, 127, 214, 0.3) !important;
+  box-shadow: inset 0 1px 0 rgba(92, 127, 214, 0.75), inset 0 -1px 0 rgba(92, 127, 214, 0.75);
+}
+
+.admin-table tbody tr.row-highlight td:first-child {
+  box-shadow: inset 3px 0 0 #5c7fd6, inset 0 1px 0 rgba(92, 127, 214, 0.75), inset 0 -1px 0 rgba(92, 127, 214, 0.75);
+}
+
 .admin-table tbody tr:last-child td {
   border-bottom: none;
 }
@@ -3247,7 +3263,11 @@ select::picker-icon {
 }
 
 .notif-dropdown-header {
-  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 18px;
   border-bottom: 1px solid #202329;
   color: #e8ebef;
   font-family: 'Manrope', sans-serif;
@@ -3255,8 +3275,26 @@ select::picker-icon {
   font-weight: 600;
 }
 
+.notif-mark-all {
+  flex: 0 0 auto;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--admin-blue-300);
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.notif-mark-all:hover {
+  color: #a7bef0;
+  text-decoration: underline;
+}
+
 .notif-list {
-  max-height: 320px;
+  max-height: min(420px, 60vh);
   overflow-y: auto;
   padding: 4px 18px;
 }
@@ -4842,8 +4880,43 @@ html[data-theme="light"] .stat-card-status-legend-item {
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  padding: 12px 4px;
+  padding: 12px 10px;
+  margin: 0 -10px;
+  border-radius: 8px;
   border-bottom: 1px solid #1c1f24;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+/* Read notification — flat, muted */
+.activity-item {
+  background: rgba(154, 161, 173, 0.04);
+}
+
+.activity-item:hover {
+  background: rgba(154, 161, 173, 0.1);
+}
+
+.activity-item:not(.is-unread) .activity-text p {
+  color: #7d8490;
+}
+
+.activity-item:not(.is-unread) .activity-text p strong {
+  color: #a5abb5;
+}
+
+.activity-item:not(.is-unread) .activity-dot {
+  background: #4b525c;
+}
+
+/* Unread notification — blue background + accent bar until read */
+.activity-item.is-unread {
+  background: rgba(92, 127, 214, 0.18);
+  box-shadow: inset 3px 0 0 #5c7fd6;
+}
+
+.activity-item.is-unread:hover {
+  background: rgba(92, 127, 214, 0.26);
 }
 
 .activity-item:last-child {
@@ -5855,6 +5928,10 @@ html[data-theme="light"] .notif-dropdown-header {
   color: #1a2233;
 }
 
+html[data-theme="light"] .notif-mark-all:hover {
+  color: #2f5fc4;
+}
+
 html[data-theme="light"] .notif-see-all {
   border-top-color: #e4e8f0;
 }
@@ -5929,6 +6006,10 @@ html[data-theme="light"] .admin-table tbody td {
 
 html[data-theme="light"] .admin-table tbody tr:hover td {
   background: #f1f5fd !important;
+}
+
+html[data-theme="light"] .admin-table tbody tr.row-highlight td {
+  background: rgba(92, 127, 214, 0.22) !important;
 }
 
 html[data-theme="light"] .cell-ref {
@@ -6336,6 +6417,31 @@ html[data-theme="light"] .dchart-col:nth-child(n+3) .dchart-bar {
 
 html[data-theme="light"] .activity-item {
   border-bottom-color: #eef1f7;
+}
+
+html[data-theme="light"] .activity-item {
+  background: rgba(15, 23, 40, 0.03);
+}
+
+html[data-theme="light"] .activity-item:hover {
+  background: rgba(15, 23, 40, 0.07);
+}
+
+html[data-theme="light"] .activity-item:not(.is-unread) .activity-text p {
+  color: #7c8699;
+}
+
+html[data-theme="light"] .activity-item:not(.is-unread) .activity-text p strong {
+  color: #4b566b;
+}
+
+html[data-theme="light"] .activity-item.is-unread {
+  background: rgba(92, 127, 214, 0.16);
+  box-shadow: inset 3px 0 0 #5c7fd6;
+}
+
+html[data-theme="light"] .activity-item.is-unread:hover {
+  background: rgba(92, 127, 214, 0.24);
 }
 
 html[data-theme="light"] .activity-text p {

@@ -516,6 +516,107 @@ if (notifTrigger && notifDropdown) {
   });
 }
 
+// ---- Notification badge ----
+function updateNotifBadge(count) {
+  const badge = document.getElementById('notifBadge');
+  if (count > 0) {
+    const label = count > 9 ? '9+' : String(count);
+    if (badge) {
+      badge.textContent = label;
+    } else if (notifTrigger) {
+      const span = document.createElement('span');
+      span.className = 'notif-badge';
+      span.id = 'notifBadge';
+      span.textContent = label;
+      notifTrigger.appendChild(span);
+    }
+  } else if (badge) {
+    badge.remove();
+  }
+
+  // "Mark all as read" only makes sense while something is unread
+  const markAll = document.getElementById('notifMarkAllRead');
+  if (markAll) markAll.hidden = !(count > 0);
+}
+
+// ---- Notification items: double-click to open the request or mark read ----
+document.addEventListener('dblclick', function (e) {
+  const item = e.target.closest('.activity-item');
+  if (!item) return;
+
+  const notifId = item.dataset.notifId;
+  const reference = item.dataset.reference;
+
+  if (reference) {
+    // Still-existing request — jump to the dashboard and highlight it.
+    // The server marks this notification read when it sees read_notif.
+    const url = 'dashboard.php?highlight=' + encodeURIComponent(reference) +
+      (notifId ? '&read_notif=' + encodeURIComponent(notifId) : '');
+    window.location.href = url;
+    return;
+  }
+
+  // No linked request (claimed / deleted) — just mark it read in place.
+  if (!notifId || item.dataset.read === '1') return;
+  fetch('mark_notifications_read.php', {
+    method: 'POST',
+    body: new URLSearchParams({ id: notifId, csrf_token: window.CSRF_TOKEN })
+  })
+    .then(function (res) { return res.json(); })
+    .then(function (json) {
+      if (json.success) {
+        item.classList.remove('is-unread');
+        item.dataset.read = '1';
+        updateNotifBadge(json.unread);
+      }
+    });
+});
+
+// ---- Mark all as read ----
+const notifMarkAllBtn = document.getElementById('notifMarkAllRead');
+if (notifMarkAllBtn) {
+  notifMarkAllBtn.addEventListener('click', function () {
+    fetch('mark_notifications_read.php', {
+      method: 'POST',
+      body: new URLSearchParams({ csrf_token: window.CSRF_TOKEN })
+    })
+      .then(function (res) { return res.json(); })
+      .then(function (json) {
+        if (json.success) {
+          document.querySelectorAll('.activity-item.is-unread').forEach(function (el) {
+            el.classList.remove('is-unread');
+            el.dataset.read = '1';
+          });
+          updateNotifBadge(json.unread);
+          notifMarkAllBtn.hidden = true;
+        }
+      });
+  });
+}
+
+// ---- Highlight a request row linked from a notification (dashboard only) ----
+(function () {
+  const params = new URLSearchParams(window.location.search);
+  const ref = params.get('highlight');
+  if (!ref) return;
+
+  const table = document.querySelector('.admin-table');
+  const row = table ? table.querySelector('tr[data-reference="' + CSS.escape(ref) + '"]') : null;
+  if (row) {
+    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    row.classList.add('row-highlight');
+    setTimeout(function () {
+      row.classList.remove('row-highlight');
+    }, 4000);
+  }
+
+  // Clean the URL so refreshing doesn't re-highlight / re-mark-read
+  params.delete('highlight');
+  params.delete('read_notif');
+  const qs = params.toString();
+  window.history.replaceState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
+})();
+
 // ---- Audit log popup ----
 const auditLogOverlay = document.getElementById('auditLogOverlay');
 const openAuditLogBtn = document.getElementById('openAuditLogModal');
