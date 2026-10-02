@@ -5014,11 +5014,7 @@ html[data-theme="light"] .stat-card-status-legend-item {
   transition: background 0.15s ease;
 }
 
-/* Read notification — flat, muted */
-.activity-item {
-  background: rgba(154, 161, 173, 0.04);
-}
-
+/* Read notification — no background, muted text */
 .activity-item:hover {
   background: rgba(154, 161, 173, 0.1);
 }
@@ -5035,7 +5031,7 @@ html[data-theme="light"] .stat-card-status-legend-item {
   background: #4b525c;
 }
 
-/* Unread notification — blue background + accent bar until read */
+/* Unread notification — blue background until read */
 .activity-item.is-unread {
   background: rgba(92, 127, 214, 0.18);
 }
@@ -6593,10 +6589,6 @@ html[data-theme="light"] .dchart-col:nth-child(n+3) .dchart-bar {
 
 html[data-theme="light"] .activity-item {
   border-bottom-color: #eef1f7;
-}
-
-html[data-theme="light"] .activity-item {
-  background: rgba(15, 23, 40, 0.03);
 }
 
 html[data-theme="light"] .activity-item:hover {
