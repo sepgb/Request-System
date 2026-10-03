@@ -278,7 +278,7 @@ foreach ($days as $v) {
    --------------------------------------------------------------- */
 $fullActivityLimit = 200;
 
-$activityWhere = $scopeIn !== null ? "WHERE document_type IN ($scopeIn) " : '';
+$activityWhere = $scopeIn !== null ? "WHERE is_dismissed = 0 AND document_type IN ($scopeIn) " : 'WHERE is_dismissed = 0 ';
 $activityAnd = $scopeIn !== null ? "AND document_type IN ($scopeIn) " : '';
 
 /* A notification double-click lands back here with ?read_notif=<id> —
@@ -310,7 +310,7 @@ foreach ($allActivityRows as $act) {
     $notifGroups[date('Y-m-d', strtotime($act['created_at'])) === $notifToday ? 'Today' : 'Earlier'][] = $act;
 }
 
-$unreadWhere = $activityWhere === '' ? 'WHERE is_read = 0' : $activityWhere . 'AND is_read = 0';
+$unreadWhere = $activityWhere . 'AND is_read = 0';
 $unreadCount = (int)($conn->query("SELECT COUNT(*) AS c FROM audit_log {$unreadWhere}")->fetch_assoc()['c'] ?? 0);
 
 // 'claimed' and 'deleted' remove the request row, so there's nothing left
@@ -335,6 +335,7 @@ function renderActivityItem(array $a): void
     }
     echo ' title="Double-click to ' . ($canOpen ? 'open this request' : 'mark as read') . '">';
 
+    echo '<input type="checkbox" class="notif-check" aria-label="Select notification">';
     echo '<span class="activity-dot' . ($isClaimed ? ' is-claimed' : ($isDeleted ? ' is-deleted' : '')) . '"></span>';
     echo '<div class="activity-text">';
     if ($isClaimed) {
@@ -540,16 +541,26 @@ function renderActivityItem(array $a): void
                                                 </svg>
                                                 Mark all as read
                                             </button>
+                                            <button type="button" class="notif-menu-item is-danger" id="notifDeleteMode" <?php echo empty($activityRows) ? ' disabled' : ''; ?>>
+                                                <svg viewBox="0 0 24 24" fill="none">
+                                                    <path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 002 2h6a2 2 0 002-2l1-12M9 7V4h6v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                                                </svg>
+                                                Delete notifications
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="notif-tabs" role="tablist">
                                     <button type="button" class="notif-tab is-active" data-filter="all" role="tab" aria-selected="true">All</button>
                                     <button type="button" class="notif-tab" data-filter="unread" role="tab" aria-selected="false">Unread</button>
+                                    <label class="notif-select-all" id="notifSelectAllWrap" hidden>
+                                        <input type="checkbox" id="notifSelectAll">
+                                        <span>All</span>
+                                    </label>
                                 </div>
                                 <div class="notif-list" id="notifList">
                                     <?php if (empty($activityRows)): ?>
-                                        <p class="stats-empty">No activity recorded yet.</p>
+                                        <p class="stats-empty" id="notifEmptyAll">No notifications.</p>
                                     <?php else: ?>
                                         <?php foreach ($notifGroups as $groupLabel => $groupRows): ?>
                                             <?php if (empty($groupRows)) continue; ?>
@@ -563,6 +574,10 @@ function renderActivityItem(array $a): void
                                         <?php endforeach; ?>
                                         <p class="stats-empty" id="notifEmptyUnread" hidden>You're all caught up.</p>
                                     <?php endif; ?>
+                                </div>
+                                <div class="notif-delete-bar" id="notifDeleteBar" hidden>
+                                    <button type="button" class="notif-cancel-btn" id="notifCancelDelete">Cancel</button>
+                                    <button type="button" class="notif-delete-btn" id="notifDeleteConfirm" disabled>Delete</button>
                                 </div>
                             </div>
                         </div>

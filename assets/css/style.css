@@ -3461,6 +3461,126 @@ select::picker-icon {
   color: #a7bef0;
 }
 
+/* ---- Delete notifications: select mode ---- */
+.notif-menu-item.is-danger {
+  color: #f0707a;
+}
+
+.notif-menu-item.is-danger:hover:not(:disabled) {
+  background: rgba(240, 112, 122, 0.14);
+  color: #ff8f98;
+}
+
+/* shared checkbox look: per-notification box + the "All" box */
+.notif-check,
+.notif-select-all input {
+  appearance: none;
+  -webkit-appearance: none;
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  border: 1.5px solid #5a616c;
+  border-radius: 5px;
+  background: transparent center / 12px no-repeat;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.notif-check:checked,
+.notif-select-all input:checked {
+  border-color: #5c7fd6;
+  background-color: #5c7fd6;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E");
+}
+
+.notif-select-all input:indeterminate {
+  border-color: #5c7fd6;
+  background-color: #5c7fd6;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.2' stroke-linecap='round'%3E%3Cpath d='M6 12h12'/%3E%3C/svg%3E");
+}
+
+.notif-select-all input:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* the checkbox only exists while selecting, and takes the dot's place */
+.notif-check {
+  display: none;
+  margin-top: 1px;
+}
+
+.notif-dropdown.is-selecting .notif-check {
+  display: inline-block;
+}
+
+.notif-dropdown.is-selecting .activity-dot {
+  display: none;
+}
+
+.notif-dropdown.is-selecting .activity-item.is-selected {
+  background: rgba(92, 127, 214, 0.22);
+}
+
+.notif-select-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  padding: 0 4px;
+  color: #c3c8d0;
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+}
+
+.notif-delete-bar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 10px 18px 14px;
+  border-top: 1px solid #202329;
+}
+
+.notif-cancel-btn,
+.notif-delete-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+}
+
+.notif-cancel-btn {
+  background: transparent;
+  color: #9aa1ad;
+}
+
+.notif-cancel-btn:hover {
+  background: rgba(154, 161, 173, 0.12);
+  color: #e8ebef;
+}
+
+.notif-delete-btn {
+  background: #e5535f;
+  color: #ffffff;
+}
+
+.notif-delete-btn:hover:not(:disabled) {
+  background: #f0626e;
+}
+
+.notif-delete-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
 .notif-group+.notif-group {
   margin-top: 6px;
 }
@@ -6164,6 +6284,47 @@ html[data-theme="light"] .notif-tab:hover {
 html[data-theme="light"] .notif-tab.is-active {
   background: rgba(92, 127, 214, 0.15);
   color: #2f5fc4;
+}
+
+html[data-theme="light"] .notif-menu-item.is-danger {
+  color: #d6404c;
+}
+
+html[data-theme="light"] .notif-menu-item.is-danger:hover:not(:disabled) {
+  background: rgba(214, 64, 76, 0.1);
+  color: #b82f3b;
+}
+
+html[data-theme="light"] .notif-check,
+html[data-theme="light"] .notif-select-all input {
+  border-color: #a9b2c4;
+}
+
+html[data-theme="light"] .notif-check:checked,
+html[data-theme="light"] .notif-select-all input:checked,
+html[data-theme="light"] .notif-select-all input:indeterminate {
+  border-color: #3f65c8;
+}
+
+html[data-theme="light"] .notif-dropdown.is-selecting .activity-item.is-selected {
+  background: rgba(92, 127, 214, 0.18);
+}
+
+html[data-theme="light"] .notif-select-all {
+  color: #4a5468;
+}
+
+html[data-theme="light"] .notif-delete-bar {
+  border-top-color: #e4e8f0;
+}
+
+html[data-theme="light"] .notif-cancel-btn {
+  color: #5b6578;
+}
+
+html[data-theme="light"] .notif-cancel-btn:hover {
+  background: rgba(15, 23, 40, 0.06);
+  color: #1a2233;
 }
 
 html[data-theme="light"] .notif-group-title {

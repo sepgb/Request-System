@@ -299,89 +299,12 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
-  // ---- Custom "delete request" confirmation modal (rejected requests only) ----
-  const deleteModalOverlay = document.getElementById('deleteModalOverlay');
-  const deleteModalText = document.getElementById('deleteModalText');
-  const deleteModalConfirm = document.getElementById('deleteModalConfirm');
-  const deleteModalCancel = document.getElementById('deleteModalCancel');
-  let pendingDelete = null; // { id, btn }
-
-  function openDeleteModal(id, reference, fullName, btn) {
-    pendingDelete = { id: id, btn: btn };
-
-    if (deleteModalText) {
-      deleteModalText.textContent =
-        'Delete ' + reference + ' (' + fullName + ')? This will permanently delete the request from the system.';
-    }
-
-    if (deleteModalOverlay) {
-      deleteModalOverlay.hidden = false;
-    }
-  }
-
-  function closeDeleteModal() {
-    pendingDelete = null;
-    if (deleteModalOverlay) deleteModalOverlay.hidden = true;
-  }
-
-  function doDelete(id, btn) {
-    if (btn) btn.disabled = true;
-
-    fetch('delete_request.php', {
-      method: 'POST',
-      body: new URLSearchParams({ id: id, csrf_token: window.CSRF_TOKEN })
-    })
-      .then(function (res) { return res.json(); })
-      .then(function (json) {
-        if (json.success) {
-          const row = document.getElementById('row-' + id);
-          if (row) row.remove();
-          bumpStat(statTotal, -1);
-          bumpStat(sidebarCountAll, -1);
-          bumpStat(sidebarCountRejected, -1);
-        } else {
-          alert(json.message || 'Could not delete the request.');
-          if (btn) btn.disabled = false;
-        }
-      })
-      .catch(function () {
-        alert('Network error. Please try again.');
-        if (btn) btn.disabled = false;
-      });
-  }
-
-  if (deleteModalConfirm) {
-    deleteModalConfirm.addEventListener('click', function () {
-      if (!pendingDelete) return;
-      const del = pendingDelete;
-      closeDeleteModal();
-      doDelete(del.id, del.btn);
-    });
-  }
-
-  if (deleteModalCancel) {
-    deleteModalCancel.addEventListener('click', closeDeleteModal);
-  }
-
-  if (deleteModalOverlay) {
-    deleteModalOverlay.addEventListener('click', function (e) {
-      if (e.target === deleteModalOverlay) closeDeleteModal();
-    });
-  }
-
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && deleteModalOverlay && !deleteModalOverlay.hidden) {
-      closeDeleteModal();
-    }
-  });
-
   const tableBody = document.querySelector('.admin-table tbody');
 
   // ---- Request details modal: double-click a row to see it like a receipt ----
   const requestDetailsOverlay = document.getElementById('requestDetailsOverlay');
   const requestDetailsClose = document.getElementById('requestDetailsClose');
   const rdMarkClaimed = document.getElementById('rdMarkClaimed');
-  const rdDelete = document.getElementById('rdDelete');
   const rdTitle = document.getElementById('requestDetailsTitle');
   const rdStudentNo = document.getElementById('rdStudentNo');
   const rdName = document.getElementById('rdName');
@@ -427,9 +350,6 @@ document.addEventListener('DOMContentLoaded', function () {
     if (rdMarkClaimed) {
       rdMarkClaimed.hidden = status !== 'Ready for Pickup';
     }
-    if (rdDelete) {
-      rdDelete.hidden = status !== 'Rejected';
-    }
 
     if (requestDetailsOverlay) requestDetailsOverlay.hidden = false;
   }
@@ -457,15 +377,6 @@ document.addEventListener('DOMContentLoaded', function () {
       const req = currentDetailsRequest;
       closeRequestDetails();
       openClaimModal(req.id, req.reference, req.fullName, null);
-    });
-  }
-
-  if (rdDelete) {
-    rdDelete.addEventListener('click', function () {
-      if (!currentDetailsRequest) return;
-      const req = currentDetailsRequest;
-      closeRequestDetails();
-      openDeleteModal(req.id, req.reference, req.fullName, null);
     });
   }
 
@@ -582,6 +493,8 @@ const notifDropdown = document.getElementById('notifDropdown');
 function closeNotifDropdown() {
   if (!notifDropdown) return;
   notifDropdown.hidden = true;
+  exitNotifSelectMode();
+  closeNotifMenu();
   if (notifTrigger) notifTrigger.setAttribute('aria-expanded', 'false');
 }
 
@@ -622,10 +535,83 @@ function updateNotifBadge(count) {
   } else if (badge) {
     badge.remove();
   }
+
+  // "Mark all as read" only makes sense while something is unread
+  const markAll = document.getElementById('notifMarkAllRead');
+  if (markAll) markAll.disabled = !(count > 0);
+}
+
+// ---- Notification tabs (All / Unread) ----
+let notifFilter = 'all';
+
+function applyNotifFilter() {
+  const list = document.getElementById('notifList');
+  if (!list) return;
+
+  let anyShown = false;
+  list.querySelectorAll('.notif-group').forEach(function (group) {
+    let shown = 0;
+    group.querySelectorAll('.activity-item').forEach(function (item) {
+      const show = notifFilter === 'all' || item.dataset.read === '0';
+      item.hidden = !show;
+      if (show) shown++;
+    });
+    group.hidden = shown === 0;          // hide "Today" / "Earlier" when empty
+    if (shown > 0) anyShown = true;
+  });
+
+  const hasItems = !!list.querySelector('.activity-item');
+  const empty = document.getElementById('notifEmptyUnread');
+  if (empty) empty.hidden = !(notifFilter === 'unread' && !anyShown && hasItems);
+
+  // Anything the filter just hid can't stay selected for deletion
+  list.querySelectorAll('.activity-item[hidden] .notif-check:checked').forEach(function (cb) {
+    cb.checked = false;
+    cb.closest('.activity-item').classList.remove('is-selected');
+  });
+  updateNotifSelection();
+}
+
+document.querySelectorAll('.notif-tab').forEach(function (tab) {
+  tab.addEventListener('click', function () {
+    notifFilter = tab.dataset.filter;
+    document.querySelectorAll('.notif-tab').forEach(function (t) {
+      const active = t === tab;
+      t.classList.toggle('is-active', active);
+      t.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    applyNotifFilter();
+  });
+});
+
+// ---- Three-dot menu (Mark all as read / Delete notifications) ----
+const notifMoreBtn = document.getElementById('notifMoreBtn');
+const notifMoreMenu = document.getElementById('notifMoreMenu');
+
+function closeNotifMenu() {
+  if (!notifMoreMenu) return;
+  notifMoreMenu.hidden = true;
+  if (notifMoreBtn) notifMoreBtn.setAttribute('aria-expanded', 'false');
+}
+
+if (notifMoreBtn && notifMoreMenu) {
+  notifMoreBtn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    const willOpen = notifMoreMenu.hidden;
+    notifMoreMenu.hidden = !willOpen;
+    notifMoreBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+  });
+
+  document.addEventListener('click', function (e) {
+    if (!notifMoreMenu.hidden && !e.target.closest('.notif-more-wrap')) {
+      closeNotifMenu();
+    }
+  });
 }
 
 // ---- Notification items: double-click to open the request or mark read ----
 document.addEventListener('dblclick', function (e) {
+  if (notifSelecting) return;            // selecting for delete — don't open anything
   const item = e.target.closest('.activity-item');
   if (!item) return;
 
@@ -653,6 +639,7 @@ document.addEventListener('dblclick', function (e) {
         item.classList.remove('is-unread');
         item.dataset.read = '1';
         updateNotifBadge(json.unread);
+        applyNotifFilter();
       }
     });
 });
@@ -673,8 +660,152 @@ if (notifMarkAllBtn) {
             el.dataset.read = '1';
           });
           updateNotifBadge(json.unread);
-          notifMarkAllBtn.hidden = true;
+          notifMarkAllBtn.disabled = true;
+          closeNotifMenu();
+          applyNotifFilter();
         }
+      });
+  });
+}
+
+// ---- Delete notifications (select mode) ----
+// Deleting only hides a notification from the bell (is_dismissed); the audit
+// record stays, so Statistics is unaffected.
+const notifDeleteModeBtn = document.getElementById('notifDeleteMode');
+const notifSelectAllWrap = document.getElementById('notifSelectAllWrap');
+const notifSelectAll = document.getElementById('notifSelectAll');
+const notifDeleteBar = document.getElementById('notifDeleteBar');
+const notifDeleteConfirm = document.getElementById('notifDeleteConfirm');
+const notifCancelDelete = document.getElementById('notifCancelDelete');
+let notifSelecting = false;
+
+function visibleNotifChecks() {
+  return Array.from(document.querySelectorAll('#notifList .activity-item:not([hidden]) .notif-check'));
+}
+
+function updateNotifSelection() {
+  const checks = visibleNotifChecks();
+  const selected = checks.filter(function (c) { return c.checked; }).length;
+
+  if (notifSelectAll) {
+    notifSelectAll.checked = checks.length > 0 && selected === checks.length;
+    notifSelectAll.indeterminate = selected > 0 && selected < checks.length;
+    notifSelectAll.disabled = checks.length === 0;
+  }
+  if (notifDeleteConfirm) {
+    notifDeleteConfirm.disabled = selected === 0;
+    notifDeleteConfirm.textContent = selected > 0 ? 'Delete (' + selected + ')' : 'Delete';
+  }
+}
+
+function enterNotifSelectMode() {
+  if (!notifDropdown) return;
+  notifSelecting = true;
+  notifDropdown.classList.add('is-selecting');
+  if (notifSelectAllWrap) notifSelectAllWrap.hidden = false;
+  if (notifDeleteBar) notifDeleteBar.hidden = false;
+  closeNotifMenu();
+  updateNotifSelection();
+}
+
+function exitNotifSelectMode() {
+  notifSelecting = false;
+  if (notifDropdown) notifDropdown.classList.remove('is-selecting');
+  if (notifSelectAllWrap) notifSelectAllWrap.hidden = true;
+  if (notifDeleteBar) notifDeleteBar.hidden = true;
+  document.querySelectorAll('#notifList .notif-check').forEach(function (cb) {
+    cb.checked = false;
+    const item = cb.closest('.activity-item');
+    if (item) item.classList.remove('is-selected');
+  });
+  updateNotifSelection();
+}
+
+// Shows "No notifications." once nothing is left, and keeps the menu item in sync
+function refreshNotifEmpty() {
+  const list = document.getElementById('notifList');
+  if (!list) return;
+  const hasItems = !!list.querySelector('.activity-item');
+  let emptyAll = document.getElementById('notifEmptyAll');
+  if (!hasItems && !emptyAll) {
+    emptyAll = document.createElement('p');
+    emptyAll.className = 'stats-empty';
+    emptyAll.id = 'notifEmptyAll';
+    emptyAll.textContent = 'No notifications.';
+    list.appendChild(emptyAll);
+  } else if (hasItems && emptyAll) {
+    emptyAll.remove();
+  }
+  if (notifDeleteModeBtn) notifDeleteModeBtn.disabled = !hasItems;
+}
+
+if (notifDeleteModeBtn) {
+  notifDeleteModeBtn.addEventListener('click', function () {
+    if (!notifDeleteModeBtn.disabled) enterNotifSelectMode();
+  });
+}
+
+if (notifCancelDelete) {
+  notifCancelDelete.addEventListener('click', exitNotifSelectMode);
+}
+
+// Click anywhere on a notification to tick / untick it while selecting
+document.addEventListener('click', function (e) {
+  if (!notifSelecting) return;
+  const item = e.target.closest('#notifList .activity-item');
+  if (!item) return;
+  const cb = item.querySelector('.notif-check');
+  if (!cb) return;
+  if (e.target !== cb) cb.checked = !cb.checked;   // clicking the box itself already toggled it
+  item.classList.toggle('is-selected', cb.checked);
+  updateNotifSelection();
+});
+
+// "All" — selects every notification currently shown in the active tab
+if (notifSelectAll) {
+  notifSelectAll.addEventListener('change', function () {
+    visibleNotifChecks().forEach(function (cb) {
+      cb.checked = notifSelectAll.checked;
+      cb.closest('.activity-item').classList.toggle('is-selected', cb.checked);
+    });
+    updateNotifSelection();
+  });
+}
+
+if (notifDeleteConfirm) {
+  notifDeleteConfirm.addEventListener('click', function () {
+    const items = Array.from(document.querySelectorAll('#notifList .activity-item'))
+      .filter(function (item) {
+        const cb = item.querySelector('.notif-check');
+        return cb && cb.checked && !item.hidden;
+      });
+    const ids = items.map(function (item) { return item.dataset.notifId; }).filter(Boolean);
+    if (ids.length === 0) return;
+
+    notifDeleteConfirm.disabled = true;
+    fetch('mark_notifications_read.php', {
+      method: 'POST',
+      body: new URLSearchParams({ action: 'delete', ids: ids.join(','), csrf_token: window.CSRF_TOKEN })
+    })
+      .then(function (res) { return res.json(); })
+      .then(function (json) {
+        if (!json.success) {
+          alert(json.message || 'Could not delete notifications.');
+          updateNotifSelection();
+          return;
+        }
+        items.forEach(function (item) { item.remove(); });
+        document.querySelectorAll('#notifList .notif-group').forEach(function (group) {
+          if (!group.querySelector('.activity-item')) group.remove();   // drop empty Today / Earlier
+        });
+        updateNotifBadge(json.unread);
+        exitNotifSelectMode();
+        refreshNotifEmpty();
+        applyNotifFilter();
+      })
+      .catch(function () {
+        alert('Could not delete notifications. Please try again.');
+        updateNotifSelection();
       });
   });
 }
@@ -692,7 +823,7 @@ if (notifMarkAllBtn) {
     row.classList.add('row-highlight');
     setTimeout(function () {
       row.classList.remove('row-highlight');
-    }, 3000);
+    }, 4000);
   }
 
   // Clean the URL so refreshing doesn't re-highlight / re-mark-read
