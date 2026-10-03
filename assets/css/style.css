@@ -4953,17 +4953,26 @@ html[data-theme="light"] .stat-card-status-legend-item {
   flex: 0 0 auto;
 }
 
+/* Same-height header row on both cards, so "Last 14 days" and
+   "Top requested document" sit on exactly the same line */
+.panel-chart>.panel-title,
+.docs-header {
+  display: flex;
+  align-items: center;
+  min-height: 28px;
+}
+
 .docs-filter-btn {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px 8px 16px;
-  border-radius: 12px;
+  gap: 5px;
+  padding: 4px 8px 4px 10px;
+  border-radius: 8px;
   border: 1px solid #2c3038;
   background: #1a1d22;
   color: #e6e9ee;
   font: inherit;
-  font-size: 0.9rem;
+  font-size: 0.74rem;
   font-weight: 500;
   cursor: pointer;
   transition: background 0.15s ease, border-color 0.15s ease;
@@ -4979,8 +4988,8 @@ html[data-theme="light"] .stat-card-status-legend-item {
 }
 
 .docs-filter-btn svg {
-  width: 16px;
-  height: 16px;
+  width: 12px;
+  height: 12px;
   transition: transform 0.15s ease;
 }
 
@@ -4990,14 +4999,14 @@ html[data-theme="light"] .stat-card-status-legend-item {
 
 .docs-filter-menu {
   position: absolute;
-  top: calc(100% + 6px);
+  top: calc(100% + 4px);
   right: 0;
   z-index: 20;
-  min-width: 130px;
+  min-width: 92px;
   margin: 0;
-  padding: 6px;
+  padding: 4px;
   list-style: none;
-  border-radius: 12px;
+  border-radius: 8px;
   border: 1px solid #2c3038;
   background: #16191e;
   box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4);
@@ -5008,10 +5017,10 @@ html[data-theme="light"] .stat-card-status-legend-item {
 }
 
 .docs-filter-menu li {
-  padding: 8px 12px;
-  border-radius: 8px;
+  padding: 5px 9px;
+  border-radius: 6px;
   color: #c3c8d0;
-  font-size: 0.88rem;
+  font-size: 0.74rem;
   cursor: pointer;
 }
 

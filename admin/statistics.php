@@ -812,15 +812,15 @@ function renderActivityItem(array $a): void
                         <div class="docs-header">
                             <h2 class="panel-title">Top requested document</h2>
                             <div class="docs-filter">
-                                <button type="button" class="docs-filter-btn" id="docsFilterBtn" aria-haspopup="listbox" aria-expanded="false">
+                                <button type="button" class="docs-filter-btn" id="docsFilterBtn" aria-haspopup="true" aria-expanded="false">
                                     <span id="docsFilterLabel">Daily</span>
-                                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                        <path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                    <svg viewBox="0 0 24 24" fill="none">
+                                        <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                                     </svg>
                                 </button>
                                 <ul class="docs-filter-menu" id="docsFilterMenu" role="listbox" hidden>
-                                    <li role="option" class="is-active" aria-selected="true" data-period="daily">Daily</li>
-                                    <li role="option" aria-selected="false" data-period="weekly">Weekly</li>
+                                    <li data-period="daily" class="is-active" role="option" aria-selected="true">Daily</li>
+                                    <li data-period="weekly" role="option" aria-selected="false">Weekly</li>
                                 </ul>
                             </div>
                         </div>
@@ -1292,49 +1292,60 @@ function renderActivityItem(array $a): void
 
     <script>
         (function() {
-            var btn = document.getElementById('docsFilterBtn');
-            var menu = document.getElementById('docsFilterMenu');
-            var label = document.getElementById('docsFilterLabel');
             var panel = document.getElementById('topDocsPanel');
-            if (!btn || !menu || !panel) return;
+            if (!panel) return;
+            var btn = document.getElementById('docsFilterBtn');
+            var label = document.getElementById('docsFilterLabel');
+            var menu = document.getElementById('docsFilterMenu');
+            var items = menu.querySelectorAll('li[data-period]');
 
-            function setOpen(open) {
-                if (open) {
-                    menu.removeAttribute('hidden');
-                } else {
-                    menu.setAttribute('hidden', '');
-                }
-                btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+            function closeMenu() {
+                menu.hidden = true;
+                btn.setAttribute('aria-expanded', 'false');
             }
 
-            document.addEventListener('click', function(e) {
-                var li = e.target.closest ? e.target.closest('#docsFilterMenu li[data-period]') : null;
-                if (li) {
-                    var period = li.getAttribute('data-period');
-                    menu.querySelectorAll('li').forEach(function(x) {
-                        var on = x === li;
-                        x.classList.toggle('is-active', on);
-                        x.setAttribute('aria-selected', on ? 'true' : 'false');
-                    });
-                    panel.querySelectorAll('.docs-period').forEach(function(el) {
-                        if (el.getAttribute('data-period') === period) {
-                            el.removeAttribute('hidden');
-                        } else {
-                            el.setAttribute('hidden', '');
-                        }
-                    });
-                    label.textContent = li.textContent.trim();
-                    setOpen(false);
-                    return;
+            function show(period, text) {
+                label.textContent = text;
+                items.forEach(function(li) {
+                    var active = li.getAttribute('data-period') === period;
+                    li.classList.toggle('is-active', active);
+                    li.setAttribute('aria-selected', active ? 'true' : 'false');
+                });
+                panel.querySelectorAll('.docs-period').forEach(function(el) {
+                    if (el.getAttribute('data-period') === period) {
+                        el.removeAttribute('hidden');
+                    } else {
+                        el.setAttribute('hidden', '');
+                    }
+                });
+            }
+
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                var isOpen = !menu.hidden;
+                if (isOpen) {
+                    closeMenu();
+                } else {
+                    menu.hidden = false;
+                    btn.setAttribute('aria-expanded', 'true');
                 }
-                if (e.target.closest && e.target.closest('#docsFilterBtn')) {
-                    setOpen(menu.hasAttribute('hidden'));
-                    return;
-                }
-                setOpen(false);
             });
+
+            items.forEach(function(li) {
+                li.addEventListener('click', function() {
+                    show(li.getAttribute('data-period'), li.textContent.trim());
+                    closeMenu();
+                });
+            });
+
+            document.addEventListener('click', function(e) {
+                if (!menu.hidden && !e.target.closest('.docs-filter')) {
+                    closeMenu();
+                }
+            });
+
             document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape') setOpen(false);
+                if (e.key === 'Escape' && !menu.hidden) closeMenu();
             });
         })();
     </script>
