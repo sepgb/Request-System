@@ -945,6 +945,15 @@ const editProfilePhotoBtn = document.getElementById('editProfilePhotoBtn');
 const editProfilePhotoInput = document.getElementById('editProfilePhotoInput');
 const editProfileAvatarEl = document.getElementById('editProfileAvatar');
 
+// showToast / showEditProfileAlert live outside the DOMContentLoaded block, so they can't
+// see the escapeHtml defined inside it — without this copy they threw a ReferenceError.
+function escapeHtml(str) {
+  if (!str) return '';
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
 function showToast(type, message) {
   let container = document.getElementById('toastContainer');
   if (!container) {
@@ -970,10 +979,11 @@ function showToast(type, message) {
   const toast = document.createElement('div');
   toast.style.display = 'flex';
   toast.style.alignItems = 'center';
+  toast.style.justifyContent = 'center';
+  toast.style.textAlign = 'center';
   toast.style.gap = '10px';
-  toast.style.minWidth = '260px';
   toast.style.maxWidth = '360px';
-  toast.style.padding = '14px 16px';
+  toast.style.padding = '10px 20px';
   toast.style.borderRadius = '12px';
   toast.style.fontFamily = "'Inter', sans-serif";
   toast.style.fontSize = '0.86rem';
@@ -1202,7 +1212,7 @@ if (editProfileForm) {
             editProfilePhotoInput.value = '';
 
             closeEditProfileModal();
-            showToast('success', json.message || 'Profile updated.');
+            showToast('success', 'Changes saved');
           } else {
             const msg = json.message || 'Could not update profile.';
 
