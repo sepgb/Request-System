@@ -150,11 +150,20 @@ $rejectedTrend = weekTrend($rejectedThisWeek, $rejectedLastWeek);
    Top requested documents (daily / weekly)
    --------------------------------------------------------------- */
 $topDocLimit = 3;
+
+/*
+ * Requests per document type = still-live rows in `requests` PLUS requests that
+ * are now gone (claimed, or deleted while Rejected), recovered from audit_log.
+ * Both are bucketed by the date the request was SUBMITTED, so a document
+ * requested yesterday and claimed today still counts toward yesterday.
+ * audit_log rows written before date_requested existed have it NULL, so they
+ * fall back to the date they were claimed/deleted (the old behaviour).
+ */
 function docCountsSince($conn, $scopeAnd, $since = null)
 {
     $counts = [];
     $reqWhere = "WHERE 1=1" . ($since !== null ? " AND date_requested >= '" . $conn->real_escape_string($since) . "'" : '') . $scopeAnd;
-    $logWhere = "WHERE action = 'claimed'" . ($since !== null ? " AND created_at >= '" . $conn->real_escape_string($since) . "'" : '') . $scopeAnd;
+    $logWhere = "WHERE action IN ('claimed', 'deleted')" . ($since !== null ? " AND COALESCE(date_requested, created_at) >= '" . $conn->real_escape_string($since) . "'" : '') . $scopeAnd;
 
     $res = $conn->query("SELECT document_type, COUNT(*) AS c FROM requests {$reqWhere} GROUP BY document_type");
     while ($row = $res->fetch_assoc()) {
