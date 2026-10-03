@@ -5111,6 +5111,10 @@ html[data-theme="light"] .stat-card-status-legend-item {
   background: #8fe0b4;
 }
 
+.activity-dot.is-deleted {
+  background: #f0707a;
+}
+
 .activity-text {
   flex: 1 1 auto;
   min-width: 0;

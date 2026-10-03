@@ -309,6 +309,7 @@ $unreadCount = (int)($conn->query("SELECT COUNT(*) AS c FROM audit_log {$unreadW
 function renderActivityItem(array $a): void
 {
     $isClaimed = $a['action'] === 'claimed';
+    $isDeleted = $a['action'] === 'deleted';
     $isUnread = empty($a['is_read']);
     $canOpen = !in_array($a['action'], ['claimed', 'deleted'], true);
 
@@ -325,12 +326,16 @@ function renderActivityItem(array $a): void
     }
     echo ' title="Double-click to ' . ($canOpen ? 'open this request' : 'mark as read') . '">';
 
-    echo '<span class="activity-dot' . ($isClaimed ? ' is-claimed' : '') . '"></span>';
+    echo '<span class="activity-dot' . ($isClaimed ? ' is-claimed' : ($isDeleted ? ' is-deleted' : '')) . '"></span>';
     echo '<div class="activity-text">';
     if ($isClaimed) {
         echo '<p><strong>' . htmlspecialchars($a['performed_by_username'] ?? 'Admin') . '</strong>'
             . ' marked <strong>' . htmlspecialchars($a['reference_no']) . '</strong>'
             . ' (' . htmlspecialchars($a['full_name']) . ') as claimed</p>';
+    } elseif ($isDeleted) {
+        echo '<p><strong>' . htmlspecialchars($a['performed_by_username'] ?? 'Admin') . '</strong>'
+            . ' deleted <strong>' . htmlspecialchars($a['reference_no']) . '</strong>'
+            . ' (' . htmlspecialchars($a['full_name']) . ')</p>';
     } else {
         echo '<p><strong>' . htmlspecialchars($a['performed_by_username'] ?? 'Admin') . '</strong>'
             . ' changed <strong>' . htmlspecialchars($a['reference_no']) . '</strong>'
