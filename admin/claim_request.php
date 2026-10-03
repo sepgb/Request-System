@@ -31,7 +31,7 @@ if ($id <= 0) {
 try {
     $conn->query('SET SESSION innodb_lock_wait_timeout = 5');
     $snap = $conn->prepare(
-        "SELECT id, reference_no, student_number, full_name, document_type, request_status
+        "SELECT id, reference_no, student_number, full_name, document_type, request_status, date_requested
            FROM requests WHERE id = ? AND request_status = 'Ready for Pickup'"
     );
     $snap->bind_param('i', $id);
@@ -59,7 +59,7 @@ try {
     }
 
     try {
-        logAudit($conn, $before, 'claimed', $before['request_status'], null);
+        logAudit($conn, $before, 'claimed', $before['request_status'], null, $before['date_requested']);
     } catch (Throwable $e) {
         error_log('claim_request.php audit log failed: ' . $e->getMessage());
     }

@@ -45,19 +45,24 @@ function csrf_verify(?string $token): bool
  * from the `requests` table.
  * $request must contain: id, reference_no, student_number, full_name, document_type.
  */
-function logAudit(mysqli $conn, array $request, string $action, ?string $oldStatus, ?string $newStatus): void
+function logAudit(mysqli $conn, array $request, string $action, ?string $oldStatus, ?string $newStatus, ?string $dateRequested = null): void
 {
     $adminId       = $_SESSION['admin_id'] ?? null;
     $adminUsername = $_SESSION['admin_username'] ?? null;
 
+    // $dateRequested is the ORIGINAL request's date_requested, not today's date.
+    // It only matters for actions that delete the row (claimed/deleted) — it's
+    // what lets the Statistics weekly counts still find this request after the
+    // row itself is gone. Callers that don't pass it (e.g. a plain status
+    // change, where the row still exists) just store NULL here, which is fine.
     $stmt = $conn->prepare(
         "INSERT INTO audit_log
             (request_id, reference_no, student_number, full_name, document_type,
-             action, old_status, new_status, performed_by_admin_id, performed_by_username)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+             action, old_status, new_status, performed_by_admin_id, performed_by_username, date_requested)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
     );
     $stmt->bind_param(
-        'isssssssis',
+        'isssssssiss',
         $request['id'],
         $request['reference_no'],
         $request['student_number'],
@@ -67,7 +72,8 @@ function logAudit(mysqli $conn, array $request, string $action, ?string $oldStat
         $oldStatus,
         $newStatus,
         $adminId,
-        $adminUsername
+        $adminUsername,
+        $dateRequested
     );
     $stmt->execute();
     $stmt->close();

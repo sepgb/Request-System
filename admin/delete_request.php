@@ -41,7 +41,7 @@ try {
     // Snapshot the row BEFORE deleting it — this is the only record that
     // survives once the row is gone.
     $snap = $conn->prepare(
-        "SELECT id, reference_no, student_number, full_name, document_type, request_status
+        "SELECT id, reference_no, student_number, full_name, document_type, request_status, date_requested
            FROM requests WHERE id = ? AND request_status = 'Rejected'"
     );
     $snap->bind_param('i', $id);
@@ -70,7 +70,7 @@ try {
 
     /* The row is already gone; a logging problem must not turn this into an error. */
     try {
-        logAudit($conn, $before, 'deleted', $before['request_status'], null);
+        logAudit($conn, $before, 'deleted', $before['request_status'], null, $before['date_requested']);
     } catch (Throwable $e) {
         error_log('delete_request.php audit log failed: ' . $e->getMessage());
     }

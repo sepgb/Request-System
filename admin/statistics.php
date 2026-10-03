@@ -53,19 +53,46 @@ $todayDow = (int)date('N');
 $mondayThisWeek = date('Y-m-d', strtotime('-' . ($todayDow - 1) . ' days'));
 $mondayLastWeek = date('Y-m-d', strtotime($mondayThisWeek . ' -7 days'));
 
-$submittedThisWeek = (int)($conn->query("
+/* ---------------------------------------------------------------
+   "Submitted" and "Rejected" this/last week.
+
+   A request that's since been claimed or deleted is GONE from the
+   `requests` table, so counting live rows alone undercounts both of
+   these the moment anything gets claimed or deleted. audit_log is the
+   permanent record, so every count here is (still-live rows) PLUS
+   (rows now gone, recovered from audit_log). A given request is never
+   in both places at once, so there's no risk of double-counting.
+   --------------------------------------------------------------- */
+
+// Submitted = still-live rows, by date_requested ...
+$submittedThisWeekLive = (int)($conn->query("
     SELECT COUNT(*) AS c FROM requests
     WHERE date_requested >= '{$mondayThisWeek}'{$scopeAnd}
 ")->fetch_assoc()['c'] ?? 0);
 
+$submittedLastWeekLive = (int)($conn->query("
+    SELECT COUNT(*) AS c FROM requests
+    WHERE date_requested >= '{$mondayLastWeek}' AND date_requested < '{$mondayThisWeek}'{$scopeAnd}
+")->fetch_assoc()['c'] ?? 0);
+
+// ... PLUS rows since claimed or deleted, by their ORIGINAL date_requested
+// (saved to audit_log at the time of the claim/delete).
+$submittedThisWeekGone = (int)($conn->query("
+    SELECT COUNT(*) AS c FROM audit_log
+    WHERE action IN ('claimed', 'deleted') AND date_requested >= '{$mondayThisWeek}'{$scopeAnd}
+")->fetch_assoc()['c'] ?? 0);
+
+$submittedLastWeekGone = (int)($conn->query("
+    SELECT COUNT(*) AS c FROM audit_log
+    WHERE action IN ('claimed', 'deleted') AND date_requested >= '{$mondayLastWeek}' AND date_requested < '{$mondayThisWeek}'{$scopeAnd}
+")->fetch_assoc()['c'] ?? 0);
+
+$submittedThisWeek = $submittedThisWeekLive + $submittedThisWeekGone;
+$submittedLastWeek = $submittedLastWeekLive + $submittedLastWeekGone;
+
 $claimedThisWeek = (int)($conn->query("
     SELECT COUNT(*) AS c FROM audit_log
     WHERE action = 'claimed' AND created_at >= '{$mondayThisWeek}'{$scopeAnd}
-")->fetch_assoc()['c'] ?? 0);
-
-$submittedLastWeek = (int)($conn->query("
-    SELECT COUNT(*) AS c FROM requests
-    WHERE date_requested >= '{$mondayLastWeek}' AND date_requested < '{$mondayThisWeek}'{$scopeAnd}
 ")->fetch_assoc()['c'] ?? 0);
 
 $claimedLastWeek = (int)($conn->query("
@@ -73,9 +100,13 @@ $claimedLastWeek = (int)($conn->query("
     WHERE action = 'claimed' AND created_at >= '{$mondayLastWeek}' AND created_at < '{$mondayThisWeek}'{$scopeAnd}
 ")->fetch_assoc()['c'] ?? 0);
 
+// Rejected: bucket by WHEN it was rejected (not submitted), same as before —
+// but now also scanning deleted-while-rejected rows from audit_log, bucketed
+// the same way (when they were rejected, not when they were deleted).
 $rejectedThisWeek = 0;
 $rejectedLastWeek = 0;
-$rejRes = $conn->query("
+
+$rejResLive = $conn->query("
     SELECT COALESCE(
         (SELECT MAX(a.created_at) FROM audit_log a
          WHERE a.reference_no = r.reference_no AND a.new_status = 'Rejected'),
@@ -84,7 +115,25 @@ $rejRes = $conn->query("
     FROM requests r
     WHERE r.request_status = 'Rejected'{$scopeAnd}
 ");
-while ($rj = $rejRes->fetch_assoc()) {
+while ($rj = $rejResLive->fetch_assoc()) {
+    $rejectedDay = substr((string)$rj['rejected_at'], 0, 10);
+    if ($rejectedDay >= $mondayThisWeek) {
+        $rejectedThisWeek++;
+    } elseif ($rejectedDay >= $mondayLastWeek) {
+        $rejectedLastWeek++;
+    }
+}
+
+$rejResGone = $conn->query("
+    SELECT COALESCE(
+        (SELECT MAX(a2.created_at) FROM audit_log a2
+         WHERE a2.reference_no = a.reference_no AND a2.new_status = 'Rejected'),
+        a.date_requested
+    ) AS rejected_at
+    FROM audit_log a
+    WHERE a.action = 'deleted' AND a.old_status = 'Rejected'{$scopeAnd}
+");
+while ($rj = $rejResGone->fetch_assoc()) {
     $rejectedDay = substr((string)$rj['rejected_at'], 0, 10);
     if ($rejectedDay >= $mondayThisWeek) {
         $rejectedThisWeek++;
