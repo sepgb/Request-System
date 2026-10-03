@@ -248,6 +248,7 @@ for ($i = 13; $i >= 0; $i--) {
     $days[$d] = ['submitted' => 0, 'claimed' => 0];
 }
 
+// Submitted = requests still in the system, by the day they were submitted ...
 $res = $conn->query("
     SELECT DATE(date_requested) AS d, COUNT(*) AS c
     FROM requests
@@ -255,7 +256,21 @@ $res = $conn->query("
     GROUP BY DATE(date_requested)
 ");
 while ($row = $res->fetch_assoc()) {
-    if (isset($days[$row['d']])) $days[$row['d']]['submitted'] = (int)$row['c'];
+    if (isset($days[$row['d']])) $days[$row['d']]['submitted'] += (int)$row['c'];
+}
+
+// ... PLUS requests that are gone (claimed, or deleted while Rejected). Those rows
+// no longer exist in `requests`, so they're recovered from audit_log by their ORIGINAL
+// submission date — otherwise a day's Submitted bar shrinks once its requests are
+// claimed or deleted. A request is never in both places at once, so nothing is double-counted.
+$res = $conn->query("
+    SELECT DATE(date_requested) AS d, COUNT(*) AS c
+    FROM audit_log
+    WHERE action IN ('claimed', 'deleted') AND date_requested >= (CURDATE() - INTERVAL 13 DAY){$scopeAnd}
+    GROUP BY DATE(date_requested)
+");
+while ($row = $res->fetch_assoc()) {
+    if (isset($days[$row['d']])) $days[$row['d']]['submitted'] += (int)$row['c'];
 }
 
 $res = $conn->query("
