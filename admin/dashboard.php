@@ -31,6 +31,7 @@ $initialStatusFilter = trim($_GET['status'] ?? '');
 /* ---------------------------------------------------------------
    Recent activity
    --------------------------------------------------------------- */
+$activityLimit = 5;
 $fullActivityLimit = 200;
 
 $activityWhere = $scopeIn !== null ? "WHERE document_type IN ($scopeIn) " : '';
@@ -56,14 +57,8 @@ while ($row = $fullActivity->fetch_assoc()) {
   $allActivityRows[] = $row;
 }
 
-$activityRows = $allActivityRows;   // every notification — the dropdown list scrolls
-
-// Facebook-style sections: anything logged today vs. everything before
-$notifToday = date('Y-m-d');
-$notifGroups = ['Today' => [], 'Earlier' => []];
-foreach ($allActivityRows as $act) {
-  $notifGroups[date('Y-m-d', strtotime($act['created_at'])) === $notifToday ? 'Today' : 'Earlier'][] = $act;
-}
+$activityRows = array_slice($allActivityRows, 0, $activityLimit);
+$hasMoreActivity = count($allActivityRows) > $activityLimit;
 
 $unreadWhere = $activityWhere === '' ? 'WHERE is_read = 0' : $activityWhere . 'AND is_read = 0';
 $unreadCount = (int)($conn->query("SELECT COUNT(*) AS c FROM audit_log {$unreadWhere}")->fetch_assoc()['c'] ?? 0);
@@ -124,7 +119,7 @@ function renderActivityItem(array $a): void
     })();
   </script>
 
-  <link rel="stylesheet" href="../assets/css/style.css?v=<?php echo @filemtime(__DIR__ . '/../assets/css/style.css'); ?>">
+  <link rel="stylesheet" href="../assets/css/style.css">
 
 </head>
 
@@ -316,46 +311,28 @@ function renderActivityItem(array $a): void
               <div class="notif-dropdown" id="notifDropdown" hidden>
                 <div class="notif-dropdown-header">
                   <span>Notifications</span>
-                  <div class="notif-more-wrap">
-                    <button type="button" class="notif-more" id="notifMoreBtn"
-                      aria-haspopup="true" aria-expanded="false" aria-label="More options">
-                      <svg viewBox="0 0 24 24" fill="currentColor">
-                        <circle cx="5" cy="12" r="1.8" />
-                        <circle cx="12" cy="12" r="1.8" />
-                        <circle cx="19" cy="12" r="1.8" />
-                      </svg>
-                    </button>
-                    <div class="notif-more-menu" id="notifMoreMenu" hidden>
-                      <button type="button" class="notif-menu-item" id="notifMarkAllRead" <?php echo $unreadCount > 0 ? '' : ' disabled'; ?>>
-                        <svg viewBox="0 0 24 24" fill="none">
-                          <path d="M5 12.5L9.5 17L19 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                        </svg>
-                        Mark all as read
-                      </button>
-                    </div>
-                  </div>
+                  <?php if ($unreadCount > 0): ?>
+                    <button type="button" class="notif-mark-all" id="notifMarkAllRead">Mark all as read</button>
+                  <?php endif; ?>
                 </div>
-                <div class="notif-tabs" role="tablist">
-                  <button type="button" class="notif-tab is-active" data-filter="all" role="tab" aria-selected="true">All</button>
-                  <button type="button" class="notif-tab" data-filter="unread" role="tab" aria-selected="false">Unread</button>
-                </div>
-                <div class="notif-list" id="notifList">
+                <div class="notif-list">
                   <?php if (empty($activityRows)): ?>
                     <p class="stats-empty">No activity recorded yet.</p>
                   <?php else: ?>
-                    <?php foreach ($notifGroups as $groupLabel => $groupRows): ?>
-                      <?php if (empty($groupRows)) continue; ?>
-                      <div class="notif-group">
-                        <h4 class="notif-group-title"><?php echo $groupLabel; ?></h4>
-                        <div class="activity-list">
-                          <?php foreach ($groupRows as $a): renderActivityItem($a);
-                          endforeach; ?>
-                        </div>
-                      </div>
-                    <?php endforeach; ?>
-                    <p class="stats-empty" id="notifEmptyUnread" hidden>You're all caught up.</p>
+                    <div class="activity-list">
+                      <?php foreach ($activityRows as $a): renderActivityItem($a);
+                      endforeach; ?>
+                    </div>
                   <?php endif; ?>
                 </div>
+                <?php if ($hasMoreActivity): ?>
+                  <button type="button" class="notif-see-all" id="openAuditLogModal">
+                    See all recent activity
+                    <svg viewBox="0 0 24 24" fill="none">
+                      <path d="M9 6L15 12L9 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                  </button>
+                <?php endif; ?>
               </div>
             </div>
           <?php endif; ?>
@@ -705,6 +682,18 @@ function renderActivityItem(array $a): void
     </div>
   </div>
 
+  <!-- DELETE CONFIRMATION MODAL (rejected requests only) -->
+  <div class="modal-overlay" id="deleteModalOverlay" hidden>
+    <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+      <h3 id="deleteModalTitle">Delete request?</h3>
+      <p id="deleteModalText">This will permanently delete the rejected request from the system.</p>
+      <div class="modal-actions">
+        <button type="button" class="btn-modal btn-modal-cancel" id="deleteModalCancel">Cancel</button>
+        <button type="button" class="btn-modal btn-modal-danger" id="deleteModalConfirm">Yes, delete</button>
+      </div>
+    </div>
+  </div>
+
   <!-- REQUEST DETAILS MODAL -->
   <div class="modal-overlay" id="requestDetailsOverlay" hidden>
     <div class="request-details-box" role="dialog" aria-modal="true" aria-labelledby="requestDetailsTitle">
@@ -755,9 +744,40 @@ function renderActivityItem(array $a): void
       <div class="modal-actions">
         <button type="button" class="btn-modal btn-modal-cancel" id="requestDetailsClose">Cancel</button>
         <button type="button" class="btn-modal btn-modal-confirm" id="rdMarkClaimed" hidden>Mark as Claimed</button>
+        <button type="button" class="btn-modal btn-modal-danger" id="rdDelete" hidden>Delete Request</button>
       </div>
     </div>
   </div>
+
+  <!-- AUDIT LOG MODAL (Full Admin only) -->
+  <?php if (isFullAdmin()): ?>
+    <div class="modal-overlay" id="auditLogOverlay" hidden>
+      <div class="audit-log-box" role="dialog" aria-modal="true" aria-labelledby="auditLogTitle">
+        <div class="audit-log-header">
+          <div>
+            <h3 id="auditLogTitle">All Recent Activity</h3>
+            <p>Showing the last <?php echo count($allActivityRows); ?> logged actions.</p>
+          </div>
+          <button type="button" class="edit-profile-close" id="auditLogClose" aria-label="Close">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="audit-log-body">
+          <?php if (empty($allActivityRows)): ?>
+            <p class="stats-empty">No activity recorded yet.</p>
+          <?php else: ?>
+            <div class="activity-list">
+              <?php foreach ($allActivityRows as $a): renderActivityItem($a);
+              endforeach; ?>
+            </div>
+          <?php endif; ?>
+        </div>
+      </div>
+    </div>
+  <?php endif; ?>
 
   <!-- EDIT PROFILE MODAL -->
   <div class="modal-overlay" id="editProfileOverlay" hidden>
@@ -865,7 +885,7 @@ function renderActivityItem(array $a): void
     window.CSRF_TOKEN = <?php echo json_encode(csrf_token()); ?>;
     window.INITIAL_STATUS_FILTER = <?php echo json_encode($initialStatusFilter); ?>;
   </script>
-  <script src="../assets/js/admin.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/admin.js'); ?>"></script>
+  <script src="../assets/js/admin.js"></script>
 
   <!-- THEME TOGGLE -->
   <script>

@@ -299,12 +299,89 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
+  // ---- Custom "delete request" confirmation modal (rejected requests only) ----
+  const deleteModalOverlay = document.getElementById('deleteModalOverlay');
+  const deleteModalText = document.getElementById('deleteModalText');
+  const deleteModalConfirm = document.getElementById('deleteModalConfirm');
+  const deleteModalCancel = document.getElementById('deleteModalCancel');
+  let pendingDelete = null; // { id, btn }
+
+  function openDeleteModal(id, reference, fullName, btn) {
+    pendingDelete = { id: id, btn: btn };
+
+    if (deleteModalText) {
+      deleteModalText.textContent =
+        'Delete ' + reference + ' (' + fullName + ')? This will permanently delete the request from the system.';
+    }
+
+    if (deleteModalOverlay) {
+      deleteModalOverlay.hidden = false;
+    }
+  }
+
+  function closeDeleteModal() {
+    pendingDelete = null;
+    if (deleteModalOverlay) deleteModalOverlay.hidden = true;
+  }
+
+  function doDelete(id, btn) {
+    if (btn) btn.disabled = true;
+
+    fetch('delete_request.php', {
+      method: 'POST',
+      body: new URLSearchParams({ id: id, csrf_token: window.CSRF_TOKEN })
+    })
+      .then(function (res) { return res.json(); })
+      .then(function (json) {
+        if (json.success) {
+          const row = document.getElementById('row-' + id);
+          if (row) row.remove();
+          bumpStat(statTotal, -1);
+          bumpStat(sidebarCountAll, -1);
+          bumpStat(sidebarCountRejected, -1);
+        } else {
+          alert(json.message || 'Could not delete the request.');
+          if (btn) btn.disabled = false;
+        }
+      })
+      .catch(function () {
+        alert('Network error. Please try again.');
+        if (btn) btn.disabled = false;
+      });
+  }
+
+  if (deleteModalConfirm) {
+    deleteModalConfirm.addEventListener('click', function () {
+      if (!pendingDelete) return;
+      const del = pendingDelete;
+      closeDeleteModal();
+      doDelete(del.id, del.btn);
+    });
+  }
+
+  if (deleteModalCancel) {
+    deleteModalCancel.addEventListener('click', closeDeleteModal);
+  }
+
+  if (deleteModalOverlay) {
+    deleteModalOverlay.addEventListener('click', function (e) {
+      if (e.target === deleteModalOverlay) closeDeleteModal();
+    });
+  }
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && deleteModalOverlay && !deleteModalOverlay.hidden) {
+      closeDeleteModal();
+    }
+  });
+
   const tableBody = document.querySelector('.admin-table tbody');
 
   // ---- Request details modal: double-click a row to see it like a receipt ----
   const requestDetailsOverlay = document.getElementById('requestDetailsOverlay');
   const requestDetailsClose = document.getElementById('requestDetailsClose');
   const rdMarkClaimed = document.getElementById('rdMarkClaimed');
+  const rdDelete = document.getElementById('rdDelete');
   const rdTitle = document.getElementById('requestDetailsTitle');
   const rdStudentNo = document.getElementById('rdStudentNo');
   const rdName = document.getElementById('rdName');
@@ -350,6 +427,9 @@ document.addEventListener('DOMContentLoaded', function () {
     if (rdMarkClaimed) {
       rdMarkClaimed.hidden = status !== 'Ready for Pickup';
     }
+    if (rdDelete) {
+      rdDelete.hidden = status !== 'Rejected';
+    }
 
     if (requestDetailsOverlay) requestDetailsOverlay.hidden = false;
   }
@@ -377,6 +457,15 @@ document.addEventListener('DOMContentLoaded', function () {
       const req = currentDetailsRequest;
       closeRequestDetails();
       openClaimModal(req.id, req.reference, req.fullName, null);
+    });
+  }
+
+  if (rdDelete) {
+    rdDelete.addEventListener('click', function () {
+      if (!currentDetailsRequest) return;
+      const req = currentDetailsRequest;
+      closeRequestDetails();
+      openDeleteModal(req.id, req.reference, req.fullName, null);
     });
   }
 
@@ -493,7 +582,6 @@ const notifDropdown = document.getElementById('notifDropdown');
 function closeNotifDropdown() {
   if (!notifDropdown) return;
   notifDropdown.hidden = true;
-  closeNotifMenu();
   if (notifTrigger) notifTrigger.setAttribute('aria-expanded', 'false');
 }
 
@@ -534,70 +622,6 @@ function updateNotifBadge(count) {
   } else if (badge) {
     badge.remove();
   }
-
-  // "Mark all as read" only makes sense while something is unread
-  const markAll = document.getElementById('notifMarkAllRead');
-  if (markAll) markAll.disabled = !(count > 0);
-}
-
-// ---- Notification tabs (All / Unread) ----
-let notifFilter = 'all';
-
-function applyNotifFilter() {
-  const list = document.getElementById('notifList');
-  if (!list) return;
-
-  let anyShown = false;
-  list.querySelectorAll('.notif-group').forEach(function (group) {
-    let shown = 0;
-    group.querySelectorAll('.activity-item').forEach(function (item) {
-      const show = notifFilter === 'all' || item.dataset.read === '0';
-      item.hidden = !show;
-      if (show) shown++;
-    });
-    group.hidden = shown === 0;          // hide "Today" / "Earlier" when empty
-    if (shown > 0) anyShown = true;
-  });
-
-  const empty = document.getElementById('notifEmptyUnread');
-  if (empty) empty.hidden = !(notifFilter === 'unread' && !anyShown);
-}
-
-document.querySelectorAll('.notif-tab').forEach(function (tab) {
-  tab.addEventListener('click', function () {
-    notifFilter = tab.dataset.filter;
-    document.querySelectorAll('.notif-tab').forEach(function (t) {
-      const active = t === tab;
-      t.classList.toggle('is-active', active);
-      t.setAttribute('aria-selected', active ? 'true' : 'false');
-    });
-    applyNotifFilter();
-  });
-});
-
-// ---- Three-dot menu (holds "Mark all as read") ----
-const notifMoreBtn = document.getElementById('notifMoreBtn');
-const notifMoreMenu = document.getElementById('notifMoreMenu');
-
-function closeNotifMenu() {
-  if (!notifMoreMenu) return;
-  notifMoreMenu.hidden = true;
-  if (notifMoreBtn) notifMoreBtn.setAttribute('aria-expanded', 'false');
-}
-
-if (notifMoreBtn && notifMoreMenu) {
-  notifMoreBtn.addEventListener('click', function (e) {
-    e.stopPropagation();
-    const willOpen = notifMoreMenu.hidden;
-    notifMoreMenu.hidden = !willOpen;
-    notifMoreBtn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
-  });
-
-  document.addEventListener('click', function (e) {
-    if (!notifMoreMenu.hidden && !e.target.closest('.notif-more-wrap')) {
-      closeNotifMenu();
-    }
-  });
 }
 
 // ---- Notification items: double-click to open the request or mark read ----
@@ -629,7 +653,6 @@ document.addEventListener('dblclick', function (e) {
         item.classList.remove('is-unread');
         item.dataset.read = '1';
         updateNotifBadge(json.unread);
-        applyNotifFilter();
       }
     });
 });
@@ -650,9 +673,7 @@ if (notifMarkAllBtn) {
             el.dataset.read = '1';
           });
           updateNotifBadge(json.unread);
-          notifMarkAllBtn.disabled = true;
-          closeNotifMenu();
-          applyNotifFilter();
+          notifMarkAllBtn.hidden = true;
         }
       });
   });
@@ -671,7 +692,7 @@ if (notifMarkAllBtn) {
     row.classList.add('row-highlight');
     setTimeout(function () {
       row.classList.remove('row-highlight');
-    }, 4000);
+    }, 3000);
   }
 
   // Clean the URL so refreshing doesn't re-highlight / re-mark-read
