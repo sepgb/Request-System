@@ -8,6 +8,15 @@ $scopeWhere = $scopeIn !== null ? " WHERE document_type IN ($scopeIn)" : '';
 
 $requests = $conn->query("SELECT * FROM requests{$scopeWhere} ORDER BY date_requested DESC");
 
+/* Distinct document types for the "Document" filter dropdown, scoped the
+   same way as the table itself. */
+$docTypeRes = $conn->query("SELECT DISTINCT document_type FROM requests{$scopeWhere} ORDER BY document_type ASC");
+$docTypeOptions = [];
+while ($dt = $docTypeRes->fetch_assoc()) {
+  $docTypeOptions[] = $dt['document_type'];
+}
+
+/* Quick stats — scoped to this admin's document types, if restricted */
 $stats = $conn->query("
     SELECT
         SUM(request_status = 'Pending') AS pending,
@@ -27,11 +36,18 @@ $adminInitial = $firstInitial . $secondInitial;
 $currentAdminPage = basename($_SERVER['PHP_SELF'] ?? '');
 $initialStatusFilter = trim($_GET['status'] ?? '');
 
+/* ---------------------------------------------------------------
+   Recent activity
+   --------------------------------------------------------------- */
 $fullActivityLimit = 200;
 
 $activityWhere = $scopeIn !== null ? "WHERE is_dismissed = 0 AND document_type IN ($scopeIn) " : 'WHERE is_dismissed = 0 ';
 $activityAnd = $scopeIn !== null ? "AND document_type IN ($scopeIn) " : '';
 
+/* A notification double-click lands back here with ?read_notif=<id> —
+mark that one entry read before we compute the unread count below.
+Assumes audit_log has an auto-increment `id` primary key and an
+`is_read` TINYINT(1) DEFAULT 0 column. */
 if (!empty($_GET['read_notif'])) {
   $readId = (int)$_GET['read_notif'];
   if ($readId > 0) {
@@ -48,7 +64,9 @@ while ($row = $fullActivity->fetch_assoc()) {
   $allActivityRows[] = $row;
 }
 
-$activityRows = $allActivityRows;
+$activityRows = $allActivityRows;   // every notification — the dropdown list scrolls
+
+// Facebook-style sections: anything logged today vs. everything before
 $notifToday = date('Y-m-d');
 $notifGroups = ['Today' => [], 'Earlier' => []];
 foreach ($allActivityRows as $act) {
@@ -58,6 +76,8 @@ foreach ($allActivityRows as $act) {
 $unreadWhere = $activityWhere . 'AND is_read = 0';
 $unreadCount = (int)($conn->query("SELECT COUNT(*) AS c FROM audit_log {$unreadWhere}")->fetch_assoc()['c'] ?? 0);
 
+// 'claimed' and 'deleted' remove the request row, so there's nothing left
+// to open on the dashboard for those — only status-change entries link out.
 function renderActivityItem(array $a): void
 {
   $isClaimed = $a['action'] === 'claimed';
@@ -142,7 +162,7 @@ function renderActivityItem(array $a): void
         </div>
       </div>
 
-      <!-- GENERAL -->
+      <!-- General -->
       <div class="sidebar-section-label">
         General
       </div>
@@ -167,14 +187,14 @@ function renderActivityItem(array $a): void
         <?php endif; ?>
       </nav>
 
-      <!-- STATUS -->
+      <!-- Status -->
       <div class="sidebar-section-label">
         Status
       </div>
 
       <nav class="sidebar-nav sidebar-nav-status">
 
-        <!-- ALL -->
+        <!-- All -->
         <a href="dashboard.php"
           class="sidebar-link sidebar-status-link<?php echo $initialStatusFilter === '' ? ' active' : ''; ?>"
           data-status="">
@@ -227,8 +247,11 @@ function renderActivityItem(array $a): void
       </nav>
     </aside>
 
-    <!-- TOPBAR -->
+    <!-- MAIN CONTENT -->
     <div class="admin-content">
+
+
+      <!-- TOPBAR -->
       <header class="admin-topbar">
         <div class="topbar-status-row">
           <a href="dashboard.php"
@@ -554,6 +577,37 @@ function renderActivityItem(array $a): void
         <!-- REQUEST TABLE -->
         <div class="table-wrap">
 
+          <div class="table-filters">
+            <div class="table-filter-group">
+              <label for="filterDocument">Document</label>
+              <select id="filterDocument">
+                <option value="">All documents</option>
+                <?php foreach ($docTypeOptions as $dt): ?>
+                  <option value="<?php echo htmlspecialchars($dt, ENT_QUOTES, 'UTF-8'); ?>">
+                    <?php echo htmlspecialchars($dt); ?>
+                  </option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+
+            <div class="table-filter-group">
+              <label for="filterDateFrom">From</label>
+              <input type="date" id="filterDateFrom">
+            </div>
+
+            <div class="table-filter-group">
+              <label for="filterDateTo">To</label>
+              <input type="date" id="filterDateTo">
+            </div>
+
+            <button type="button" class="table-filter-clear" id="filterClear" hidden>
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+              </svg>
+              Clear filters
+            </button>
+          </div>
+
           <table class="admin-table">
 
             <thead>
@@ -615,6 +669,8 @@ function renderActivityItem(array $a): void
                   data-reference="<?php echo htmlspecialchars($r['reference_no'], ENT_QUOTES, 'UTF-8'); ?>"
                   data-full-name="<?php echo htmlspecialchars($r['full_name'], ENT_QUOTES, 'UTF-8'); ?>"
                   data-date-requested="<?php echo $r['date_requested'] ? date('M d, Y g:i A', strtotime($r['date_requested'])) : ''; ?>"
+                  data-date="<?php echo $r['date_requested'] ? date('Y-m-d', strtotime($r['date_requested'])) : ''; ?>"
+                  data-document="<?php echo htmlspecialchars($r['document_type'], ENT_QUOTES, 'UTF-8'); ?>"
                   data-purpose="<?php echo htmlspecialchars($r['purpose'] ?? '', ENT_QUOTES, 'UTF-8'); ?>">
                   <td data-label="Reference no.">
                     <span class="cell-ref">
@@ -710,7 +766,7 @@ function renderActivityItem(array $a): void
     </div>
   </div>
 
-  <!-- DELETE CONFIRMATION MODAL -->
+  <!-- DELETE CONFIRMATION MODAL (rejected requests only) -->
   <div class="modal-overlay" id="deleteModalOverlay" hidden>
     <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
       <h3 id="deleteModalTitle">Delete request?</h3>
