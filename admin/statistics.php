@@ -12,9 +12,6 @@ $adminInitial = $firstInitial . $secondInitial;
 $currentAdminPage = basename($_SERVER['PHP_SELF'] ?? '');
 $initialStatusFilter = trim($_GET['status'] ?? '');
 
-/* ---------------------------------------------------------------
-   Top stat cards
-   --------------------------------------------------------------- */
 $scopeIn = documentScopeInClause($conn);
 $scopeWhere = $scopeIn !== null ? " WHERE document_type IN ($scopeIn)" : '';
 $scopeAnd = $scopeIn !== null ? " AND document_type IN ($scopeIn)" : '';
@@ -53,18 +50,6 @@ $todayDow = (int)date('N');
 $mondayThisWeek = date('Y-m-d', strtotime('-' . ($todayDow - 1) . ' days'));
 $mondayLastWeek = date('Y-m-d', strtotime($mondayThisWeek . ' -7 days'));
 
-/* ---------------------------------------------------------------
-   "Submitted" and "Rejected" this/last week.
-
-   A request that's since been claimed or deleted is GONE from the
-   `requests` table, so counting live rows alone undercounts both of
-   these the moment anything gets claimed or deleted. audit_log is the
-   permanent record, so every count here is (still-live rows) PLUS
-   (rows now gone, recovered from audit_log). A given request is never
-   in both places at once, so there's no risk of double-counting.
-   --------------------------------------------------------------- */
-
-// Submitted = still-live rows, by date_requested ...
 $submittedThisWeekLive = (int)($conn->query("
     SELECT COUNT(*) AS c FROM requests
     WHERE date_requested >= '{$mondayThisWeek}'{$scopeAnd}
@@ -75,8 +60,6 @@ $submittedLastWeekLive = (int)($conn->query("
     WHERE date_requested >= '{$mondayLastWeek}' AND date_requested < '{$mondayThisWeek}'{$scopeAnd}
 ")->fetch_assoc()['c'] ?? 0);
 
-// ... PLUS rows since claimed or deleted, by their ORIGINAL date_requested
-// (saved to audit_log at the time of the claim/delete).
 $submittedThisWeekGone = (int)($conn->query("
     SELECT COUNT(*) AS c FROM audit_log
     WHERE action IN ('claimed', 'deleted') AND date_requested >= '{$mondayThisWeek}'{$scopeAnd}
@@ -100,9 +83,6 @@ $claimedLastWeek = (int)($conn->query("
     WHERE action = 'claimed' AND created_at >= '{$mondayLastWeek}' AND created_at < '{$mondayThisWeek}'{$scopeAnd}
 ")->fetch_assoc()['c'] ?? 0);
 
-// Rejected: bucket by WHEN it was rejected (not submitted), same as before —
-// but now also scanning deleted-while-rejected rows from audit_log, bucketed
-// the same way (when they were rejected, not when they were deleted).
 $rejectedThisWeek = 0;
 $rejectedLastWeek = 0;
 
@@ -146,19 +126,8 @@ $submittedTrend = weekTrend($submittedThisWeek, $submittedLastWeek);
 $claimedTrend = weekTrend($claimedThisWeek, $claimedLastWeek);
 $rejectedTrend = weekTrend($rejectedThisWeek, $rejectedLastWeek);
 
-/* ---------------------------------------------------------------
-   Top requested documents (daily / weekly)
-   --------------------------------------------------------------- */
 $topDocLimit = 3;
 
-/*
- * Requests per document type = still-live rows in `requests` PLUS requests that
- * are now gone (claimed, or deleted while Rejected), recovered from audit_log.
- * Both are bucketed by the date the request was SUBMITTED, so a document
- * requested yesterday and claimed today still counts toward yesterday.
- * audit_log rows written before date_requested existed have it NULL, so they
- * fall back to the date they were claimed/deleted (the old behaviour).
- */
 function docCountsSince($conn, $scopeAnd, $since = null)
 {
     $counts = [];
@@ -239,16 +208,12 @@ function renderDocChart(array $counts, int $steps): void
 <?php
 }
 
-/* ---------------------------------------------------------------
-   Last 14 days — requests submitted vs. documents claimed
-   --------------------------------------------------------------- */
 $days = [];
 for ($i = 13; $i >= 0; $i--) {
     $d = date('Y-m-d', strtotime("-{$i} days"));
     $days[$d] = ['submitted' => 0, 'claimed' => 0];
 }
 
-// Submitted = requests still in the system, by the day they were submitted ...
 $res = $conn->query("
     SELECT DATE(date_requested) AS d, COUNT(*) AS c
     FROM requests
@@ -259,10 +224,6 @@ while ($row = $res->fetch_assoc()) {
     if (isset($days[$row['d']])) $days[$row['d']]['submitted'] += (int)$row['c'];
 }
 
-// ... PLUS requests that are gone (claimed, or deleted while Rejected). Those rows
-// no longer exist in `requests`, so they're recovered from audit_log by their ORIGINAL
-// submission date — otherwise a day's Submitted bar shrinks once its requests are
-// claimed or deleted. A request is never in both places at once, so nothing is double-counted.
 $res = $conn->query("
     SELECT DATE(date_requested) AS d, COUNT(*) AS c
     FROM audit_log
@@ -288,18 +249,11 @@ foreach ($days as $v) {
     $maxDayCount = max($maxDayCount, $v['submitted'], $v['claimed']);
 }
 
-/* ---------------------------------------------------------------
-   Recent activity
-   --------------------------------------------------------------- */
 $fullActivityLimit = 200;
 
 $activityWhere = $scopeIn !== null ? "WHERE is_dismissed = 0 AND document_type IN ($scopeIn) " : 'WHERE is_dismissed = 0 ';
 $activityAnd = $scopeIn !== null ? "AND document_type IN ($scopeIn) " : '';
 
-/* A notification double-click lands back here with ?read_notif=<id> —
-mark that one entry read before we compute the unread count below.
-Assumes audit_log has an auto-increment `id` primary key and an
-`is_read` TINYINT(1) DEFAULT 0 column. */
 if (!empty($_GET['read_notif'])) {
     $readId = (int)$_GET['read_notif'];
     if ($readId > 0) {
@@ -316,9 +270,7 @@ while ($row = $fullActivity->fetch_assoc()) {
     $allActivityRows[] = $row;
 }
 
-$activityRows = $allActivityRows;   // every notification — the dropdown list scrolls
-
-// Facebook-style sections: anything logged today vs. everything before
+$activityRows = $allActivityRows;
 $notifToday = date('Y-m-d');
 $notifGroups = ['Today' => [], 'Earlier' => []];
 foreach ($allActivityRows as $act) {
@@ -328,8 +280,6 @@ foreach ($allActivityRows as $act) {
 $unreadWhere = $activityWhere . 'AND is_read = 0';
 $unreadCount = (int)($conn->query("SELECT COUNT(*) AS c FROM audit_log {$unreadWhere}")->fetch_assoc()['c'] ?? 0);
 
-// 'claimed' and 'deleted' remove the request row, so there's nothing left
-// to open on the dashboard for those — only status-change entries link out.
 function renderActivityItem(array $a): void
 {
     $isClaimed = $a['action'] === 'claimed';
@@ -988,7 +938,6 @@ function renderActivityItem(array $a): void
                 return t;
             }
 
-            // Smooth, overshoot-free curve (monotone cubic) through the points
             function smoothPath(p) {
                 var n = p.length,
                     dx = [],
@@ -1084,7 +1033,6 @@ function renderActivityItem(array $a): void
                 });
                 svg.appendChild(defs);
 
-                // horizontal grid + y labels
                 ticks.forEach(function(v) {
                     svg.appendChild(mk('line', {
                         x1: pad.l,
@@ -1103,7 +1051,6 @@ function renderActivityItem(array $a): void
                     svg.appendChild(tx);
                 });
 
-                // vertical grid + x labels (every day; every 2nd on narrow screens)
                 var skip = W < 560 ? 2 : 1;
                 for (var i = 0; i < n; i++) {
                     svg.appendChild(mk('line', {
@@ -1125,7 +1072,6 @@ function renderActivityItem(array $a): void
                     }
                 }
 
-                // series: claimed behind, submitted in front
                 var pts = {};
                 ['claimed', 'submitted'].forEach(function(k) {
                     pts[k] = data[k].map(function(v, i) {

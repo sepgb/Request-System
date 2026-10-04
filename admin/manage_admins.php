@@ -75,18 +75,11 @@ foreach ($admins as $id => &$a) {
 unset($a);
 
 $scopeIn = documentScopeInClause($conn);
-/* ---------------------------------------------------------------
-   Recent activity
-   --------------------------------------------------------------- */
 $fullActivityLimit = 200;
 
 $activityWhere = $scopeIn !== null ? "WHERE is_dismissed = 0 AND document_type IN ($scopeIn) " : 'WHERE is_dismissed = 0 ';
 $activityAnd = $scopeIn !== null ? "AND document_type IN ($scopeIn) " : '';
 
-/* A notification double-click lands back here with ?read_notif=<id> —
-mark that one entry read before we compute the unread count below.
-Assumes audit_log has an auto-increment `id` primary key and an
-`is_read` TINYINT(1) DEFAULT 0 column. */
 if (!empty($_GET['read_notif'])) {
     $readId = (int)$_GET['read_notif'];
     if ($readId > 0) {
@@ -103,9 +96,8 @@ while ($row = $fullActivity->fetch_assoc()) {
     $allActivityRows[] = $row;
 }
 
-$activityRows = $allActivityRows;   // every notification — the dropdown list scrolls
+$activityRows = $allActivityRows;
 
-// Facebook-style sections: anything logged today vs. everything before
 $notifToday = date('Y-m-d');
 $notifGroups = ['Today' => [], 'Earlier' => []];
 foreach ($allActivityRows as $act) {
@@ -115,8 +107,6 @@ foreach ($allActivityRows as $act) {
 $unreadWhere = $activityWhere . 'AND is_read = 0';
 $unreadCount = (int)($conn->query("SELECT COUNT(*) AS c FROM audit_log {$unreadWhere}")->fetch_assoc()['c'] ?? 0);
 
-// 'claimed' and 'deleted' remove the request row, so there's nothing left
-// to open on the dashboard for those — only status-change entries link out.
 function renderActivityItem(array $a): void
 {
     $isClaimed = $a['action'] === 'claimed';

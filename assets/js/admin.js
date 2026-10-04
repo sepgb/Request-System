@@ -37,11 +37,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
-  // Build a fully custom dropdown UI for a status <select>, so the popup
-  // list can be styled precisely (native <select> popups can't be). The
-  // original <select> stays in the DOM (visually hidden) as the source of
-  // truth for .value / dataset / the 'change' event, so every bit of
-  // existing update/filter logic below keeps working untouched.
   function enhanceStatusSelect(select) {
     var wrapper = document.createElement('div');
     wrapper.className = 'status-select-wrapper';
@@ -78,8 +73,6 @@ document.addEventListener('DOMContentLoaded', function () {
       list.appendChild(item);
     });
 
-    // Appended to <body> so the popup can never be clipped by the
-    // table's horizontal-scroll container, regardless of which row it's in.
     document.body.appendChild(list);
 
     select._trigger = trigger;
@@ -150,7 +143,6 @@ document.addEventListener('DOMContentLoaded', function () {
     return div.innerHTML;
   }
 
-  // Inline status dropdown -> quick status update, no page reload
   document.querySelectorAll('.status-select').forEach(function (select) {
     enhanceStatusSelect(select);
     select.dataset.prevStatus = select.value;
@@ -222,7 +214,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 
-  // ---- Custom "mark as claimed" confirmation modal ----
   const claimModalOverlay = document.getElementById('claimModalOverlay');
   const claimModalText = document.getElementById('claimModalText');
   const claimModalConfirm = document.getElementById('claimModalConfirm');
@@ -301,7 +292,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
   const tableBody = document.querySelector('.admin-table tbody');
 
-  // ---- Request details modal: double-click a row to see it like a receipt ----
   const requestDetailsOverlay = document.getElementById('requestDetailsOverlay');
   const requestDetailsClose = document.getElementById('requestDetailsClose');
   const rdMarkClaimed = document.getElementById('rdMarkClaimed');
@@ -384,8 +374,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  // ---- Delete a rejected request (confirmation modal) ----
-  // Only Rejected requests can be deleted; delete_request.php enforces that too.
   const deleteModalOverlay = document.getElementById('deleteModalOverlay');
   const deleteModalText = document.getElementById('deleteModalText');
   const deleteModalConfirm = document.getElementById('deleteModalConfirm');
@@ -478,7 +466,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
-  // ---- Live filtering: type to search, click a status in the sidebar ----
   const filterSearch = document.getElementById('filterSearch');
   const statusLinks = document.querySelectorAll('.sidebar-status-link');
   const emptyRow = document.querySelector('.filter-empty');
@@ -533,7 +520,7 @@ document.addEventListener('DOMContentLoaded', function () {
     applyFilter();
   }
 });
-// ---- Profile dropdown ----
+
 const profileTrigger = document.getElementById('profileTrigger');
 const profileDropdown = document.getElementById('profileDropdown');
 
@@ -563,7 +550,6 @@ if (profileTrigger && profileDropdown) {
   });
 }
 
-// ---- Edit profile modal ----
 const editProfileOverlay = document.getElementById('editProfileOverlay');
 const editProfileForm = document.getElementById('editProfileForm');
 const editProfileAlert = document.getElementById('editProfileAlert');
@@ -572,7 +558,6 @@ const openEditProfileBtn = document.getElementById('openEditProfile');
 const editProfileClose = document.getElementById('editProfileClose');
 const editProfileCancel = document.getElementById('editProfileCancel');
 
-// ---- Notification bell dropdown ----
 const notifTrigger = document.getElementById('notifTrigger');
 const notifDropdown = document.getElementById('notifDropdown');
 
@@ -604,7 +589,6 @@ if (notifTrigger && notifDropdown) {
   });
 }
 
-// ---- Notification badge ----
 function updateNotifBadge(count) {
   const badge = document.getElementById('notifBadge');
   if (count > 0) {
@@ -622,12 +606,10 @@ function updateNotifBadge(count) {
     badge.remove();
   }
 
-  // "Mark all as read" only makes sense while something is unread
   const markAll = document.getElementById('notifMarkAllRead');
   if (markAll) markAll.disabled = !(count > 0);
 }
 
-// ---- Notification tabs (All / Unread) ----
 let notifFilter = 'all';
 
 function applyNotifFilter() {
@@ -642,7 +624,7 @@ function applyNotifFilter() {
       item.hidden = !show;
       if (show) shown++;
     });
-    group.hidden = shown === 0;          // hide "Today" / "Earlier" when empty
+    group.hidden = shown === 0;
     if (shown > 0) anyShown = true;
   });
 
@@ -650,7 +632,6 @@ function applyNotifFilter() {
   const empty = document.getElementById('notifEmptyUnread');
   if (empty) empty.hidden = !(notifFilter === 'unread' && !anyShown && hasItems);
 
-  // Anything the filter just hid can't stay selected for deletion
   list.querySelectorAll('.activity-item[hidden] .notif-check:checked').forEach(function (cb) {
     cb.checked = false;
     cb.closest('.activity-item').classList.remove('is-selected');
@@ -670,7 +651,6 @@ document.querySelectorAll('.notif-tab').forEach(function (tab) {
   });
 });
 
-// ---- Three-dot menu (Mark all as read / Delete notifications) ----
 const notifMoreBtn = document.getElementById('notifMoreBtn');
 const notifMoreMenu = document.getElementById('notifMoreMenu');
 
@@ -695,9 +675,8 @@ if (notifMoreBtn && notifMoreMenu) {
   });
 }
 
-// ---- Notification items: double-click to open the request or mark read ----
 document.addEventListener('dblclick', function (e) {
-  if (notifSelecting) return;            // selecting for delete — don't open anything
+  if (notifSelecting) return;
   const item = e.target.closest('.activity-item');
   if (!item) return;
 
@@ -705,15 +684,12 @@ document.addEventListener('dblclick', function (e) {
   const reference = item.dataset.reference;
 
   if (reference) {
-    // Still-existing request — jump to the dashboard and highlight it.
-    // The server marks this notification read when it sees read_notif.
     const url = 'dashboard.php?highlight=' + encodeURIComponent(reference) +
       (notifId ? '&read_notif=' + encodeURIComponent(notifId) : '');
     window.location.href = url;
     return;
   }
 
-  // No linked request (claimed / deleted) — just mark it read in place.
   if (!notifId || item.dataset.read === '1') return;
   fetch('mark_notifications_read.php', {
     method: 'POST',
@@ -730,7 +706,6 @@ document.addEventListener('dblclick', function (e) {
     });
 });
 
-// ---- Mark all as read ----
 const notifMarkAllBtn = document.getElementById('notifMarkAllRead');
 if (notifMarkAllBtn) {
   notifMarkAllBtn.addEventListener('click', function () {
@@ -754,9 +729,6 @@ if (notifMarkAllBtn) {
   });
 }
 
-// ---- Delete notifications (select mode) ----
-// Deleting only hides a notification from the bell (is_dismissed); the audit
-// record stays, so Statistics is unaffected.
 const notifDeleteModeBtn = document.getElementById('notifDeleteMode');
 const notifSelectAllWrap = document.getElementById('notifSelectAllWrap');
 const notifSelectAll = document.getElementById('notifSelectAll');
@@ -807,7 +779,6 @@ function exitNotifSelectMode() {
   updateNotifSelection();
 }
 
-// Shows "No notifications." once nothing is left, and keeps the menu item in sync
 function refreshNotifEmpty() {
   const list = document.getElementById('notifList');
   if (!list) return;
@@ -835,19 +806,17 @@ if (notifCancelDelete) {
   notifCancelDelete.addEventListener('click', exitNotifSelectMode);
 }
 
-// Click anywhere on a notification to tick / untick it while selecting
 document.addEventListener('click', function (e) {
   if (!notifSelecting) return;
   const item = e.target.closest('#notifList .activity-item');
   if (!item) return;
   const cb = item.querySelector('.notif-check');
   if (!cb) return;
-  if (e.target !== cb) cb.checked = !cb.checked;   // clicking the box itself already toggled it
+  if (e.target !== cb) cb.checked = !cb.checked;
   item.classList.toggle('is-selected', cb.checked);
   updateNotifSelection();
 });
 
-// "All" — selects every notification currently shown in the active tab
 if (notifSelectAll) {
   notifSelectAll.addEventListener('change', function () {
     visibleNotifChecks().forEach(function (cb) {
@@ -896,7 +865,6 @@ if (notifDeleteConfirm) {
   });
 }
 
-// ---- Highlight a request row linked from a notification (dashboard only) ----
 (function () {
   const params = new URLSearchParams(window.location.search);
   const ref = params.get('highlight');
@@ -912,14 +880,12 @@ if (notifDeleteConfirm) {
     }, 4000);
   }
 
-  // Clean the URL so refreshing doesn't re-highlight / re-mark-read
   params.delete('highlight');
   params.delete('read_notif');
   const qs = params.toString();
   window.history.replaceState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
 })();
 
-// ---- Audit log popup ----
 const auditLogOverlay = document.getElementById('auditLogOverlay');
 const openAuditLogBtn = document.getElementById('openAuditLogModal');
 const auditLogClose = document.getElementById('auditLogClose');
@@ -945,8 +911,6 @@ const editProfilePhotoBtn = document.getElementById('editProfilePhotoBtn');
 const editProfilePhotoInput = document.getElementById('editProfilePhotoInput');
 const editProfileAvatarEl = document.getElementById('editProfileAvatar');
 
-// showToast / showEditProfileAlert live outside the DOMContentLoaded block, so they can't
-// see the escapeHtml defined inside it — without this copy they threw a ReferenceError.
 function escapeHtml(str) {
   if (!str) return '';
   const div = document.createElement('div');
@@ -1139,7 +1103,6 @@ if (editProfileForm) {
     });
   });
 
-  // ---- Live username format check (server still re-checks uniqueness on submit) ----
   if (usernameInput) {
     let usernameCheckTimer = null;
 
