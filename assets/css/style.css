@@ -2558,6 +2558,7 @@ body:has(.hero) {
   display: flex;
   align-items: center;
   gap: 8px;
+  width: 160px;
   height: 38px;
   padding: 0 11px;
   border-radius: 6px;
@@ -2583,7 +2584,8 @@ body:has(.hero) {
 }
 
 .table-filter-select-label {
-  max-width: 160px;
+  flex: 1 1 auto;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2632,43 +2634,6 @@ body:has(.hero) {
 .table-filter-select-option.is-selected {
   background-color: rgba(227, 197, 137, 0.16);
   color: var(--gold-300);
-}
-
-/* Date range */
-.table-filter-date {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  height: 38px;
-  padding: 0 11px;
-  border-radius: 6px;
-  background: #111317;
-  border: 1px solid #272a30;
-  transition: border-color 0.15s ease;
-}
-
-.table-filter-date:focus-within {
-  border-color: var(--gold-300);
-  box-shadow: 0 0 0 3px rgba(227, 197, 137, 0.14);
-}
-
-.table-filter-date span {
-  font-family: 'Manrope', sans-serif;
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: #858a93;
-}
-
-.table-filter-date input[type="date"] {
-  width: 112px;
-  padding: 0;
-  border: none;
-  outline: none;
-  background: transparent;
-  color: #e6e8eb;
-  font-family: 'Manrope', sans-serif;
-  font-size: 0.78rem;
-  color-scheme: dark;
 }
 
 /* Clear filters — icon-only, compact */
@@ -6142,15 +6107,13 @@ html[data-theme="light"] .filter-empty {
   background: #f3f5fa !important;
 }
 
-html[data-theme="light"] .table-filter-select-trigger,
-html[data-theme="light"] .table-filter-date {
+html[data-theme="light"] .table-filter-select-trigger {
   background: #f7f9fc;
   border-color: #dbe2ec;
   color: #1a2233;
 }
 
-html[data-theme="light"] .table-filter-select-trigger:hover,
-html[data-theme="light"] .table-filter-date:hover {
+html[data-theme="light"] .table-filter-select-trigger:hover {
   border-color: #c7d0e0;
 }
 
@@ -6158,18 +6121,8 @@ html[data-theme="light"] .table-filter-select-caret {
   color: #9aa2b1;
 }
 
-html[data-theme="light"] .table-filter-date span {
-  color: #7c8496;
-}
-
-html[data-theme="light"] .table-filter-date input[type="date"] {
-  color: #1a2233;
-  color-scheme: light;
-}
-
 html[data-theme="light"] .table-filter-select-trigger:focus-visible,
-html[data-theme="light"] .table-filter-select-trigger[aria-expanded="true"],
-html[data-theme="light"] .table-filter-date:focus-within {
+html[data-theme="light"] .table-filter-select-trigger[aria-expanded="true"] {
   border-color: #b98b2b;
   box-shadow: 0 0 0 3px rgba(217, 164, 65, 0.22);
 }

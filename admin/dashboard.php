@@ -13,7 +13,7 @@ $requests = $conn->query("SELECT * FROM requests{$scopeWhere} ORDER BY date_requ
 $docTypeRes = $conn->query("SELECT DISTINCT document_type FROM requests{$scopeWhere} ORDER BY document_type ASC");
 $docTypeOptions = [];
 while ($dt = $docTypeRes->fetch_assoc()) {
-  $docTypeOptions[] = $dt['document_type'];
+    $docTypeOptions[] = $dt['document_type'];
 }
 
 /* Quick stats — scoped to this admin's document types, if restricted */
@@ -476,15 +476,12 @@ function renderActivityItem(array $a): void
               <?php endforeach; ?>
             </select>
 
-            <label class="table-filter-date">
-              <span>From</span>
-              <input type="date" id="filterDateFrom">
-            </label>
-
-            <label class="table-filter-date">
-              <span>To</span>
-              <input type="date" id="filterDateTo">
-            </label>
+            <select id="filterDatePeriod" aria-label="Filter by date">
+              <option value="">Any time</option>
+              <option value="today">Today</option>
+              <option value="week">This week</option>
+              <option value="month">This month</option>
+            </select>
 
             <button type="button" class="table-filter-clear" id="filterClear" hidden aria-label="Clear filters">
               <svg viewBox="0 0 24 24" fill="none">
