@@ -13,7 +13,7 @@ $requests = $conn->query("SELECT * FROM requests{$scopeWhere} ORDER BY date_requ
 $docTypeRes = $conn->query("SELECT DISTINCT document_type FROM requests{$scopeWhere} ORDER BY document_type ASC");
 $docTypeOptions = [];
 while ($dt = $docTypeRes->fetch_assoc()) {
-    $docTypeOptions[] = $dt['document_type'];
+  $docTypeOptions[] = $dt['document_type'];
 }
 
 /* Quick stats — scoped to this admin's document types, if restricted */
@@ -483,11 +483,6 @@ function renderActivityItem(array $a): void
               <option value="month">This month</option>
             </select>
 
-            <button type="button" class="table-filter-clear" id="filterClear" hidden aria-label="Clear filters">
-              <svg viewBox="0 0 24 24" fill="none">
-                <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-              </svg>
-            </button>
           </div>
         </div>
       </header>

@@ -609,7 +609,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     return { from: iso(start), to: iso(end) };
   }
-  const filterClear = document.getElementById('filterClear');
   const statusLinks = document.querySelectorAll('.sidebar-status-link');
   const emptyRow = document.querySelector('.filter-empty');
   let currentStatus = (typeof window.INITIAL_STATUS_FILTER === 'string') ? window.INITIAL_STATUS_FILTER : '';
@@ -650,9 +649,6 @@ document.addEventListener('DOMContentLoaded', function () {
     if (emptyRow) {
       emptyRow.hidden = !(filtering && shown === 0);
     }
-    if (filterClear) {
-      filterClear.hidden = !(docType !== '' || !!dateRange);
-    }
   }
 
   statusLinks.forEach(function (link) {
@@ -670,20 +666,6 @@ document.addEventListener('DOMContentLoaded', function () {
   if (filterSearch) filterSearch.addEventListener('input', applyFilter);
   if (filterDocument) filterDocument.addEventListener('change', applyFilter);
   if (filterDatePeriod) filterDatePeriod.addEventListener('change', applyFilter);
-
-  if (filterClear) {
-    filterClear.addEventListener('click', function () {
-      if (filterDocument) {
-        filterDocument.value = '';
-        filterDocument.dispatchEvent(new Event('change'));
-      }
-      if (filterDatePeriod) {
-        filterDatePeriod.value = '';
-        filterDatePeriod.dispatchEvent(new Event('change'));
-      }
-      applyFilter();
-    });
-  }
 
   if (currentStatus !== '') {
     applyFilter();

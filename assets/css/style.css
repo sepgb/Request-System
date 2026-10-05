@@ -2568,6 +2568,7 @@ body:has(.hero) {
   font-family: 'Manrope', sans-serif;
   font-size: 0.8rem;
   font-weight: 500;
+  text-align: left;
   cursor: pointer;
   outline: none;
   transition: border-color 0.15s ease;
@@ -2637,35 +2638,6 @@ body:has(.hero) {
 }
 
 /* Clear filters — icon-only, compact */
-.table-filter-clear {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 38px;
-  height: 38px;
-  flex: 0 0 auto;
-  border-radius: 6px;
-  border: 1px solid #272a30;
-  background: transparent;
-  color: #858a93;
-  cursor: pointer;
-  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
-}
-
-.table-filter-clear svg {
-  width: 15px;
-  height: 15px;
-}
-
-.table-filter-clear:hover {
-  border-color: #d65454;
-  color: #e5636b;
-  background: rgba(214, 84, 84, 0.08);
-}
-
-.table-filter-clear[hidden] {
-  display: none;
-}
 
 .admin-table {
   background: #111317;
@@ -6144,16 +6116,6 @@ html[data-theme="light"] .table-filter-select-option.is-selected {
   color: #8a611a;
 }
 
-html[data-theme="light"] .table-filter-clear {
-  border-color: #dbe2ec;
-  color: #5b6579;
-}
-
-html[data-theme="light"] .table-filter-clear:hover {
-  border-color: #c23b3b;
-  color: #c23b3b;
-  background: rgba(194, 59, 59, 0.06);
-}
 
 /* ---------- Sidebar brand & nav ---------- */
 html[data-theme="light"] .sidebar-brand-text {
