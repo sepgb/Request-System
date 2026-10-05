@@ -143,6 +143,101 @@ document.addEventListener('DOMContentLoaded', function () {
     paintStatusSelect(select);
   }
 
+  // Same idea as enhanceStatusSelect above (hide the real <select>, build a
+  // fully custom trigger+list so the popup can actually be themed — native
+  // <select> option lists can't be styled), but plain/unstyled-by-value,
+  // for ordinary filter dropdowns like "Document" rather than status pills.
+  function enhanceFilterSelect(select) {
+    var wrapper = document.createElement('div');
+    wrapper.className = 'table-filter-select-wrapper';
+    select.parentNode.insertBefore(wrapper, select);
+    wrapper.appendChild(select);
+    select.classList.add('status-select-native'); // reuses the same visually-hidden recipe
+
+    var trigger = document.createElement('button');
+    trigger.type = 'button';
+    trigger.className = 'table-filter-select-trigger';
+    trigger.setAttribute('aria-haspopup', 'listbox');
+    trigger.setAttribute('aria-expanded', 'false');
+    if (select.getAttribute('aria-label')) {
+      trigger.setAttribute('aria-label', select.getAttribute('aria-label'));
+    }
+    trigger.innerHTML =
+      '<span class="table-filter-select-label"></span>' +
+      '<svg class="table-filter-select-caret" viewBox="0 0 20 20" fill="none">' +
+      '<path d="M5.5 8L10 12.5L14.5 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '</svg>';
+    wrapper.appendChild(trigger);
+
+    var list = document.createElement('div');
+    list.className = 'table-filter-select-list';
+    list.setAttribute('role', 'listbox');
+    list.hidden = true;
+    wrapper.appendChild(list);
+
+    Array.prototype.forEach.call(select.options, function (opt) {
+      var item = document.createElement('div');
+      item.className = 'table-filter-select-option';
+      item.setAttribute('role', 'option');
+      item.dataset.value = opt.value;
+      item.textContent = opt.textContent.trim();
+      list.appendChild(item);
+    });
+
+    function paint() {
+      var selectedText = select.options[select.selectedIndex]
+        ? select.options[select.selectedIndex].textContent.trim()
+        : '';
+      trigger.querySelector('.table-filter-select-label').textContent = selectedText;
+      list.querySelectorAll('.table-filter-select-option').forEach(function (opt) {
+        var selected = opt.dataset.value === select.value;
+        opt.classList.toggle('is-selected', selected);
+        opt.setAttribute('aria-selected', selected ? 'true' : 'false');
+      });
+    }
+
+    function closeList() {
+      list.hidden = true;
+      trigger.setAttribute('aria-expanded', 'false');
+    }
+
+    function openList() {
+      document.querySelectorAll('.table-filter-select-list, .status-select-list').forEach(function (l) {
+        if (l !== list) l.hidden = true;
+      });
+      list.hidden = false;
+      trigger.setAttribute('aria-expanded', 'true');
+    }
+
+    trigger.addEventListener('click', function (e) {
+      e.stopPropagation();
+      if (list.hidden) openList(); else closeList();
+    });
+
+    list.addEventListener('click', function (e) {
+      var item = e.target.closest('.table-filter-select-option');
+      if (!item) return;
+      closeList();
+      if (item.dataset.value === select.value) return;
+      select.value = item.dataset.value;
+      paint();
+      select.dispatchEvent(new Event('change'));
+    });
+
+    document.addEventListener('click', function (e) {
+      if (!list.hidden && !e.target.closest('.table-filter-select-wrapper')) {
+        closeList();
+      }
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !list.hidden) closeList();
+    });
+
+    select.addEventListener('change', paint);
+    paint();
+  }
+
   function escapeHtml(str) {
     if (!str) return '';
     const div = document.createElement('div');
@@ -482,6 +577,7 @@ document.addEventListener('DOMContentLoaded', function () {
   //      plus the Document / From / To filters above the table ----
   const filterSearch = document.getElementById('filterSearch');
   const filterDocument = document.getElementById('filterDocument');
+  if (filterDocument) enhanceFilterSelect(filterDocument);
   const filterDateFrom = document.getElementById('filterDateFrom');
   const filterDateTo = document.getElementById('filterDateTo');
   const filterClear = document.getElementById('filterClear');
@@ -551,7 +647,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
   if (filterClear) {
     filterClear.addEventListener('click', function () {
-      if (filterDocument) filterDocument.value = '';
+      if (filterDocument) {
+        filterDocument.value = '';
+        filterDocument.dispatchEvent(new Event('change'));
+      }
       if (filterDateFrom) filterDateFrom.value = '';
       if (filterDateTo) filterDateTo.value = '';
       applyFilter();

@@ -465,6 +465,33 @@ function renderActivityItem(array $a): void
               autocomplete="off"
               placeholder="Search name, student no. or reference no.">
           </label>
+
+          <div class="table-filters">
+            <select id="filterDocument" aria-label="Filter by document type">
+              <option value="">All documents</option>
+              <?php foreach ($docTypeOptions as $dt): ?>
+                <option value="<?php echo htmlspecialchars($dt, ENT_QUOTES, 'UTF-8'); ?>">
+                  <?php echo htmlspecialchars($dt); ?>
+                </option>
+              <?php endforeach; ?>
+            </select>
+
+            <label class="table-filter-date">
+              <span>From</span>
+              <input type="date" id="filterDateFrom">
+            </label>
+
+            <label class="table-filter-date">
+              <span>To</span>
+              <input type="date" id="filterDateTo">
+            </label>
+
+            <button type="button" class="table-filter-clear" id="filterClear" hidden aria-label="Clear filters">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+              </svg>
+            </button>
+          </div>
         </div>
       </header>
 
@@ -576,37 +603,6 @@ function renderActivityItem(array $a): void
 
         <!-- REQUEST TABLE -->
         <div class="table-wrap">
-
-          <div class="table-filters">
-            <div class="table-filter-group">
-              <label for="filterDocument">Document</label>
-              <select id="filterDocument">
-                <option value="">All documents</option>
-                <?php foreach ($docTypeOptions as $dt): ?>
-                  <option value="<?php echo htmlspecialchars($dt, ENT_QUOTES, 'UTF-8'); ?>">
-                    <?php echo htmlspecialchars($dt); ?>
-                  </option>
-                <?php endforeach; ?>
-              </select>
-            </div>
-
-            <div class="table-filter-group">
-              <label for="filterDateFrom">From</label>
-              <input type="date" id="filterDateFrom">
-            </div>
-
-            <div class="table-filter-group">
-              <label for="filterDateTo">To</label>
-              <input type="date" id="filterDateTo">
-            </div>
-
-            <button type="button" class="table-filter-clear" id="filterClear" hidden>
-              <svg viewBox="0 0 24 24" fill="none">
-                <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-              </svg>
-              Clear filters
-            </button>
-          </div>
 
           <table class="admin-table">
 
