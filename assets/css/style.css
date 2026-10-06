@@ -2564,7 +2564,7 @@ body:has(.hero) {
   border-radius: 6px;
   background: #111317;
   border: 1px solid #272a30;
-  color: #e6e8eb;
+  color: #858a93;
   font-family: 'Manrope', sans-serif;
   font-size: 0.8rem;
   font-weight: 500;
@@ -6082,7 +6082,7 @@ html[data-theme="light"] .filter-empty {
 html[data-theme="light"] .table-filter-select-trigger {
   background: #f7f9fc;
   border-color: #dbe2ec;
-  color: #1a2233;
+  color: #586176;
 }
 
 html[data-theme="light"] .table-filter-select-trigger:hover {
