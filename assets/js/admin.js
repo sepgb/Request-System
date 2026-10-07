@@ -573,103 +573,22 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
-  // ---- Live filtering: type to search, click a status in the sidebar,
-  //      plus the Document / From / To filters above the table ----
-  const filterSearch = document.getElementById('filterSearch');
+  // ---- Search / Document / Date filters ----
+  // Filtering now runs as real SQL on the server (needed for pagination to
+  // work correctly), so these just submit the form — the sidebar status
+  // links and Prev/Next are plain <a> links doing the same thing.
+  const filterForm = document.getElementById('filterForm');
   const filterDocument = document.getElementById('filterDocument');
   if (filterDocument) enhanceFilterSelect(filterDocument);
   const filterDatePeriod = document.getElementById('filterDatePeriod');
   if (filterDatePeriod) enhanceFilterSelect(filterDatePeriod);
 
-  // 'today' / 'week' (Mon-Sun) / 'month' -> { from, to } as 'YYYY-MM-DD',
-  // matching row.dataset.date's format, or null for "Any time".
-  function periodRange(period) {
-    if (!period) return null;
-    function iso(dt) {
-      var mo = String(dt.getMonth() + 1).padStart(2, '0');
-      var da = String(dt.getDate()).padStart(2, '0');
-      return dt.getFullYear() + '-' + mo + '-' + da;
-    }
-    var now = new Date();
-    var y = now.getFullYear(), m = now.getMonth(), d = now.getDate();
-    var start, end;
-    if (period === 'today') {
-      start = new Date(y, m, d);
-      end = start;
-    } else if (period === 'week') {
-      var dow = now.getDay(); // 0 = Sunday ... 6 = Saturday
-      var diffToMonday = dow === 0 ? 6 : dow - 1;
-      start = new Date(y, m, d - diffToMonday);
-      end = new Date(y, m, d - diffToMonday + 6);
-    } else if (period === 'month') {
-      start = new Date(y, m, 1);
-      end = new Date(y, m + 1, 0);
-    } else {
-      return null;
-    }
-    return { from: iso(start), to: iso(end) };
-  }
-  const statusLinks = document.querySelectorAll('.sidebar-status-link');
-  const emptyRow = document.querySelector('.filter-empty');
-  let currentStatus = (typeof window.INITIAL_STATUS_FILTER === 'string') ? window.INITIAL_STATUS_FILTER : '';
-
-  function applyFilter() {
-    if (!tableBody) return;
-
-    const term = (filterSearch ? filterSearch.value : '').trim().toLowerCase();
-    const docType = filterDocument ? filterDocument.value : '';
-    const dateRange = periodRange(filterDatePeriod ? filterDatePeriod.value : '');
-    let shown = 0;
-
-    tableBody.querySelectorAll('tr[id^="row-"]').forEach(function (row) {
-      const cells = row.querySelectorAll('td');
-      const haystack = [
-        cells[0] ? cells[0].textContent : '',
-        cells[1] ? cells[1].textContent : '',
-        cells[2] ? cells[2].textContent : ''
-      ].join(' ').toLowerCase();
-
-      const select = row.querySelector('.status-select');
-      const rowStatus = select ? select.value : '';
-      const rowDoc = row.dataset.document || '';
-      const rowDate = row.dataset.date || ''; // 'YYYY-MM-DD', same format as the date inputs
-
-      const matchesTerm = term === '' || haystack.indexOf(term) !== -1;
-      const matchesStatus = currentStatus === '' || rowStatus === currentStatus;
-      const matchesDoc = docType === '' || rowDoc === docType;
-      const matchesDate = !dateRange || (rowDate !== '' && rowDate >= dateRange.from && rowDate <= dateRange.to);
-      const visible = matchesTerm && matchesStatus && matchesDoc && matchesDate;
-
-      row.hidden = !visible;
-      if (visible) shown++;
-    });
-
-    const filtering = term !== '' || currentStatus !== '' || docType !== '' || !!dateRange;
-
-    if (emptyRow) {
-      emptyRow.hidden = !(filtering && shown === 0);
-    }
-  }
-
-  statusLinks.forEach(function (link) {
-    link.addEventListener('click', function (e) {
-      e.preventDefault();
-      currentStatus = link.dataset.status;
-
-      statusLinks.forEach(function (l) { l.classList.remove('active'); });
-      link.classList.add('active');
-
-      applyFilter();
-    });
+  if (filterDocument) filterDocument.addEventListener('change', function () {
+    if (filterForm) filterForm.submit();
   });
-
-  if (filterSearch) filterSearch.addEventListener('input', applyFilter);
-  if (filterDocument) filterDocument.addEventListener('change', applyFilter);
-  if (filterDatePeriod) filterDatePeriod.addEventListener('change', applyFilter);
-
-  if (currentStatus !== '') {
-    applyFilter();
-  }
+  if (filterDatePeriod) filterDatePeriod.addEventListener('change', function () {
+    if (filterForm) filterForm.submit();
+  });
 });
 // ---- Profile dropdown ----
 const profileTrigger = document.getElementById('profileTrigger');

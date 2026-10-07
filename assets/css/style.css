@@ -2500,6 +2500,22 @@ body:has(.hero) {
   color: #777c85;
 }
 
+.topbar-search button[type="submit"] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: inherit;
+}
+
+.topbar-search button[type="submit"]:hover svg {
+  color: #c9ccd8;
+}
+
 .topbar-search input {
   width: 100%;
   height: 100%;
@@ -2540,6 +2556,64 @@ body:has(.hero) {
   box-shadow: none !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+}
+
+.table-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px 20px;
+  border-top: 1px solid #1c1f24;
+}
+
+.table-pagination-count {
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.8rem;
+  color: #858a93;
+}
+
+.table-pagination-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.table-pagination-page {
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.8rem;
+  color: #c3c8d0;
+}
+
+.table-pagination-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 68px;
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 6px;
+  border: 1px solid #272a30;
+  background: #111317;
+  color: #e6e8eb;
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.table-pagination-btn:hover {
+  border-color: var(--gold-300);
+  background: #16191e;
+}
+
+.table-pagination-btn.is-disabled {
+  color: #4e535c;
+  cursor: default;
+  pointer-events: none;
 }
 
 .table-filters {
@@ -6077,6 +6151,33 @@ html[data-theme="light"] .admin-main {
 html[data-theme="light"] .table-wrap,
 html[data-theme="light"] .filter-empty {
   background: #f3f5fa !important;
+}
+
+html[data-theme="light"] .table-pagination {
+  border-top-color: #e4e8f0;
+}
+
+html[data-theme="light"] .table-pagination-count {
+  color: #7c8496;
+}
+
+html[data-theme="light"] .table-pagination-page {
+  color: #4a5262;
+}
+
+html[data-theme="light"] .table-pagination-btn {
+  background: #ffffff;
+  border-color: #dbe2ec;
+  color: #1a2233;
+}
+
+html[data-theme="light"] .table-pagination-btn:hover {
+  border-color: #b98b2b;
+  background: #faf6ee;
+}
+
+html[data-theme="light"] .table-pagination-btn.is-disabled {
+  color: #b7bdc9;
 }
 
 html[data-theme="light"] .table-filter-select-trigger {

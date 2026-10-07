@@ -6,14 +6,112 @@ require_once '../includes/functions.php';
 $scopeIn = documentScopeInClause($conn);
 $scopeWhere = $scopeIn !== null ? " WHERE document_type IN ($scopeIn)" : '';
 
-$requests = $conn->query("SELECT * FROM requests{$scopeWhere} ORDER BY date_requested DESC");
-
 /* Distinct document types for the "Document" filter dropdown, scoped the
    same way as the table itself. */
 $docTypeRes = $conn->query("SELECT DISTINCT document_type FROM requests{$scopeWhere} ORDER BY document_type ASC");
 $docTypeOptions = [];
 while ($dt = $docTypeRes->fetch_assoc()) {
-  $docTypeOptions[] = $dt['document_type'];
+    $docTypeOptions[] = $dt['document_type'];
+}
+
+/* ---------------------------------------------------------------
+   Table filters (search / status / document / date) + pagination.
+   These now run as real SQL, not client-side row hiding — needed so
+   search and filtering still work correctly once the table is paged
+   instead of loading every row at once.
+   --------------------------------------------------------------- */
+$perPage = 50;
+
+$filterQ        = trim($_GET['q'] ?? '');
+$filterStatus   = trim($_GET['status'] ?? '');
+$filterDocument = trim($_GET['document'] ?? '');
+$filterPeriod   = trim($_GET['period'] ?? ''); // '' | today | week | month
+$page           = max(1, (int)($_GET['page'] ?? 1));
+
+$validStatuses = ['Pending', 'Processing', 'Ready for Pickup', 'Rejected'];
+if (!in_array($filterStatus, $validStatuses, true)) {
+    $filterStatus = '';
+}
+if (!in_array($filterDocument, $docTypeOptions, true)) {
+    $filterDocument = '';
+}
+if (!in_array($filterPeriod, ['today', 'week', 'month'], true)) {
+    $filterPeriod = '';
+}
+
+$where  = [];
+$params = [];
+$types  = '';
+
+if ($scopeIn !== null) {
+    $where[] = "document_type IN ($scopeIn)";
+}
+if ($filterQ !== '') {
+    $where[] = '(reference_no LIKE ? OR student_number LIKE ? OR full_name LIKE ?)';
+    $like = '%' . $filterQ . '%';
+    $params = array_merge($params, [$like, $like, $like]);
+    $types .= 'sss';
+}
+if ($filterStatus !== '') {
+    $where[] = 'request_status = ?';
+    $params[] = $filterStatus;
+    $types .= 's';
+}
+if ($filterDocument !== '') {
+    $where[] = 'document_type = ?';
+    $params[] = $filterDocument;
+    $types .= 's';
+}
+if ($filterPeriod === 'today') {
+    $where[] = 'date_requested >= CURDATE() AND date_requested < CURDATE() + INTERVAL 1 DAY';
+} elseif ($filterPeriod === 'week') {
+    $where[] = 'YEARWEEK(date_requested, 1) = YEARWEEK(CURDATE(), 1)';
+} elseif ($filterPeriod === 'month') {
+    $where[] = 'YEAR(date_requested) = YEAR(CURDATE()) AND MONTH(date_requested) = MONTH(CURDATE())';
+}
+
+$whereSql = $where ? ('WHERE ' . implode(' AND ', $where)) : '';
+
+if ($types !== '') {
+    $countStmt = $conn->prepare("SELECT COUNT(*) AS c FROM requests {$whereSql}");
+    $countStmt->bind_param($types, ...$params);
+    $countStmt->execute();
+    $totalRows = (int)$countStmt->get_result()->fetch_assoc()['c'];
+    $countStmt->close();
+} else {
+    $totalRows = (int)$conn->query("SELECT COUNT(*) AS c FROM requests {$whereSql}")->fetch_assoc()['c'];
+}
+
+$totalPages = max(1, (int)ceil($totalRows / $perPage));
+$page       = min($page, $totalPages);
+$offset     = ($page - 1) * $perPage;
+
+$pageSql   = "SELECT * FROM requests {$whereSql} ORDER BY date_requested DESC LIMIT ? OFFSET ?";
+$pageTypes = $types . 'ii';
+$pageStmt  = $conn->prepare($pageSql);
+$pageStmt->bind_param($pageTypes, ...array_merge($params, [$perPage, $offset]));
+$pageStmt->execute();
+$requests = $pageStmt->get_result();
+
+$isFiltering = ($filterQ !== '' || $filterStatus !== '' || $filterDocument !== '' || $filterPeriod !== '');
+
+/* Builds a dashboard.php?... URL, keeping every active filter except the
+   ones passed in $overrides. Changing a filter always resets to page 1;
+   pass page explicitly in $overrides when linking to a specific page. */
+function filterUrl(array $overrides = []): string
+{
+    global $filterQ, $filterStatus, $filterDocument, $filterPeriod;
+    $params = array_merge([
+        'q'        => $filterQ,
+        'status'   => $filterStatus,
+        'document' => $filterDocument,
+        'period'   => $filterPeriod,
+        'page'     => 1,
+    ], $overrides);
+    $params = array_filter($params, function ($v) {
+        return $v !== '' && $v !== null;
+    });
+    return 'dashboard.php' . ($params ? ('?' . http_build_query($params)) : '');
 }
 
 /* Quick stats — scoped to this admin's document types, if restricted */
@@ -34,7 +132,7 @@ $firstInitial = strtoupper(substr($nameParts[0], 0, 1));
 $secondInitial = strtoupper(substr(end($nameParts), 0, 1));
 $adminInitial = $firstInitial . $secondInitial;
 $currentAdminPage = basename($_SERVER['PHP_SELF'] ?? '');
-$initialStatusFilter = trim($_GET['status'] ?? '');
+$initialStatusFilter = $filterStatus; // alias kept for the sidebar active-state checks below
 
 /* ---------------------------------------------------------------
    Recent activity
@@ -195,7 +293,7 @@ function renderActivityItem(array $a): void
       <nav class="sidebar-nav sidebar-nav-status">
 
         <!-- All -->
-        <a href="dashboard.php"
+        <a href="<?php echo filterUrl(['status' => '']); ?>"
           class="sidebar-link sidebar-status-link<?php echo $initialStatusFilter === '' ? ' active' : ''; ?>"
           data-status="">
           <span>All requests</span>
@@ -205,7 +303,7 @@ function renderActivityItem(array $a): void
           </span>
         </a>
 
-        <a href="dashboard.php?status=Pending"
+        <a href="<?php echo filterUrl(['status' => 'Pending']); ?>"
           class="sidebar-link sidebar-status-link<?php echo $initialStatusFilter === 'Pending' ? ' active' : ''; ?>"
           data-status="Pending">
           <span>Pending</span>
@@ -215,7 +313,7 @@ function renderActivityItem(array $a): void
           </span>
         </a>
 
-        <a href="dashboard.php?status=Processing"
+        <a href="<?php echo filterUrl(['status' => 'Processing']); ?>"
           class="sidebar-link sidebar-status-link<?php echo $initialStatusFilter === 'Processing' ? ' active' : ''; ?>"
           data-status="Processing">
           <span>Processing</span>
@@ -225,7 +323,7 @@ function renderActivityItem(array $a): void
           </span>
         </a>
 
-        <a href="dashboard.php?status=Ready+for+Pickup"
+        <a href="<?php echo filterUrl(['status' => 'Ready for Pickup']); ?>"
           class="sidebar-link sidebar-status-link<?php echo $initialStatusFilter === 'Ready for Pickup' ? ' active' : ''; ?>"
           data-status="Ready for Pickup">
           <span>Ready for pickup</span>
@@ -235,7 +333,7 @@ function renderActivityItem(array $a): void
           </span>
         </a>
 
-        <a href="dashboard.php?status=Rejected"
+        <a href="<?php echo filterUrl(['status' => 'Rejected']); ?>"
           class="sidebar-link sidebar-status-link<?php echo $initialStatusFilter === 'Rejected' ? ' active' : ''; ?>"
           data-status="Rejected">
           <span>Rejected</span>
@@ -443,47 +541,57 @@ function renderActivityItem(array $a): void
           </div>
         </div>
 
-        <!-- SEARCH -->
+        <!-- SEARCH + FILTERS -->
         <div class="topbar-tools">
-          <label class="topbar-search">
-            <svg viewBox="0 0 24 24" fill="none">
-              <circle
-                cx="11"
-                cy="11"
-                r="6.5"
-                stroke="currentColor"
-                stroke-width="1.7" />
-              <path
-                d="M16 16L20 20"
-                stroke="currentColor"
-                stroke-width="1.7"
-                stroke-linecap="round" />
-            </svg>
-            <input
-              type="text"
-              id="filterSearch"
-              autocomplete="off"
-              placeholder="Search name, student no. or reference no.">
-          </label>
+          <form method="GET" action="dashboard.php" id="filterForm">
+            <label class="topbar-search">
+              <button type="submit" aria-label="Search">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <circle
+                    cx="11"
+                    cy="11"
+                    r="6.5"
+                    stroke="currentColor"
+                    stroke-width="1.7" />
+                  <path
+                    d="M16 16L20 20"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                    stroke-linecap="round" />
+                </svg>
+              </button>
+              <input
+                type="text"
+                name="q"
+                id="filterSearch"
+                autocomplete="off"
+                value="<?php echo htmlspecialchars($filterQ, ENT_QUOTES, 'UTF-8'); ?>"
+                placeholder="Search name, student no. or reference no.">
+            </label>
 
-          <div class="table-filters">
-            <select id="filterDocument" aria-label="Filter by document type">
-              <option value="">All documents</option>
-              <?php foreach ($docTypeOptions as $dt): ?>
-                <option value="<?php echo htmlspecialchars($dt, ENT_QUOTES, 'UTF-8'); ?>">
-                  <?php echo htmlspecialchars($dt); ?>
-                </option>
-              <?php endforeach; ?>
-            </select>
+            <?php if ($filterStatus !== ''): ?>
+              <input type="hidden" name="status" value="<?php echo htmlspecialchars($filterStatus, ENT_QUOTES, 'UTF-8'); ?>">
+            <?php endif; ?>
 
-            <select id="filterDatePeriod" aria-label="Filter by date">
-              <option value="">Any time</option>
-              <option value="today">Today</option>
-              <option value="week">This week</option>
-              <option value="month">This month</option>
-            </select>
+            <div class="table-filters">
+              <select name="document" id="filterDocument" aria-label="Filter by document type">
+                <option value="">All documents</option>
+                <?php foreach ($docTypeOptions as $dt): ?>
+                  <option value="<?php echo htmlspecialchars($dt, ENT_QUOTES, 'UTF-8'); ?>"<?php echo $filterDocument === $dt ? ' selected' : ''; ?>>
+                    <?php echo htmlspecialchars($dt); ?>
+                  </option>
+                <?php endforeach; ?>
+              </select>
 
-          </div>
+              <select name="period" id="filterDatePeriod" aria-label="Filter by date">
+                <option value="">Any time</option>
+                <option value="today"<?php echo $filterPeriod === 'today' ? ' selected' : ''; ?>>Today</option>
+                <option value="week"<?php echo $filterPeriod === 'week' ? ' selected' : ''; ?>>This week</option>
+                <option value="month"<?php echo $filterPeriod === 'month' ? ' selected' : ''; ?>>This month</option>
+              </select>
+
+            </div>
+          </form>
         </div>
       </header>
 
@@ -612,41 +720,18 @@ function renderActivityItem(array $a): void
             </thead>
 
             <tbody>
-              <tr class="filter-empty"
-                hidden>
-                <td colspan="8"
-                  class="empty-row">
-                  <div class="empty-state">
-                    <svg viewBox="0 0 24 24"
-                      fill="none">
-
-                      <rect
-                        x="5"
-                        y="3"
-                        width="14"
-                        height="18"
-                        rx="2"
-                        stroke="currentColor"
-                        stroke-width="1.5" />
-
-                      <path
-                        d="M9 8H15M9 12H15M9 16H13"
-                        stroke="currentColor"
-                        stroke-width="1.4"
-                        stroke-linecap="round" />
-                    </svg>
-                    <span>
-                      No requests match that search.
-                    </span>
-                  </div>
-                </td>
-              </tr>
-
-              <?php if ($requests->num_rows === 0): ?>
+              <?php if ($totalRows === 0): ?>
                 <tr>
-                  <td colspan="8"
-                    class="empty-row">
-                    No requests yet. New submissions from the student site will appear here.
+                  <td colspan="8" class="empty-row">
+                    <div class="empty-state">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <rect x="5" y="3" width="14" height="18" rx="2" stroke="currentColor" stroke-width="1.5" />
+                        <path d="M9 8H15M9 12H15M9 16H13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+                      </svg>
+                      <span>
+                        <?php echo $isFiltering ? 'No requests match your filters.' : 'No requests yet. New submissions from the student site will appear here.'; ?>
+                      </span>
+                    </div>
                   </td>
                 </tr>
               <?php endif; ?>
@@ -737,6 +822,33 @@ function renderActivityItem(array $a): void
               <?php endwhile; ?>
             </tbody>
           </table>
+
+          <?php if ($totalRows > 0): ?>
+            <div class="table-pagination">
+              <span class="table-pagination-count">
+                Showing <?php echo $offset + 1; ?>&ndash;<?php echo min($offset + $perPage, $totalRows); ?>
+                of <?php echo $totalRows; ?> request<?php echo $totalRows === 1 ? '' : 's'; ?>
+              </span>
+
+              <?php if ($totalPages > 1): ?>
+                <nav class="table-pagination-nav" aria-label="Table pages">
+                  <?php if ($page > 1): ?>
+                    <a href="<?php echo filterUrl(['page' => $page - 1]); ?>" class="table-pagination-btn">Prev</a>
+                  <?php else: ?>
+                    <span class="table-pagination-btn is-disabled">Prev</span>
+                  <?php endif; ?>
+
+                  <span class="table-pagination-page">Page <?php echo $page; ?> of <?php echo $totalPages; ?></span>
+
+                  <?php if ($page < $totalPages): ?>
+                    <a href="<?php echo filterUrl(['page' => $page + 1]); ?>" class="table-pagination-btn">Next</a>
+                  <?php else: ?>
+                    <span class="table-pagination-btn is-disabled">Next</span>
+                  <?php endif; ?>
+                </nav>
+              <?php endif; ?>
+            </div>
+          <?php endif; ?>
         </div>
       </main>
     </div>
@@ -925,7 +1037,6 @@ function renderActivityItem(array $a): void
 
   <script>
     window.CSRF_TOKEN = <?php echo json_encode(csrf_token()); ?>;
-    window.INITIAL_STATUS_FILTER = <?php echo json_encode($initialStatusFilter); ?>;
   </script>
   <script src="../assets/js/admin.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/admin.js'); ?>"></script>
 
