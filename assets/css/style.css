@@ -2565,7 +2565,8 @@ body:has(.hero) {
   flex-wrap: wrap;
   gap: 12px;
   padding: 16px 20px;
-  border-top: 1px solid #1c1f24;
+  background: #111317;
+  border-top: 1px solid #191c21;
 }
 
 .table-pagination-count {
@@ -6162,7 +6163,8 @@ html[data-theme="light"] .filter-empty {
 }
 
 html[data-theme="light"] .table-pagination {
-  border-top-color: #e4e8f0;
+  background: #ffffff;
+  border-top-color: #eef1f7;
 }
 
 html[data-theme="light"] .table-pagination-count {
