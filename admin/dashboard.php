@@ -11,7 +11,7 @@ $scopeWhere = $scopeIn !== null ? " WHERE document_type IN ($scopeIn)" : '';
 $docTypeRes = $conn->query("SELECT DISTINCT document_type FROM requests{$scopeWhere} ORDER BY document_type ASC");
 $docTypeOptions = [];
 while ($dt = $docTypeRes->fetch_assoc()) {
-    $docTypeOptions[] = $dt['document_type'];
+  $docTypeOptions[] = $dt['document_type'];
 }
 
 /* ---------------------------------------------------------------
@@ -30,13 +30,13 @@ $page           = max(1, (int)($_GET['page'] ?? 1));
 
 $validStatuses = ['Pending', 'Processing', 'Ready for Pickup', 'Rejected'];
 if (!in_array($filterStatus, $validStatuses, true)) {
-    $filterStatus = '';
+  $filterStatus = '';
 }
 if (!in_array($filterDocument, $docTypeOptions, true)) {
-    $filterDocument = '';
+  $filterDocument = '';
 }
 if (!in_array($filterPeriod, ['today', 'week', 'month'], true)) {
-    $filterPeriod = '';
+  $filterPeriod = '';
 }
 
 $where  = [];
@@ -44,42 +44,42 @@ $params = [];
 $types  = '';
 
 if ($scopeIn !== null) {
-    $where[] = "document_type IN ($scopeIn)";
+  $where[] = "document_type IN ($scopeIn)";
 }
 if ($filterQ !== '') {
-    $where[] = '(reference_no LIKE ? OR student_number LIKE ? OR full_name LIKE ?)';
-    $like = '%' . $filterQ . '%';
-    $params = array_merge($params, [$like, $like, $like]);
-    $types .= 'sss';
+  $where[] = '(reference_no LIKE ? OR student_number LIKE ? OR full_name LIKE ?)';
+  $like = '%' . $filterQ . '%';
+  $params = array_merge($params, [$like, $like, $like]);
+  $types .= 'sss';
 }
 if ($filterStatus !== '') {
-    $where[] = 'request_status = ?';
-    $params[] = $filterStatus;
-    $types .= 's';
+  $where[] = 'request_status = ?';
+  $params[] = $filterStatus;
+  $types .= 's';
 }
 if ($filterDocument !== '') {
-    $where[] = 'document_type = ?';
-    $params[] = $filterDocument;
-    $types .= 's';
+  $where[] = 'document_type = ?';
+  $params[] = $filterDocument;
+  $types .= 's';
 }
 if ($filterPeriod === 'today') {
-    $where[] = 'date_requested >= CURDATE() AND date_requested < CURDATE() + INTERVAL 1 DAY';
+  $where[] = 'date_requested >= CURDATE() AND date_requested < CURDATE() + INTERVAL 1 DAY';
 } elseif ($filterPeriod === 'week') {
-    $where[] = 'YEARWEEK(date_requested, 1) = YEARWEEK(CURDATE(), 1)';
+  $where[] = 'YEARWEEK(date_requested, 1) = YEARWEEK(CURDATE(), 1)';
 } elseif ($filterPeriod === 'month') {
-    $where[] = 'YEAR(date_requested) = YEAR(CURDATE()) AND MONTH(date_requested) = MONTH(CURDATE())';
+  $where[] = 'YEAR(date_requested) = YEAR(CURDATE()) AND MONTH(date_requested) = MONTH(CURDATE())';
 }
 
 $whereSql = $where ? ('WHERE ' . implode(' AND ', $where)) : '';
 
 if ($types !== '') {
-    $countStmt = $conn->prepare("SELECT COUNT(*) AS c FROM requests {$whereSql}");
-    $countStmt->bind_param($types, ...$params);
-    $countStmt->execute();
-    $totalRows = (int)$countStmt->get_result()->fetch_assoc()['c'];
-    $countStmt->close();
+  $countStmt = $conn->prepare("SELECT COUNT(*) AS c FROM requests {$whereSql}");
+  $countStmt->bind_param($types, ...$params);
+  $countStmt->execute();
+  $totalRows = (int)$countStmt->get_result()->fetch_assoc()['c'];
+  $countStmt->close();
 } else {
-    $totalRows = (int)$conn->query("SELECT COUNT(*) AS c FROM requests {$whereSql}")->fetch_assoc()['c'];
+  $totalRows = (int)$conn->query("SELECT COUNT(*) AS c FROM requests {$whereSql}")->fetch_assoc()['c'];
 }
 
 $totalPages = max(1, (int)ceil($totalRows / $perPage));
@@ -100,18 +100,18 @@ $isFiltering = ($filterQ !== '' || $filterStatus !== '' || $filterDocument !== '
    pass page explicitly in $overrides when linking to a specific page. */
 function filterUrl(array $overrides = []): string
 {
-    global $filterQ, $filterStatus, $filterDocument, $filterPeriod;
-    $params = array_merge([
-        'q'        => $filterQ,
-        'status'   => $filterStatus,
-        'document' => $filterDocument,
-        'period'   => $filterPeriod,
-        'page'     => 1,
-    ], $overrides);
-    $params = array_filter($params, function ($v) {
-        return $v !== '' && $v !== null;
-    });
-    return 'dashboard.php' . ($params ? ('?' . http_build_query($params)) : '');
+  global $filterQ, $filterStatus, $filterDocument, $filterPeriod;
+  $params = array_merge([
+    'q'        => $filterQ,
+    'status'   => $filterStatus,
+    'document' => $filterDocument,
+    'period'   => $filterPeriod,
+    'page'     => 1,
+  ], $overrides);
+  $params = array_filter($params, function ($v) {
+    return $v !== '' && $v !== null;
+  });
+  return 'dashboard.php' . ($params ? ('?' . http_build_query($params)) : '');
 }
 
 /* Quick stats — scoped to this admin's document types, if restricted */
@@ -577,7 +577,7 @@ function renderActivityItem(array $a): void
               <select name="document" id="filterDocument" aria-label="Filter by document type">
                 <option value="">All documents</option>
                 <?php foreach ($docTypeOptions as $dt): ?>
-                  <option value="<?php echo htmlspecialchars($dt, ENT_QUOTES, 'UTF-8'); ?>"<?php echo $filterDocument === $dt ? ' selected' : ''; ?>>
+                  <option value="<?php echo htmlspecialchars($dt, ENT_QUOTES, 'UTF-8'); ?>" <?php echo $filterDocument === $dt ? ' selected' : ''; ?>>
                     <?php echo htmlspecialchars($dt); ?>
                   </option>
                 <?php endforeach; ?>
@@ -585,9 +585,9 @@ function renderActivityItem(array $a): void
 
               <select name="period" id="filterDatePeriod" aria-label="Filter by date">
                 <option value="">Any time</option>
-                <option value="today"<?php echo $filterPeriod === 'today' ? ' selected' : ''; ?>>Today</option>
-                <option value="week"<?php echo $filterPeriod === 'week' ? ' selected' : ''; ?>>This week</option>
-                <option value="month"<?php echo $filterPeriod === 'month' ? ' selected' : ''; ?>>This month</option>
+                <option value="today" <?php echo $filterPeriod === 'today' ? ' selected' : ''; ?>>Today</option>
+                <option value="week" <?php echo $filterPeriod === 'week' ? ' selected' : ''; ?>>This week</option>
+                <option value="month" <?php echo $filterPeriod === 'month' ? ' selected' : ''; ?>>This month</option>
               </select>
 
             </div>

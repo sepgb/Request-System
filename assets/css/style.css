@@ -3098,6 +3098,14 @@ select::picker-icon {
   gap: 10px;
 }
 
+#filterForm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  row-gap: 8px;
+  gap: 10px;
+}
+
 .confirmation-mark {
   display: flex;
   align-items: center;
