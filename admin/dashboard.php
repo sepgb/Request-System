@@ -95,9 +95,6 @@ $requests = $pageStmt->get_result();
 
 $isFiltering = ($filterQ !== '' || $filterStatus !== '' || $filterDocument !== '' || $filterPeriod !== '');
 
-/* Builds a dashboard.php?... URL, keeping every active filter except the
-   ones passed in $overrides. Changing a filter always resets to page 1;
-   pass page explicitly in $overrides when linking to a specific page. */
 function filterUrl(array $overrides = []): string
 {
   global $filterQ, $filterStatus, $filterDocument, $filterPeriod;

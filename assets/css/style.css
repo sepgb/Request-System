@@ -2617,6 +2617,51 @@ body:has(.hero) {
   pointer-events: none;
 }
 
+/* Hover hint over request rows — "Double-click to view details" */
+.row-hint {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 16px 7px 7px;
+  border-radius: 14px;
+  background: #1b1e26;
+  border: 1px solid #2c303a;
+  color: #ffffff;
+  font-family: 'Manrope', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 700;
+  white-space: nowrap;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  will-change: transform;
+}
+
+.row-hint.is-visible {
+  opacity: 1;
+}
+
+.row-hint-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: var(--admin-blue-300);
+}
+
+.row-hint-icon svg {
+  width: 15px;
+  height: 15px;
+}
+
 .table-filters {
   display: flex;
   align-items: center;
@@ -6160,6 +6205,12 @@ html[data-theme="light"] .admin-main {
 html[data-theme="light"] .table-wrap,
 html[data-theme="light"] .filter-empty {
   background: #f3f5fa !important;
+}
+
+html[data-theme="light"] .row-hint {
+  background: #1a2233;
+  border-color: #1a2233;
+  box-shadow: 0 14px 34px rgba(20, 30, 60, 0.28);
 }
 
 html[data-theme="light"] .table-pagination {

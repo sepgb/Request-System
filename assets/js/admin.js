@@ -267,7 +267,16 @@ document.addEventListener('DOMContentLoaded', function () {
           if (json.success) {
             paintStatusSelect(select);
             select.dataset.prevStatus = newStatus;
-            applyFilter();
+
+            // Filtering is server-side now. If a sidebar status filter is
+            // active and this row just moved to a different status, it no
+            // longer belongs in this view — hide it (the list itself catches
+            // up on the next page load).
+            const activeStatus = new URLSearchParams(window.location.search).get('status') || '';
+            if (activeStatus !== '' && activeStatus !== newStatus) {
+              const changedRow = document.getElementById('row-' + id);
+              if (changedRow) changedRow.hidden = true;
+            }
 
             if (prevStatus !== newStatus) {
               if (prevStatus === 'Pending') {
@@ -342,31 +351,114 @@ document.addEventListener('DOMContentLoaded', function () {
     if (claimModalOverlay) claimModalOverlay.hidden = true;
   }
 
-  function doClaim(id, btn) {
-    if (btn) btn.disabled = true;
+  // ---- Undo window for "Mark as Claimed" / "Delete Request" ----
+  // Both actions permanently delete the row, so after the confirm modal the
+  // row just disappears from view and a toast offers "Undo". The server isn't
+  // asked to delete anything until the window closes — undoing is therefore
+  // free (nothing to roll back). Closing or leaving the page inside the window
+  // still commits the action, so it's never silently lost.
+  const UNDO_WINDOW_MS = 6000;
+  const pendingRemovals = {}; // request id -> entry
 
-    fetch('claim_request.php', {
+  function hideRow(row) {
+    row.hidden = true;
+    row.style.display = 'none'; // also beats any CSS that sets display on rows
+  }
+
+  function showRow(row) {
+    row.hidden = false;
+    row.style.display = '';
+  }
+
+  // delta is -1 when a request leaves the list, +1 when it comes back.
+  function adjustCounts(kind, delta) {
+    bumpStat(statTotal, delta);
+    bumpStat(sidebarCountAll, delta);
+    if (kind === 'claim') {
+      bumpStat(statReady, delta);
+      bumpStat(sidebarCountReady, delta);
+    } else {
+      bumpStat(sidebarCountRejected, delta);
+    }
+  }
+
+  function scheduleRemoval(kind, id) {
+    if (pendingRemovals[id]) return;
+    const row = document.getElementById('row-' + id);
+    if (!row) return;
+
+    const reference = row.dataset.reference || 'Request';
+    const entry = { kind: kind, id: id, row: row, timer: null, done: false };
+    pendingRemovals[id] = entry;
+
+    hideRow(row);
+    adjustCounts(kind, -1);
+
+    entry.timer = setTimeout(function () { commitRemoval(entry, false); }, UNDO_WINDOW_MS);
+
+    showToast(
+      'success',
+      reference + (kind === 'claim' ? ' marked as claimed' : ' deleted'),
+      {
+        duration: UNDO_WINDOW_MS,
+        actionLabel: 'Undo',
+        onAction: function () { undoRemoval(entry); }
+      }
+    );
+  }
+
+  function undoRemoval(entry) {
+    if (entry.done) return;
+    entry.done = true;
+    clearTimeout(entry.timer);
+    delete pendingRemovals[entry.id];
+
+    showRow(entry.row);
+    adjustCounts(entry.kind, 1);
+    showToast('success', (entry.row.dataset.reference || 'Request') + ' restored');
+  }
+
+  function commitRemoval(entry, leavingPage) {
+    if (entry.done) return;
+    entry.done = true;
+    clearTimeout(entry.timer);
+    delete pendingRemovals[entry.id];
+
+    function rollback(message) {
+      showRow(entry.row);
+      adjustCounts(entry.kind, 1);
+      alert(message);
+    }
+
+    fetch(entry.kind === 'claim' ? 'claim_request.php' : 'delete_request.php', {
       method: 'POST',
-      body: new URLSearchParams({ id: id, csrf_token: window.CSRF_TOKEN })
+      body: new URLSearchParams({ id: entry.id, csrf_token: window.CSRF_TOKEN }),
+      keepalive: !!leavingPage // lets the request finish even as the page unloads
     })
       .then(function (res) { return res.json(); })
       .then(function (json) {
         if (json.success) {
-          const row = document.getElementById('row-' + id);
-          if (row) row.remove();
-          bumpStat(statTotal, -1);
-          bumpStat(statReady, -1);
-          bumpStat(sidebarCountAll, -1);
-          bumpStat(sidebarCountReady, -1);
+          entry.row.remove();
         } else {
-          alert(json.message || 'Could not mark as claimed.');
-          if (btn) btn.disabled = false;
+          rollback(json.message || (entry.kind === 'claim'
+            ? 'Could not mark as claimed.'
+            : 'Could not delete the request.'));
         }
       })
       .catch(function () {
-        alert('Network error. Please try again.');
-        if (btn) btn.disabled = false;
+        if (!leavingPage) rollback('Network error. Please try again.');
       });
+  }
+
+  // Leaving (or closing) the page inside the undo window: commit now.
+  window.addEventListener('pagehide', function () {
+    Object.keys(pendingRemovals).forEach(function (id) {
+      commitRemoval(pendingRemovals[id], true);
+    });
+  });
+
+  function doClaim(id) {
+    scheduleRemoval('claim', id);
   }
 
   if (claimModalConfirm) {
@@ -466,6 +558,65 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  // ---- Hover hint: "Double-click to view details" follows the cursor over a row ----
+  // Mirrors the double-click handler above: it only appears where a double-click
+  // would actually open the details, so not over the status dropdown or buttons.
+  // Skipped on touch screens, where there is no hover.
+  if (tableBody && window.matchMedia && window.matchMedia('(hover: hover)').matches) {
+    const hint = document.createElement('div');
+    hint.className = 'row-hint';
+    hint.setAttribute('role', 'tooltip');
+    hint.innerHTML =
+      '<span class="row-hint-icon">' +
+      '<svg viewBox="0 0 24 24" fill="#fff" stroke="#fff" stroke-width="1.6" stroke-linejoin="round">' +
+      '<path d="M6 3v16l4.2-3.8L13 21l2.6-1.2-2.7-5.8h5.6z"/></svg>' +
+      '</span><span>Double-click to view details</span>';
+    document.body.appendChild(hint);
+
+    const SHOW_DELAY_MS = 350; // so sweeping the mouse across the table doesn't flash it
+    let showTimer = null;
+    let activeRow = null;
+
+    function hideHint() {
+      clearTimeout(showTimer);
+      activeRow = null;
+      hint.classList.remove('is-visible');
+    }
+
+    function placeHint(e) {
+      const gap = 16;
+      const w = hint.offsetWidth;
+      const h = hint.offsetHeight;
+      let x = e.clientX + gap;
+      let y = e.clientY + gap;
+      if (x + w > window.innerWidth - 8) x = e.clientX - w - gap; // flip near the right edge
+      if (y + h > window.innerHeight - 8) y = e.clientY - h - gap; // flip near the bottom
+      hint.style.transform = 'translate(' + Math.max(8, x) + 'px, ' + Math.max(8, y) + 'px)';
+    }
+
+    tableBody.addEventListener('mousemove', function (e) {
+      const row = e.target.closest('tr[id^="row-"]');
+      if (!row || e.target.closest('a, button, .status-select-wrapper')) {
+        hideHint();
+        return;
+      }
+      placeHint(e);
+      if (row !== activeRow) {
+        hideHint();
+        activeRow = row;
+        showTimer = setTimeout(function () {
+          if (activeRow === row) hint.classList.add('is-visible');
+        }, SHOW_DELAY_MS);
+      }
+    });
+
+    tableBody.addEventListener('mouseleave', hideHint);
+    tableBody.addEventListener('mousedown', hideHint);
+    tableBody.addEventListener('dblclick', hideHint);
+    window.addEventListener('scroll', hideHint, true);
+    document.addEventListener('keydown', hideHint);
+  }
+
   if (requestDetailsClose) {
     requestDetailsClose.addEventListener('click', closeRequestDetails);
   }
@@ -506,25 +657,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function doDelete(id) {
-    fetch('delete_request.php', {
-      method: 'POST',
-      body: new URLSearchParams({ id: id, csrf_token: window.CSRF_TOKEN })
-    })
-      .then(function (res) { return res.json(); })
-      .then(function (json) {
-        if (json.success) {
-          const row = document.getElementById('row-' + id);
-          if (row) row.remove();
-          bumpStat(statTotal, -1);
-          bumpStat(sidebarCountAll, -1);
-          bumpStat(sidebarCountRejected, -1);
-        } else {
-          alert(json.message || 'Could not delete the request.');
-        }
-      })
-      .catch(function () {
-        alert('Network error. Please try again.');
-      });
+    scheduleRemoval('delete', id);
   }
 
   if (rdDelete) {
@@ -1001,7 +1134,6 @@ if (auditLogOverlay) {
 const editProfilePhotoBtn = document.getElementById('editProfilePhotoBtn');
 const editProfilePhotoInput = document.getElementById('editProfilePhotoInput');
 const editProfileAvatarEl = document.getElementById('editProfileAvatar');
-let originalAvatarHtml = editProfileAvatarEl ? editProfileAvatarEl.innerHTML : '';
 
 // showToast / showEditProfileAlert live outside the DOMContentLoaded block, so they can't
 // see the escapeHtml defined inside it — without this copy they threw a ReferenceError.
@@ -1012,7 +1144,11 @@ function escapeHtml(str) {
   return div.innerHTML;
 }
 
-function showToast(type, message) {
+// options (all optional): { duration: ms, actionLabel: 'Undo', onAction: fn }
+// Returns { dismiss } so the caller can close the toast early.
+function showToast(type, message, options) {
+  options = options || {};
+  const duration = options.duration || 3000;
   let container = document.getElementById('toastContainer');
   if (!container) {
     container = document.createElement('div');
@@ -1068,6 +1204,42 @@ function showToast(type, message) {
     : '<svg viewBox="0 0 24 24" fill="none" style="width:19px;height:19px;flex:0 0 auto;"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 8V13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="16.2" r="1" fill="currentColor"/></svg>';
 
   toast.innerHTML = iconMarkup + '<span>' + escapeHtml(message) + '</span>';
+
+  let hideTimer = null;
+  let dismissed = false;
+  function dismiss() {
+    if (dismissed) return;
+    dismissed = true;
+    clearTimeout(hideTimer);
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(-10px)';
+    setTimeout(function () { toast.remove(); }, 200);
+  }
+
+  if (options.actionLabel) {
+    toast.style.maxWidth = '440px';
+    const actionBtn = document.createElement('button');
+    actionBtn.type = 'button';
+    actionBtn.textContent = options.actionLabel;
+    actionBtn.style.flex = '0 0 auto';
+    actionBtn.style.marginLeft = '4px';
+    actionBtn.style.padding = '2px 0 2px 14px';
+    actionBtn.style.background = 'transparent';
+    actionBtn.style.border = 'none';
+    actionBtn.style.borderLeft = '1px solid currentColor';
+    actionBtn.style.color = 'inherit';
+    actionBtn.style.font = 'inherit';
+    actionBtn.style.fontWeight = '700';
+    actionBtn.style.textDecoration = 'underline';
+    actionBtn.style.cursor = 'pointer';
+    actionBtn.addEventListener('click', function () {
+      if (dismissed) return;
+      dismiss();
+      if (typeof options.onAction === 'function') options.onAction();
+    });
+    toast.appendChild(actionBtn);
+  }
+
   container.appendChild(toast);
 
   requestAnimationFrame(function () {
@@ -1075,11 +1247,9 @@ function showToast(type, message) {
     toast.style.transform = 'translateY(0)';
   });
 
-  setTimeout(function () {
-    toast.style.opacity = '0';
-    toast.style.transform = 'translateY(-10px)';
-    setTimeout(function () { toast.remove(); }, 200);
-  }, 3000);
+  hideTimer = setTimeout(dismiss, duration);
+
+  return { dismiss: dismiss };
 }
 function showEditProfileAlert(type, message) {
   if (!editProfileAlert) return;
@@ -1100,20 +1270,6 @@ function openEditProfileModal() {
 
 function closeEditProfileModal() {
   if (editProfileOverlay) editProfileOverlay.hidden = true;
-
-  // Discard anything typed/selected but not saved, so reopening (or the
-  // next failed-save state) doesn't still show it.
-  if (editProfileForm) {
-    editProfileForm.reset();
-    editProfileForm.querySelectorAll('.is-invalid').forEach(function (el) {
-      el.classList.remove('is-invalid');
-    });
-    editProfileForm.querySelectorAll('.edit-profile-field-error').forEach(function (el) {
-      el.remove();
-    });
-  }
-  if (editProfileAlert) editProfileAlert.innerHTML = '';
-  if (editProfileAvatarEl) editProfileAvatarEl.innerHTML = originalAvatarHtml;
 }
 
 if (openEditProfileBtn) openEditProfileBtn.addEventListener('click', openEditProfileModal);
@@ -1277,7 +1433,6 @@ if (editProfileForm) {
             } else {
               avatarEls.forEach(function (el) { el.textContent = json.data.initials; });
             }
-            if (editProfileAvatarEl) originalAvatarHtml = editProfileAvatarEl.innerHTML;
 
             currentPasswordInput.value = '';
             newPasswordInput.value = '';
