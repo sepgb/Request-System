@@ -5560,28 +5560,33 @@ body.admin-body::-webkit-scrollbar {
   margin-top: 16px;
 }
 
+/* Edit and Cancel are built like the primary button ("View / Print Claim
+   Receipt"): a solid diagonal gradient, light text and a soft glow that
+   strengthens on hover. Each keeps its own colour (green / red). */
+.btn-edit,
+.btn-cancel {
+  border: 1px solid transparent;
+  color: #f4f1ea;
+}
+
 .btn-edit {
-  background: rgba(90, 199, 140, 0.12);
-  border: 1px solid rgba(90, 199, 140, 0.4);
-  color: #8fe0b4;
+  background: linear-gradient(135deg, #47bd85, #278f5e);
+  box-shadow: 0 10px 30px rgba(39, 143, 94, 0.30);
 }
 
 .btn-edit:hover {
   transform: translateY(-2px);
-  background: rgba(90, 199, 140, 0.2);
-  border-color: #8fe0b4;
+  box-shadow: 0 14px 34px rgba(39, 143, 94, 0.45);
 }
 
 .btn-cancel {
-  background: rgba(214, 84, 84, 0.12);
-  border: 1px solid rgba(214, 84, 84, 0.4);
-  color: #f4b6b6;
+  background: linear-gradient(135deg, #e5645f, #c93f3f);
+  box-shadow: 0 10px 30px rgba(201, 63, 63, 0.30);
 }
 
 .btn-cancel:hover {
   transform: translateY(-2px);
-  background: rgba(214, 84, 84, 0.2);
-  border-color: #f4b6b6;
+  box-shadow: 0 14px 34px rgba(201, 63, 63, 0.45);
 }
 
 .btn-edit svg,
