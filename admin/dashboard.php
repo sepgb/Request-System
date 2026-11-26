@@ -238,6 +238,28 @@ function renderActivityItem(array $a): void
       </div>
 
       <div class="sidebar-section-label">
+        Requests
+      </div>
+
+      <nav class="sidebar-nav sidebar-nav-status">
+
+        <a href="dashboard.php"
+          class="sidebar-link sidebar-status-link<?php echo !$isFiltering ? ' active' : ''; ?>"
+          data-status="">
+          <span>All requests</span>
+          <span class="sidebar-count sidebar-count-all"
+            id="count-all">
+            <?php echo (int)$stats['total']; ?>
+          </span>
+        </a>
+        <a href="claim_schedule.php"
+          class="sidebar-link<?php echo $currentAdminPage === 'claim_schedule.php' ? ' active' : ''; ?>">
+          <span>Claim Schedule</span>
+        </a>
+
+      </nav>
+
+      <div class="sidebar-section-label">
         General
       </div>
 
@@ -259,24 +281,6 @@ function renderActivityItem(array $a): void
             <span>Manage Admins</span>
           </a>
         <?php endif; ?>
-      </nav>
-
-      <div class="sidebar-section-label">
-        Status
-      </div>
-
-      <nav class="sidebar-nav sidebar-nav-status">
-
-        <a href="dashboard.php"
-          class="sidebar-link sidebar-status-link<?php echo !$isFiltering ? ' active' : ''; ?>"
-          data-status="">
-          <span>All requests</span>
-          <span class="sidebar-count sidebar-count-all"
-            id="count-all">
-            <?php echo (int)$stats['total']; ?>
-          </span>
-        </a>
-
       </nav>
     </aside>
 

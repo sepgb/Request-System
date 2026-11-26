@@ -156,10 +156,6 @@ body.page-leaving .main-content {
   color: var(--blue-300);
 }
 
-/* =====================================================================
-   HEADER
-   ===================================================================== */
-
 .site-header {
   position: sticky;
   top: 0;
@@ -419,10 +415,6 @@ body.page-leaving .main-content {
   }
 }
 
-/* =====================================================================
-   FOOTER
-   ===================================================================== */
-
 .site-footer {
   margin-top: 0;
   background: var(--ink-950);
@@ -582,10 +574,6 @@ body.page-leaving .main-content {
     gap: 28px;
   }
 }
-
-/* =====================================================================
-   HOME PAGE
-   ===================================================================== */
 
 .hero,
 .how-it-works,
@@ -932,10 +920,6 @@ body:has(.hero) {
   }
 }
 
-/* =====================================================================
-   REQUEST FORM
-   ===================================================================== */
-
 .form-section {
   max-width: 820px;
   margin: 0 auto;
@@ -1144,7 +1128,6 @@ body:has(.hero) {
     transition: none;
   }
 }
-
 
 .form-section>h1 {
   font-family: 'Newsreader', serif;
@@ -1407,9 +1390,6 @@ body:has(.hero) {
   color: var(--paper-dim);
 }
 
-/* =====================================================================
-   TRACK PAGE
-   ===================================================================== */
 .detail-table {
   width: 100%;
   border-collapse: collapse;
@@ -1536,9 +1516,6 @@ body:has(.hero) {
   margin-top: 50px;
 }
 
-/* =====================================================================
-   RECEIPT PAGE
-   ===================================================================== */
 .receipt-header {
   margin-bottom: 30px;
   text-align: center;
@@ -1665,10 +1642,6 @@ body:has(.hero) {
     display: none;
   }
 }
-
-/* =====================================================================
-   ADMIN AUTH
-   ===================================================================== */
 
 .auth-body {
   background:
@@ -1828,7 +1801,6 @@ body:has(.hero) {
   text-align: center;
 }
 
-/* Underline tabs */
 .auth-tabs {
   display: flex;
   gap: 22px;
@@ -2022,10 +1994,6 @@ body:has(.hero) {
   }
 }
 
-/* =====================================================================
-   ADMIN DASHBOARD
-   ===================================================================== */
-
 .admin-body {
   min-height: 100vh;
   margin: 0;
@@ -2052,6 +2020,9 @@ body:has(.hero) {
   flex-direction: column;
   padding: 24px 16px;
   box-sizing: border-box;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #2a2d34 transparent;
   background: #08090b !important;
   border-right: 1px solid #202329;
   box-shadow: none;
@@ -2128,10 +2099,6 @@ body:has(.hero) {
   display: none;
 }
 
-/* =====================================================================
-   SIDEBAR NAVIGATION
-   ===================================================================== */
-
 .sidebar-nav {
   display: flex;
   flex-direction: column;
@@ -2174,7 +2141,6 @@ body:has(.hero) {
   box-shadow: none !important;
 }
 
-
 .sidebar-section-label {
   padding: 20px 10px 6px;
   color: #74787f;
@@ -2191,6 +2157,17 @@ body:has(.hero) {
 
 .sidebar-nav-status .sidebar-link {
   min-height: 34px;
+}
+
+.admin-sidebar>* {
+  flex-shrink: 0;
+}
+
+.sidebar-nav-filter .sidebar-link span {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .sidebar-count {
@@ -2617,7 +2594,6 @@ body:has(.hero) {
   pointer-events: none;
 }
 
-/* Hover hint over request rows — "Double-click to view details" */
 .row-hint {
   position: fixed;
   top: 0;
@@ -2668,8 +2644,6 @@ body:has(.hero) {
   gap: 8px;
 }
 
-/* Document dropdown trigger (the real <select> is hidden via
-   .status-select-native, reused from the status-select recipe above) */
 .table-filter-select-wrapper {
   position: relative;
 }
@@ -2757,8 +2731,6 @@ body:has(.hero) {
   color: var(--gold-300);
 }
 
-/* Clear filters — icon-only, compact */
-
 .admin-table {
   background: #111317;
   width: 100% !important;
@@ -2814,8 +2786,6 @@ body:has(.hero) {
   align-items: flex-start;
 }
 
-/* TABLE HEADER */
-
 .admin-table thead {
   background: #111317 !important;
 }
@@ -2865,9 +2835,6 @@ body:has(.hero) {
   cursor: pointer;
 }
 
-/* Request linked from a notification: stays highlighted, then fades out.
-   (A CSS animation can't beat the `background ... !important` on table cells,
-   so this is a class the script adds and later removes.) */
 .admin-table tbody td {
   transition: background-color 0.6s ease, box-shadow 0.6s ease;
 }
@@ -2962,19 +2929,11 @@ select::picker-icon {
   color: var(--gold-300);
 }
 
-/* ---------- Custom status dropdown (replaces the native <select> popup,
-   which can't be styled precisely/consistently across browsers). Defined
-   here, BEFORE the status-color classes below, so those classes' colors
-   correctly win the cascade when applied to the trigger button. ---------- */
-
 .status-select-wrapper {
   position: relative;
   display: inline-block;
 }
 
-/* The real <select> stays in the DOM (value / dataset / change event still
-   work exactly as before) but is visually hidden; the button below it is
-   what's actually shown and interacted with. */
 .status-select-native {
   position: absolute !important;
   width: 1px !important;
@@ -3042,8 +3001,6 @@ select::picker-icon {
   transform: rotate(180deg);
 }
 
-/* Appended to <body> at runtime and positioned via JS, so it always
-   renders above the table and is never clipped by its horizontal scroll. */
 .status-select-list {
   position: fixed;
   z-index: 500;
@@ -3348,8 +3305,6 @@ select::picker-icon {
   transform: translateY(-2px);
 }
 
-/* ---------- Request Details modal (receipt-style row summary) ---------- */
-
 .request-details-box {
   width: 400px;
   max-width: 90vw;
@@ -3441,10 +3396,6 @@ select::picker-icon {
 .admin-body * {
   font-family: 'Manrope', sans-serif !important;
 }
-
-/* =====================================================================
-   PROFILE DROPDOWN 
-   ===================================================================== */
 
 .topbar-profile-trigger {
   display: flex;
@@ -3574,7 +3525,6 @@ select::picker-icon {
   text-decoration: underline;
 }
 
-/* Header: title + three-dot menu, then All / Unread tabs */
 .notif-dropdown-header {
   border-bottom: none;
   padding-bottom: 4px;
@@ -3688,7 +3638,6 @@ select::picker-icon {
   color: #a7bef0;
 }
 
-/* ---- Delete notifications: select mode ---- */
 .notif-menu-item.is-danger {
   color: #f0707a;
 }
@@ -3698,7 +3647,6 @@ select::picker-icon {
   color: #ff8f98;
 }
 
-/* shared checkbox look: per-notification box + the "All" box */
 .notif-check,
 .notif-select-all input {
   appearance: none;
@@ -3732,7 +3680,6 @@ select::picker-icon {
   cursor: default;
 }
 
-/* the checkbox only exists while selecting, and takes the dot's place */
 .notif-check {
   display: none;
   margin-top: 1px;
@@ -3982,10 +3929,6 @@ select::picker-icon {
   background: rgba(214, 84, 84, 0.14);
   color: #f4b6b6;
 }
-
-/* =====================================================================
-   EDIT PROFILE MODAL
-   ===================================================================== */
 
 .edit-profile-box {
   width: 480px;
@@ -4277,8 +4220,6 @@ select::picker-icon {
   cursor: not-allowed;
 }
 
-/* AVATAR IMAGE */
-
 .avatar-img {
   width: 100%;
   height: 100%;
@@ -4286,8 +4227,6 @@ select::picker-icon {
   display: block;
   border-radius: 50%;
 }
-
-/* TOAST NOTIFICATION */
 
 .toast-container {
   position: fixed;
@@ -4415,17 +4354,9 @@ select::picker-icon {
   border: 0;
 }
 
-/* =====================================================================
-   SIDEBAR GENERAL NAV (Statistics link, above Status section)
-   ===================================================================== */
-
 .sidebar-nav-general {
   margin-bottom: 2px;
 }
-
-/* =====================================================================
-   STATISTICS PAGE
-   ===================================================================== */
 
 .stats-page {
   padding: 28px 32px 60px;
@@ -4556,8 +4487,6 @@ select::picker-icon {
   border-color: rgba(94, 163, 255, 0.4);
 }
 
-/* ---------- Hero stat cards (Total Request / Request Claimed) ---------- */
-
 .stat-card-hero {
   display: flex;
   flex-direction: column;
@@ -4651,7 +4580,6 @@ select::picker-icon {
   transform: rotate(180deg);
 }
 
-/* Flat (0%) — neutral grey pill, no arrow */
 .stat-card-hero-trend.is-flat {
   background: rgba(154, 161, 173, 0.18);
   color: #b4bac6;
@@ -4661,7 +4589,6 @@ select::picker-icon {
   display: none;
 }
 
-/* Inverse trend (a rise is bad, a drop is good) — e.g. Request Rejected */
 .stat-card-hero-trend.is-inverse.is-up {
   background: rgba(214, 84, 84, 0.16);
   color: #f4b6b6;
@@ -4849,12 +4776,6 @@ select::picker-icon {
   border-radius: 4px;
 }
 
-
-
-/* =====================================================================
-   AUDIT LOG POPUP
-   ===================================================================== */
-
 .audit-log-box {
   width: 560px;
   max-width: 92vw;
@@ -4902,8 +4823,6 @@ select::picker-icon {
   width: 0;
   height: 0;
 }
-
-/* ---------- Combined status card (Pending / Processing / Ready) ---------- */
 
 .stat-card-status {
   grid-column: span 2;
@@ -5024,7 +4943,6 @@ html[data-theme="light"] .stat-card-status-legend-item {
   color: #7c8496;
 }
 
-/* ---------- Line chart (requests / claims per day) ---------- */
 .line-chart {
   position: relative;
   width: 100%;
@@ -5148,7 +5066,6 @@ html[data-theme="light"] .stat-card-status-legend-item {
   border-radius: 3px;
 }
 
-/* ---------- Document type breakdown (hatched bar chart) ---------- */
 .panel-docs {
   display: flex;
   flex-direction: column;
@@ -5180,8 +5097,6 @@ html[data-theme="light"] .stat-card-status-legend-item {
   flex: 0 0 auto;
 }
 
-/* Same-height header row on both cards, so "Last 14 days" and
-   "Top requested document" sit on exactly the same line */
 .panel-chart>.panel-title,
 .docs-header {
   display: flex;
@@ -5405,7 +5320,6 @@ html[data-theme="light"] .stat-card-status-legend-item {
   overflow-wrap: anywhere;
 }
 
-/* ---------- Recent activity ---------- */
 .activity-list {
   display: flex;
   flex-direction: column;
@@ -5424,7 +5338,6 @@ html[data-theme="light"] .stat-card-status-legend-item {
   transition: background 0.15s ease;
 }
 
-/* Read notification — no background, muted text */
 .activity-item:hover {
   background: rgba(154, 161, 173, 0.1);
 }
@@ -5441,7 +5354,6 @@ html[data-theme="light"] .stat-card-status-legend-item {
   background: #4b525c;
 }
 
-/* Unread notification — blue background until read */
 .activity-item.is-unread {
   background: rgba(92, 127, 214, 0.18);
 }
@@ -5532,10 +5444,6 @@ html[data-theme="light"] .stat-card-status-legend-item {
   }
 }
 
-/* =====================================================================
-   HIDE PAGE SCROLLBAR (admin dashboard pages, incl. statistics.php)
-   ===================================================================== */
-
 html:has(body.admin-body),
 body.admin-body {
   scrollbar-width: none;
@@ -5549,10 +5457,6 @@ body.admin-body::-webkit-scrollbar {
   height: 0;
 }
 
-/* =====================================================================
-   TRACKING RESULT ACTIONS (track.php — receipt/edit/cancel buttons)
-   ===================================================================== */
-
 .tracking-actions {
   display: flex;
   flex-wrap: wrap;
@@ -5560,9 +5464,6 @@ body.admin-body::-webkit-scrollbar {
   margin-top: 16px;
 }
 
-/* Edit and Cancel are built like the primary button ("View / Print Claim
-   Receipt"): a solid diagonal gradient, light text and a soft glow that
-   strengthens on hover. Each keeps its own colour (green / red). */
 .btn-edit,
 .btn-cancel {
   border: 1px solid transparent;
@@ -5718,10 +5619,6 @@ body.admin-body::-webkit-scrollbar {
   outline-offset: 2px;
 }
 
-/* =====================================================================
-   AUTH PAGE TRANSITIONS (login.php, forgot_password.php)
-   ===================================================================== */
-
 @keyframes auth-card-enter {
   from {
     opacity: 0;
@@ -5748,7 +5645,6 @@ body.auth-leaving .auth-intro {
   pointer-events: none;
 }
 
-/* Tab panel swap (Log in <-> Create account) */
 .auth-panel {
   animation: auth-card-enter 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
@@ -5776,10 +5672,6 @@ body.auth-leaving .auth-intro {
     transform: none;
   }
 }
-
-/* =====================================================================
-   MANAGE ADMINS PAGE
-   ===================================================================== */
 
 .admin-cards {
   display: grid;
@@ -6094,10 +5986,6 @@ body.auth-leaving .auth-intro {
   border-top: 1px solid #262a32;
 }
 
-/* =====================================================================
-   THEME TOGGLE (Light / Dark mode switch — admin pages)
-   ===================================================================== */
-
 .theme-toggle {
   position: relative;
   flex: 0 0 auto;
@@ -6129,7 +6017,6 @@ body.auth-leaving .auth-intro {
   outline-offset: 2px;
 }
 
-/* Only one icon shows at a time, centered in the circle */
 .theme-toggle-icon {
   position: absolute;
   top: 50%;
@@ -6149,7 +6036,6 @@ body.auth-leaving .auth-intro {
   opacity: 0;
 }
 
-/* aria-checked="true" = light mode */
 .theme-toggle[aria-checked="true"] .theme-toggle-icon-sun {
   opacity: 0;
 }
@@ -6164,15 +6050,10 @@ body.auth-leaving .auth-intro {
   }
 }
 
-/* =====================================================================
-   LIGHT MODE (admin pages — dashboard.php, statistics.php, manage_admins.php)
-   ===================================================================== */
-
 html[data-theme="light"] {
   color-scheme: light;
 }
 
-/* ---------- Base shell ---------- */
 html[data-theme="light"] .admin-body {
   background: #f3f5fa !important;
   color: #2c3648;
@@ -6283,8 +6164,6 @@ html[data-theme="light"] .table-filter-select-option.is-selected {
   color: #8a611a;
 }
 
-
-/* ---------- Sidebar brand & nav ---------- */
 html[data-theme="light"] .sidebar-brand-text {
   color: #1a2233;
 }
@@ -6346,7 +6225,6 @@ html[data-theme="light"] .sidebar-logout:hover {
   color: #c23b3b;
 }
 
-/* ---------- Topbar: link, filter, search ---------- */
 html[data-theme="light"] .topbar-link {
   color: #3a4254;
 }
@@ -6393,7 +6271,6 @@ html[data-theme="light"] .topbar-search input::placeholder {
   color: #9aa2b1;
 }
 
-/* ---------- Custom / status selects ---------- */
 html[data-theme="light"] .status-select,
 html[data-theme="light"] .status-select-trigger,
 html[data-theme="light"] .custom-select-trigger,
@@ -6484,7 +6361,6 @@ html[data-theme="light"] .status-select-rejected {
   font-weight: 700;
 }
 
-/* ---------- Profile trigger & dropdown ---------- */
 html[data-theme="light"] .topbar-profile-trigger {
   background: rgba(49, 95, 208, 0.05);
   border-color: rgba(49, 95, 208, 0.14);
@@ -6689,7 +6565,6 @@ html[data-theme="light"] .profile-dropdown-item-danger:hover {
   color: #c23b3b;
 }
 
-/* ---------- Table ---------- */
 html[data-theme="light"] .admin-table {
   background: #ffffff;
 }
@@ -6728,7 +6603,6 @@ html[data-theme="light"] .empty-row {
   color: #7c8496;
 }
 
-/* ---------- Modals (confirm, edit profile, audit log) ---------- */
 html[data-theme="light"] .modal-box,
 html[data-theme="light"] .edit-profile-box,
 html[data-theme="light"] .audit-log-box,
@@ -6877,7 +6751,6 @@ html[data-theme="light"] .edit-profile-alert-success {
   color: #1f8a56;
 }
 
-/* ---------- Toasts ---------- */
 html[data-theme="light"] .toast-success {
   background: #e9f8f0;
   border-color: rgba(31, 138, 86, 0.3);
@@ -6890,7 +6763,6 @@ html[data-theme="light"] .toast-error {
   color: #c23b3b;
 }
 
-/* ---------- Statistics page ---------- */
 html[data-theme="light"] .stats-page-header h1 {
   color: #1a2233;
 }
@@ -7006,7 +6878,6 @@ html[data-theme="light"] .panel-see-all:hover {
   color: #1d4bb0;
 }
 
-/* ---------- Audit log popup ---------- */
 html[data-theme="light"] .lc-hgrid {
   stroke: #eef1f7;
 }
@@ -7087,7 +6958,6 @@ html[data-theme="light"] .dchart-tick i {
   border-top-color: #d5dae4;
 }
 
-/* Top requested document (light mode): blue ramp, strongest = most requested */
 html[data-theme="light"] .dchart-bar {
   background-color: #3f65c8;
   background-image: repeating-linear-gradient(45deg,
@@ -7169,7 +7039,6 @@ html[data-theme="light"] .stats-empty {
   color: #9aa2b1;
 }
 
-/* ---------- Manage Admins page ---------- */
 html[data-theme="light"] .admin-manage-card {
   background: #ffffff;
   border-color: #e4e8f0;
@@ -7279,4 +7148,250 @@ html[data-theme="light"] .doc-type-checkbox input[type="checkbox"]:hover {
 html[data-theme="light"] .doc-type-checkbox input[type="checkbox"]:checked {
   background: #2f5fc4;
   border-color: #2f5fc4;
+}
+
+.schedule-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.schedule-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: #111317;
+  border: 1px solid #202329;
+  color: #8a919c;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.schedule-tab:hover {
+  border-color: #3a3e46;
+  color: #d0d4da;
+}
+
+.schedule-tab.is-active {
+  background: rgba(92, 127, 214, 0.16);
+  border-color: rgba(92, 127, 214, 0.45);
+  color: #9bb8df;
+}
+
+.schedule-tab-count {
+  min-width: 22px;
+  height: 20px;
+  padding: 0 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border-radius: 999px;
+  background: rgba(244, 241, 234, 0.07);
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.schedule-tab.is-active .schedule-tab-count {
+  background: var(--admin-blue-300);
+  color: #ffffff;
+}
+
+.schedule-group {
+  padding: 0;
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+.schedule-group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  padding: 16px 20px;
+  border-bottom: 1px solid #202329;
+}
+
+.schedule-group-title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.schedule-date {
+  margin: 0;
+  color: #d0d4da;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.schedule-tag {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: rgba(148, 152, 166, 0.16);
+  border: 1px solid rgba(148, 152, 166, 0.35);
+  color: #a9afb9;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.schedule-tag-today {
+  background: rgba(92, 127, 214, 0.16);
+  border-color: rgba(92, 127, 214, 0.4);
+  color: #9bb8df;
+}
+
+.schedule-tag-past {
+  background: rgba(214, 84, 84, 0.14);
+  border-color: rgba(214, 84, 84, 0.35);
+  color: #f4b6b6;
+}
+
+.schedule-summary {
+  color: #8a919c;
+  font-size: 12.5px;
+}
+
+.schedule-count-warn {
+  color: #f4b6b6;
+  font-weight: 600;
+}
+
+.schedule-table-wrap {
+  overflow-x: auto;
+}
+
+.schedule-table {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: collapse;
+}
+
+.schedule-table thead th {
+  height: 38px;
+  padding: 0 20px;
+  background: #101013;
+  border-bottom: 1px solid #202329;
+  color: #777f8a;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-align: left;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.schedule-table tbody td {
+  height: 46px;
+  padding: 0 20px;
+  border-bottom: 1px solid #191c21;
+  color: #d0d4da;
+  font-size: 13px;
+  white-space: nowrap;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+
+.schedule-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.schedule-table tbody tr:hover td {
+  background: #161c29;
+}
+
+.schedule-ref {
+  text-decoration: none;
+}
+
+.schedule-ref:hover {
+  text-decoration: underline;
+}
+
+.schedule-status {
+  display: inline-flex;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+html[data-theme="light"] .schedule-tab {
+  background: #ffffff;
+  border-color: #e4e8f0;
+  color: #7c8496;
+}
+
+html[data-theme="light"] .schedule-tab:hover {
+  border-color: #c9d1e0;
+  color: #2c3648;
+}
+
+html[data-theme="light"] .schedule-tab.is-active {
+  background: rgba(47, 95, 196, 0.1);
+  border-color: rgba(47, 95, 196, 0.4);
+  color: #2f5fc4;
+}
+
+html[data-theme="light"] .schedule-tab-count {
+  background: rgba(26, 34, 51, 0.07);
+}
+
+html[data-theme="light"] .schedule-group-head {
+  border-bottom-color: #e4e8f0;
+}
+
+html[data-theme="light"] .schedule-date {
+  color: #1a2233;
+}
+
+html[data-theme="light"] .schedule-tag {
+  background: rgba(124, 132, 150, 0.14);
+  border-color: rgba(124, 132, 150, 0.4);
+  color: #5d6677;
+}
+
+html[data-theme="light"] .schedule-tag-today {
+  background: rgba(47, 95, 196, 0.1);
+  border-color: rgba(47, 95, 196, 0.4);
+  color: #2f5fc4;
+}
+
+html[data-theme="light"] .schedule-tag-past {
+  background: rgba(194, 59, 59, 0.1);
+  border-color: rgba(194, 59, 59, 0.4);
+  color: #c23b3b;
+}
+
+html[data-theme="light"] .schedule-summary {
+  color: #7c8496;
+}
+
+html[data-theme="light"] .schedule-count-warn {
+  color: #c23b3b;
+}
+
+html[data-theme="light"] .schedule-table thead th {
+  background: #f7f9fc;
+  color: #7c8496;
+  border-bottom-color: #e4e8f0;
+}
+
+html[data-theme="light"] .schedule-table tbody td {
+  color: #2c3648;
+  border-bottom-color: #eef1f7;
+}
+
+html[data-theme="light"] .schedule-table tbody tr:hover td {
+  background: #f1f5fd;
 }

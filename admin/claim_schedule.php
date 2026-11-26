@@ -1,0 +1,635 @@
+<?php
+require_once 'auth_check.php';
+require_once '../config/db.php';
+require_once '../includes/functions.php';
+
+date_default_timezone_set('Asia/Manila');
+
+$adminName = $_SESSION['admin_name'] ?? 'Admin';
+$adminPhoto = $_SESSION['admin_photo'] ?? null;
+$nameParts = explode(' ', trim($adminName));
+$firstInitial = strtoupper(substr($nameParts[0], 0, 1));
+$secondInitial = strtoupper(substr(end($nameParts), 0, 1));
+$adminInitial = $firstInitial . $secondInitial;
+$currentAdminPage = basename($_SERVER['PHP_SELF'] ?? '');
+
+$scopeIn = documentScopeInClause($conn);
+$scopeWhere = $scopeIn !== null ? " WHERE document_type IN ($scopeIn)" : '';
+$scopeAnd = $scopeIn !== null ? " AND document_type IN ($scopeIn)" : '';
+
+$activeTotal = (int)$conn->query("SELECT COUNT(*) AS c FROM requests{$scopeWhere}")->fetch_assoc()['c'];
+
+$show = (($_GET['show'] ?? '') === 'not-ready') ? 'not-ready' : 'all';
+$today = date('Y-m-d');
+$tomorrow = date('Y-m-d', strtotime('+1 day'));
+
+$scheduleRes = $conn->query("
+    SELECT id, reference_no, student_number, full_name, document_type, request_status, claim_date
+    FROM requests
+    WHERE claim_date IS NOT NULL
+      AND request_status IN ('Pending', 'Processing', 'Ready for Pickup'){$scopeAnd}
+    ORDER BY claim_date ASC, full_name ASC
+");
+
+$groups = [];
+$countAll = 0;
+$countNotReady = 0;
+while ($r = $scheduleRes->fetch_assoc()) {
+    $isReady = $r['request_status'] === 'Ready for Pickup';
+    $d = $r['claim_date'];
+
+    if (!isset($groups[$d])) {
+        $groups[$d] = ['rows' => [], 'total' => 0, 'ready' => 0, 'notReady' => 0];
+    }
+
+    $countAll++;
+    $groups[$d]['total']++;
+    if ($isReady) {
+        $groups[$d]['ready']++;
+    } else {
+        $groups[$d]['notReady']++;
+        $countNotReady++;
+    }
+
+    if ($show === 'all' || !$isReady) {
+        $groups[$d]['rows'][] = $r;
+    }
+}
+
+foreach ($groups as $d => $g) {
+    if (empty($g['rows'])) {
+        unset($groups[$d]);
+    }
+}
+
+function scheduleDayTag(string $date, string $today, string $tomorrow): ?array
+{
+    if ($date < $today) return ['Past date', 'schedule-tag-past'];
+    if ($date === $today) return ['Today', 'schedule-tag-today'];
+    if ($date === $tomorrow) return ['Tomorrow', 'schedule-tag-soon'];
+    return null;
+}
+
+function schedulePlural(int $n, string $word): string
+{
+    return $n . ' ' . $word . ($n === 1 ? '' : 's');
+}
+
+$fullActivityLimit = 200;
+
+$activityWhere = $scopeIn !== null ? "WHERE is_dismissed = 0 AND document_type IN ($scopeIn) " : 'WHERE is_dismissed = 0 ';
+$activityAnd = $scopeIn !== null ? "AND document_type IN ($scopeIn) " : '';
+
+if (!empty($_GET['read_notif'])) {
+    $readId = (int)$_GET['read_notif'];
+    if ($readId > 0) {
+        $rstmt = $conn->prepare("UPDATE audit_log SET is_read = 1 WHERE id = ? {$activityAnd}");
+        $rstmt->bind_param('i', $readId);
+        $rstmt->execute();
+        $rstmt->close();
+    }
+}
+
+$fullActivity = $conn->query("SELECT * FROM audit_log {$activityWhere}ORDER BY created_at DESC LIMIT {$fullActivityLimit}");
+$allActivityRows = [];
+while ($row = $fullActivity->fetch_assoc()) {
+    $allActivityRows[] = $row;
+}
+
+$activityRows = $allActivityRows;
+$notifToday = date('Y-m-d');
+$notifGroups = ['Today' => [], 'Earlier' => []];
+foreach ($allActivityRows as $act) {
+    $notifGroups[date('Y-m-d', strtotime($act['created_at'])) === $notifToday ? 'Today' : 'Earlier'][] = $act;
+}
+
+$unreadWhere = $activityWhere . 'AND is_read = 0';
+$unreadCount = (int)($conn->query("SELECT COUNT(*) AS c FROM audit_log {$unreadWhere}")->fetch_assoc()['c'] ?? 0);
+
+function renderActivityItem(array $a): void
+{
+    $isClaimed = $a['action'] === 'claimed';
+    $isDeleted = $a['action'] === 'deleted';
+    $isUnread = empty($a['is_read']);
+    $canOpen = !in_array($a['action'], ['claimed', 'deleted'], true);
+
+    $classes = 'activity-item';
+    if ($isUnread) {
+        $classes .= ' is-unread';
+    }
+
+    echo '<div class="' . $classes . '"'
+        . ' data-notif-id="' . (int)$a['id'] . '"'
+        . ' data-read="' . ($isUnread ? '0' : '1') . '"';
+    if ($canOpen) {
+        echo ' data-reference="' . htmlspecialchars($a['reference_no'], ENT_QUOTES, 'UTF-8') . '"';
+    }
+    echo ' title="Double-click to ' . ($canOpen ? 'open this request' : 'mark as read') . '">';
+
+    echo '<input type="checkbox" class="notif-check" aria-label="Select notification">';
+    echo '<span class="activity-dot' . ($isClaimed ? ' is-claimed' : ($isDeleted ? ' is-deleted' : '')) . '"></span>';
+    echo '<div class="activity-text">';
+    if ($isClaimed) {
+        echo '<p><strong>' . htmlspecialchars($a['performed_by_username'] ?? 'Admin') . '</strong>'
+            . ' marked <strong>' . htmlspecialchars($a['reference_no']) . '</strong>'
+            . ' (' . htmlspecialchars($a['full_name']) . ') as claimed</p>';
+    } elseif ($isDeleted) {
+        echo '<p><strong>' . htmlspecialchars($a['performed_by_username'] ?? 'Admin') . '</strong>'
+            . ' deleted <strong>' . htmlspecialchars($a['reference_no']) . '</strong>'
+            . ' (' . htmlspecialchars($a['full_name']) . ')</p>';
+    } else {
+        echo '<p><strong>' . htmlspecialchars($a['performed_by_username'] ?? 'Admin') . '</strong>'
+            . ' changed <strong>' . htmlspecialchars($a['reference_no']) . '</strong>'
+            . ' from ' . htmlspecialchars($a['old_status'] ?? '—')
+            . ' to ' . htmlspecialchars($a['new_status'] ?? '—') . '</p>';
+    }
+    echo '<span class="activity-meta">' . date('M j, Y \\a\\t g:i A', strtotime($a['created_at'])) . '</span>';
+    echo '</div></div>';
+}
+?>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claim Schedule | Registrar Admin</title>
+    <script>
+        (function() {
+            try {
+                if (localStorage.getItem('urs_admin_theme') === 'light') {
+                    document.documentElement.setAttribute('data-theme', 'light');
+                }
+            } catch (e) {}
+        })();
+    </script>
+    <link rel="stylesheet" href="../assets/css/style.css?v=<?php echo @filemtime(__DIR__ . '/../assets/css/style.css'); ?>">
+</head>
+
+<body class="admin-body">
+
+    <div class="admin-shell">
+
+        <aside class="admin-sidebar">
+            <div class="sidebar-brand">
+                <span class="sidebar-brand-icon" aria-hidden="true">
+                    <img src="../assets/images/logo.png" alt="" class="sidebar-brand-img">
+                </span>
+                <div class="univ">
+                    <span class="sidebar-brand-text">University of Rizal System</span>
+                    <span class="sidebar-office">Registrar Office - Morong</span>
+                </div>
+            </div>
+
+            <div class="sidebar-section-label">Requests</div>
+
+            <nav class="sidebar-nav sidebar-nav-status">
+                <a href="dashboard.php" class="sidebar-link">
+                    <span>All requests</span>
+                    <span class="sidebar-count"><?php echo $activeTotal; ?></span>
+                </a>
+                <a href="claim_schedule.php"
+                    class="sidebar-link<?php echo $currentAdminPage === 'claim_schedule.php' ? ' active' : ''; ?>">
+                    <span>Claim Schedule</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-section-label">
+                General
+            </div>
+
+            <nav class="sidebar-nav sidebar-nav-general">
+                <a href="statistics.php" class="sidebar-link<?php echo $currentAdminPage === 'statistics.php' ? ' active' : ''; ?>">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M5 19V10M11 19V5M17 19V13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    <span>Statistics</span>
+                </a>
+                <?php if (isFullAdmin()): ?>
+                    <a href="manage_admins.php" class="sidebar-link<?php echo $currentAdminPage === 'manage_admins.php' ? ' active' : ''; ?>">
+                        <svg viewBox="0 0 24 24" fill="none">
+                            <circle cx="9" cy="8" r="3.2" stroke="currentColor" stroke-width="1.6" />
+                            <path d="M3.5 19c0-3.3 2.5-5.6 5.5-5.6s5.5 2.3 5.5 5.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+                            <path d="M15.5 8.5a2.8 2.8 0 1 0 0-5.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+                            <path d="M17.5 13.6c2.2.5 3.7 2.3 3.7 5.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+                        </svg>
+                        <span>Manage Admins</span>
+                    </a>
+                <?php endif; ?>
+            </nav>
+        </aside>
+
+        <div class="admin-content">
+
+            <header class="admin-topbar">
+                <div class="topbar-status-row">
+                    <a href="dashboard.php"
+                        class="topbar-link"
+                        data-status="">
+                        <svg viewBox="0 0 24 24" fill="none">
+                            <rect
+                                x="3.5"
+                                y="3.5"
+                                width="7"
+                                height="7"
+                                rx="1.5"
+                                stroke="currentColor"
+                                stroke-width="1.5" />
+
+                            <rect
+                                x="13.5"
+                                y="3.5"
+                                width="7"
+                                height="7"
+                                rx="1.5"
+                                stroke="currentColor"
+                                stroke-width="1.5" />
+
+                            <rect
+                                x="3.5"
+                                y="13.5"
+                                width="7"
+                                height="7"
+                                rx="1.5"
+                                stroke="currentColor"
+                                stroke-width="1.5" />
+
+                            <rect
+                                x="13.5"
+                                y="13.5"
+                                width="7"
+                                height="7"
+                                rx="1.5"
+                                stroke="currentColor"
+                                stroke-width="1.5" />
+                        </svg>
+
+                        <span>Admin Dashboard</span>
+                    </a>
+
+                    <button type="button" class="theme-toggle" id="themeToggle" role="switch"
+                        aria-checked="false" aria-label="Switch to light mode" title="Toggle light / dark mode">
+                        <svg class="theme-toggle-icon theme-toggle-icon-sun" viewBox="0 0 24 24" fill="none">
+                            <circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.8" />
+                            <path d="M12 2.5V5M12 19V21.5M4.5 12H2M22 12H19.5M5.6 5.6L7.3 7.3M18.4 5.6L16.7 7.3M5.6 18.4L7.3 16.7M18.4 18.4L16.7 16.7"
+                                stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                        </svg>
+                        <svg class="theme-toggle-icon theme-toggle-icon-moon" viewBox="0 0 24 24" fill="none">
+                            <path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a7 7 0 0 0 11 11Z" stroke="currentColor"
+                                stroke-width="1.8" stroke-linejoin="round" />
+                        </svg>
+                    </button>
+
+                    <?php if (isFullAdmin()): ?>
+                        <div class="notif-menu" id="notifMenu">
+                            <button type="button" class="notif-bell" id="notifTrigger"
+                                aria-haspopup="true" aria-expanded="false" aria-label="Notifications">
+                                <svg viewBox="0 0 24 24" fill="none">
+                                    <path d="M6 9.5a6 6 0 1 1 12 0v3.7c0 .5.16 1 .46 1.4L19.5 16.5a1 1 0 0 1-.8 1.6H5.3a1 1 0 0 1-.8-1.6l1.04-1.9c.3-.4.46-.9.46-1.4V9.5Z"
+                                        stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+                                    <path d="M9.5 19.5a2.5 2.5 0 0 0 5 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+                                </svg>
+                                <?php if ($unreadCount > 0): ?>
+                                    <span class="notif-badge" id="notifBadge"><?php echo $unreadCount > 9 ? '9+' : $unreadCount; ?></span>
+                                <?php endif; ?>
+                            </button>
+
+                            <div class="notif-dropdown" id="notifDropdown" hidden>
+                                <div class="notif-dropdown-header">
+                                    <span>Notifications</span>
+                                    <div class="notif-more-wrap">
+                                        <button type="button" class="notif-more" id="notifMoreBtn"
+                                            aria-haspopup="true" aria-expanded="false" aria-label="More options">
+                                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                                <circle cx="5" cy="12" r="1.8" />
+                                                <circle cx="12" cy="12" r="1.8" />
+                                                <circle cx="19" cy="12" r="1.8" />
+                                            </svg>
+                                        </button>
+                                        <div class="notif-more-menu" id="notifMoreMenu" hidden>
+                                            <button type="button" class="notif-menu-item" id="notifMarkAllRead" <?php echo $unreadCount > 0 ? '' : ' disabled'; ?>>
+                                                <svg viewBox="0 0 24 24" fill="none">
+                                                    <path d="M5 12.5L9.5 17L19 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                                </svg>
+                                                Mark all as read
+                                            </button>
+                                            <button type="button" class="notif-menu-item is-danger" id="notifDeleteMode" <?php echo empty($activityRows) ? ' disabled' : ''; ?>>
+                                                <svg viewBox="0 0 24 24" fill="none">
+                                                    <path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 002 2h6a2 2 0 002-2l1-12M9 7V4h6v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                                                </svg>
+                                                Delete notifications
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="notif-tabs" role="tablist">
+                                    <button type="button" class="notif-tab is-active" data-filter="all" role="tab" aria-selected="true">All</button>
+                                    <button type="button" class="notif-tab" data-filter="unread" role="tab" aria-selected="false">Unread</button>
+                                    <label class="notif-select-all" id="notifSelectAllWrap" hidden>
+                                        <input type="checkbox" id="notifSelectAll">
+                                        <span>All</span>
+                                    </label>
+                                </div>
+                                <div class="notif-list" id="notifList">
+                                    <?php if (empty($activityRows)): ?>
+                                        <p class="stats-empty" id="notifEmptyAll">No notifications.</p>
+                                    <?php else: ?>
+                                        <?php foreach ($notifGroups as $groupLabel => $groupRows): ?>
+                                            <?php if (empty($groupRows)) continue; ?>
+                                            <div class="notif-group">
+                                                <h4 class="notif-group-title"><?php echo $groupLabel; ?></h4>
+                                                <div class="activity-list">
+                                                    <?php foreach ($groupRows as $a): renderActivityItem($a);
+                                                    endforeach; ?>
+                                                </div>
+                                            </div>
+                                        <?php endforeach; ?>
+                                        <p class="stats-empty" id="notifEmptyUnread" hidden>You're all caught up.</p>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="notif-delete-bar" id="notifDeleteBar" hidden>
+                                    <button type="button" class="notif-cancel-btn" id="notifCancelDelete">Cancel</button>
+                                    <button type="button" class="notif-delete-btn" id="notifDeleteConfirm" disabled>Delete</button>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
+                    <div class="topbar-profile" id="profileMenu">
+                        <button type="button" class="topbar-profile-trigger" id="profileTrigger"
+                            aria-haspopup="true" aria-expanded="false">
+                            <span class="sidebar-avatar" id="topbarAvatar"><?php echo avatarContent($adminPhoto, $adminInitial, '../'); ?></span>
+
+                            <div class="sidebar-profile-info">
+                                <span class="sidebar-admin-name"><?php echo htmlspecialchars($adminName); ?></span>
+                                <span class="sidebar-profile-greeting">Admin</span>
+                            </div>
+
+                            <svg class="topbar-profile-chevron" viewBox="0 0 24 24" fill="none">
+                                <path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="1.8"
+                                    stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                        </button>
+
+                        <div class="profile-dropdown" id="profileDropdown" hidden>
+                            <div class="profile-dropdown-header">
+                                <span class="profile-dropdown-avatar" id="dropdownAvatar"><?php echo avatarContent($adminPhoto, $adminInitial, '../'); ?></span>
+                                <div>
+                                    <span class="profile-dropdown-name"><?php echo htmlspecialchars($adminName); ?></span>
+                                    <span class="profile-dropdown-role"><?php echo isFullAdmin() ? 'Full Admin' : 'Document Admin'; ?></span>
+                                </div>
+                            </div>
+
+                            <div class="profile-dropdown-office">
+                                <span class="profile-dropdown-office-label">Registrar Office</span>
+                                <span class="profile-dropdown-office-value">Morong</span>
+                            </div>
+
+                            <div class="profile-dropdown-items">
+                                <button type="button" class="profile-dropdown-item" id="openEditProfile">
+                                    <svg viewBox="0 0 24 24" fill="none">
+                                        <circle cx="12" cy="8" r="3.4" stroke="currentColor" stroke-width="1.6" />
+                                        <path d="M5 20c0-3.6 3.1-6.2 7-6.2s7 2.6 7 6.2" stroke="currentColor"
+                                            stroke-width="1.6" stroke-linecap="round" />
+                                    </svg>
+                                    Edit Profile
+                                </button>
+                                <a href="logout.php" class="profile-dropdown-item profile-dropdown-item-danger">
+                                    <svg viewBox="0 0 24 24" fill="none">
+                                        <path d="M9 4H6A1.5 1.5 0 0 0 4.5 5.5V18.5A1.5 1.5 0 0 0 6 20H9"
+                                            stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+                                        <path d="M14 16L18 12L14 8" stroke="currentColor" stroke-width="1.6"
+                                            stroke-linecap="round" stroke-linejoin="round" />
+                                        <path d="M18 12H9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+                                    </svg>
+                                    Sign Out
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <main class="stats-page schedule-page">
+
+                <div class="stats-page-header">
+                    <h1>Claim Schedule</h1>
+                    <p>Requests grouped by claim date, so you can see who is coming in and which ones are not ready yet.</p>
+                </div>
+
+                <nav class="schedule-tabs" aria-label="Schedule view">
+                    <a href="claim_schedule.php" class="schedule-tab<?php echo $show === 'all' ? ' is-active' : ''; ?>">
+                        All scheduled
+                        <span class="schedule-tab-count"><?php echo $countAll; ?></span>
+                    </a>
+                    <a href="claim_schedule.php?show=not-ready" class="schedule-tab<?php echo $show === 'not-ready' ? ' is-active' : ''; ?>">
+                        Not ready yet
+                        <span class="schedule-tab-count"><?php echo $countNotReady; ?></span>
+                    </a>
+                </nav>
+
+                <?php if (empty($groups)): ?>
+                    <div class="panel">
+                        <p class="stats-empty">
+                            <?php echo $countAll === 0
+                                ? 'No scheduled requests yet. Requests with a claim date will appear here.'
+                                : 'Every scheduled request is ready for pickup.'; ?>
+                        </p>
+                    </div>
+                <?php else: ?>
+                    <?php foreach ($groups as $date => $g): ?>
+                        <?php
+                        $tag = scheduleDayTag($date, $today, $tomorrow);
+                        $needsAttention = $date <= $today && $g['notReady'] > 0;
+                        ?>
+                        <section class="panel schedule-group">
+                            <header class="schedule-group-head">
+                                <div class="schedule-group-title">
+                                    <h2 class="schedule-date"><?php echo (new DateTime($date))->format('l, F j, Y'); ?></h2>
+                                    <?php if ($tag): ?>
+                                        <span class="schedule-tag <?php echo $tag[1]; ?>"><?php echo $tag[0]; ?></span>
+                                    <?php endif; ?>
+                                </div>
+                                <span class="schedule-summary">
+                                    <?php echo schedulePlural($g['total'], 'request'); ?>
+                                    &middot; <?php echo $g['ready']; ?> ready
+                                    &middot; <span class="<?php echo $needsAttention ? 'schedule-count-warn' : ''; ?>"><?php echo $g['notReady']; ?> not ready</span>
+                                </span>
+                            </header>
+
+                            <div class="schedule-table-wrap">
+                                <table class="schedule-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Reference no.</th>
+                                            <th>Student no.</th>
+                                            <th>Name</th>
+                                            <th>Document</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($g['rows'] as $r): ?>
+                                            <tr>
+                                                <td>
+                                                    <a class="cell-ref schedule-ref" href="dashboard.php?q=<?php echo urlencode($r['reference_no']); ?>">
+                                                        <?php echo htmlspecialchars($r['reference_no']); ?>
+                                                    </a>
+                                                </td>
+                                                <td><?php echo htmlspecialchars($r['student_number']); ?></td>
+                                                <td title="<?php echo htmlspecialchars($r['full_name'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($r['full_name']); ?></td>
+                                                <td title="<?php echo htmlspecialchars($r['document_type'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($r['document_type']); ?></td>
+                                                <td>
+                                                    <span class="schedule-status status-select-<?php echo strtolower(str_replace(' ', '-', $r['request_status'])); ?>">
+                                                        <?php echo htmlspecialchars($r['request_status']); ?>
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </section>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+
+            </main>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="editProfileOverlay" hidden>
+        <div class="edit-profile-box" role="dialog" aria-modal="true" aria-labelledby="editProfileTitle">
+            <div class="edit-profile-header">
+                <span class="edit-profile-header-icon">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="8" r="3.4" stroke="currentColor" stroke-width="1.6" />
+                        <path d="M5 20c0-3.6 3.1-6.2 7-6.2s7 2.6 7 6.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+                    </svg>
+                </span>
+                <div class="edit-profile-header-text">
+                    <h3 id="editProfileTitle">Edit Profile</h3>
+                    <p>Update your account information</p>
+                </div>
+                <button type="button" class="edit-profile-close" id="editProfileClose" aria-label="Close">
+                    <svg viewBox="0 0 24 24" fill="none">
+                        <path d="M6 6L18 18M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                    </svg>
+                </button>
+            </div>
+
+            <form id="editProfileForm">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(csrf_token()); ?>">
+                <div class="edit-profile-body">
+
+                    <div id="editProfileAlert"></div>
+
+                    <div class="edit-profile-avatar-row">
+                        <span class="edit-profile-avatar" id="editProfileAvatar"><?php echo avatarContent($adminPhoto, $adminInitial, '../'); ?></span>
+                        <div>
+                            <span class="edit-profile-avatar-name" id="editProfileAvatarName"><?php echo htmlspecialchars($adminName); ?></span>
+                            <span class="edit-profile-avatar-role"><?php echo isFullAdmin() ? 'Full Admin' : 'Document Admin'; ?></span> <button type="button" class="edit-profile-photo-btn" id="editProfilePhotoBtn">
+                                <svg viewBox="0 0 24 24" fill="none">
+                                    <path d="M12 16V4M12 4L7 9M12 4L17 9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                                    <path d="M4 16V18.5A1.5 1.5 0 0 0 5.5 20H18.5A1.5 1.5 0 0 0 20 18.5V16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+                                </svg>
+                                Change Photo
+                            </button>
+                            <input type="file" id="editProfilePhotoInput" name="photo" accept="image/png, image/jpeg, image/webp" hidden>
+                        </div>
+                    </div>
+
+                    <div class="edit-profile-section">
+                        <div class="edit-profile-section-label">
+                            <svg viewBox="0 0 24 24" fill="none">
+                                <rect x="3" y="5" width="18" height="14" rx="2.5" stroke="currentColor" stroke-width="1.5" />
+                                <path d="M3 8H21" stroke="currentColor" stroke-width="1.5" />
+                            </svg>
+                            Account Information
+                        </div>
+
+                        <div class="edit-profile-field">
+                            <label for="edit_full_name">Full Name</label>
+                            <input type="text" id="edit_full_name" name="full_name" value="<?php echo htmlspecialchars($adminName); ?>" required>
+                        </div>
+
+                        <div class="edit-profile-field">
+                            <label for="edit_username">Username</label>
+                            <input type="text" id="edit_username" name="username" value="<?php echo htmlspecialchars($_SESSION['admin_username'] ?? ''); ?>" required>
+                            <p class="edit-profile-hint">Your login username. Must be unique across the system.</p>
+                        </div>
+                    </div>
+
+                    <div class="edit-profile-section">
+                        <div class="edit-profile-section-label">
+                            <svg viewBox="0 0 24 24" fill="none">
+                                <rect x="5" y="10.5" width="14" height="9.5" rx="2" stroke="currentColor" stroke-width="1.5" />
+                                <path d="M8 10.5V7.5A4 4 0 0 1 16 7.5V10.5" stroke="currentColor" stroke-width="1.5" />
+                            </svg>
+                            Change Password
+                        </div>
+
+                        <div class="edit-profile-field">
+                            <label for="edit_current_password">Current Password</label>
+                            <input type="password" id="edit_current_password" name="current_password" autocomplete="off">
+                        </div>
+
+                        <div class="edit-profile-field">
+                            <label for="edit_new_password">New Password</label>
+                            <input type="password" id="edit_new_password" name="new_password" autocomplete="new-password" minlength="8">
+                        </div>
+
+                        <div class="edit-profile-field">
+                            <label for="edit_confirm_password">Confirm New Password</label>
+                            <input type="password" id="edit_confirm_password" name="confirm_password" autocomplete="new-password" minlength="8">
+                            <p class="edit-profile-hint">Leave the password fields blank if you don't want to change your password.</p>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="edit-profile-footer">
+                    <button type="button" class="btn-modal btn-modal-cancel" id="editProfileCancel">Cancel</button>
+                    <button type="submit" class="btn-modal btn-modal-save" id="editProfileSave">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        window.CSRF_TOKEN = <?php echo json_encode(csrf_token()); ?>;
+    </script>
+    <script src="../assets/js/admin.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/admin.js'); ?>"></script>
+
+    <script>
+        (function() {
+            var root = document.documentElement;
+            var toggle = document.getElementById('themeToggle');
+            if (!toggle) return;
+
+            function reflect(theme) {
+                var isLight = theme === 'light';
+                toggle.setAttribute('aria-checked', isLight ? 'true' : 'false');
+                toggle.setAttribute('aria-label', isLight ? 'Switch to dark mode' : 'Switch to light mode');
+            }
+
+            reflect(root.getAttribute('data-theme') === 'light' ? 'light' : 'dark');
+
+            toggle.addEventListener('click', function() {
+                var next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+                if (next === 'light') {
+                    root.setAttribute('data-theme', 'light');
+                } else {
+                    root.removeAttribute('data-theme');
+                }
+                try {
+                    localStorage.setItem('urs_admin_theme', next);
+                } catch (e) {}
+                reflect(next);
+            });
+        })();
+    </script>
+</body>
+
+</html>
