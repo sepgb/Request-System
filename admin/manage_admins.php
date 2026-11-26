@@ -171,7 +171,6 @@ function renderActivityItem(array $a): void
 
     <div class="admin-shell">
 
-        <!-- SIDEBAR -->
         <aside class="admin-sidebar">
             <div class="sidebar-brand">
                 <span class="sidebar-brand-icon" aria-hidden="true">
@@ -183,7 +182,6 @@ function renderActivityItem(array $a): void
                 </div>
             </div>
 
-            <!-- General -->
             <div class="sidebar-section-label">
                 General
             </div>
@@ -206,7 +204,6 @@ function renderActivityItem(array $a): void
                 </a>
             </nav>
 
-            <!-- Status -->
             <div class="sidebar-section-label">Status</div>
 
             <nav class="sidebar-nav sidebar-nav-status">
@@ -214,29 +211,11 @@ function renderActivityItem(array $a): void
                     <span>All requests</span>
                     <span class="sidebar-count"><?php echo (int)$stats['total']; ?></span>
                 </a>
-                <a href="dashboard.php?status=Pending" class="sidebar-link">
-                    <span>Pending</span>
-                    <span class="sidebar-count"><?php echo (int)$stats['pending']; ?></span>
-                </a>
-                <a href="dashboard.php?status=Processing" class="sidebar-link">
-                    <span>Processing</span>
-                    <span class="sidebar-count"><?php echo (int)$stats['processing']; ?></span>
-                </a>
-                <a href="dashboard.php?status=Ready+for+Pickup" class="sidebar-link">
-                    <span>Ready for pickup</span>
-                    <span class="sidebar-count"><?php echo (int)$stats['ready']; ?></span>
-                </a>
-                <a href="dashboard.php?status=Rejected" class="sidebar-link">
-                    <span>Rejected</span>
-                    <span class="sidebar-count"><?php echo (int)$stats['rejected']; ?></span>
-                </a>
             </nav>
         </aside>
 
-        <!-- MAIN CONTENT -->
         <div class="admin-content">
 
-            <!-- TOPBAR -->
             <header class="admin-topbar">
                 <div class="topbar-status-row">
                     <a href="dashboard.php" class="topbar-link">
@@ -249,7 +228,6 @@ function renderActivityItem(array $a): void
                         <span>Admin Dashboard</span>
                     </a>
 
-                    <!-- Light / dark mode toggle -->
                     <button type="button" class="theme-toggle" id="themeToggle" role="switch"
                         aria-checked="false" aria-label="Switch to light mode" title="Toggle light / dark mode">
                         <svg class="theme-toggle-icon theme-toggle-icon-sun" viewBox="0 0 24 24" fill="none">
@@ -263,7 +241,6 @@ function renderActivityItem(array $a): void
                         </svg>
                     </button>
 
-                    <!-- Notifications -->
                     <?php if (isFullAdmin()): ?>
                         <div class="notif-menu" id="notifMenu">
                             <button type="button" class="notif-bell" id="notifTrigger"
@@ -339,7 +316,6 @@ function renderActivityItem(array $a): void
                         </div>
                     <?php endif; ?>
 
-                    <!-- Admin profile -->
                     <div class="topbar-profile" id="profileMenu">
                         <button type="button" class="topbar-profile-trigger" id="profileTrigger"
                             aria-haspopup="true" aria-expanded="false">
@@ -387,9 +363,7 @@ function renderActivityItem(array $a): void
                 </div>
             </header>
 
-            <!-- MANAGE ADMINS CONTENT -->
             <main class="stats-page">
-
 
                 <?php if (empty($admins)): ?>
                     <p class="stats-empty">No Document Admin accounts yet. New ones created at signup will appear here.</p>
@@ -399,7 +373,6 @@ function renderActivityItem(array $a): void
                             <div class="flip-card" data-admin-id="<?php echo $a['id']; ?>">
                                 <div class="flip-card-inner">
 
-                                    <!-- FRONT -->
                                     <div class="flip-card-front admin-manage-card">
                                         <div class="admin-manage-header">
                                             <span class="sidebar-avatar admin-manage-avatar">
@@ -452,7 +425,6 @@ function renderActivityItem(array $a): void
                                         </div>
                                     </div>
 
-                                    <!-- BACK -->
                                     <div class="flip-card-back admin-manage-card">
                                         <div class="admin-manage-back-header">
                                             <span>Edit Assignment</span>
@@ -485,7 +457,6 @@ function renderActivityItem(array $a): void
         </div>
     </div>
 
-    <!-- EDIT PROFILE MODAL -->
     <div class="modal-overlay" id="editProfileOverlay" hidden>
         <div class="edit-profile-box" role="dialog" aria-modal="true" aria-labelledby="editProfileTitle">
             <div class="edit-profile-header">
@@ -578,7 +549,6 @@ function renderActivityItem(array $a): void
         </div>
     </div>
 
-    <!-- TOAST NOTIFICATIONS -->
     <div class="toast-container" id="toastContainer"></div>
 
     <script>
@@ -587,7 +557,6 @@ function renderActivityItem(array $a): void
     <script src="../assets/js/admin.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/admin.js'); ?>"></script>
     <script src="../assets/js/manage_admins.js"></script>
 
-    <!-- THEME TOGGLE -->
     <script>
         (function() {
             var root = document.documentElement;

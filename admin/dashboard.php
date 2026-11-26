@@ -6,26 +6,18 @@ require_once '../includes/functions.php';
 $scopeIn = documentScopeInClause($conn);
 $scopeWhere = $scopeIn !== null ? " WHERE document_type IN ($scopeIn)" : '';
 
-/* Distinct document types for the "Document" filter dropdown, scoped the
-   same way as the table itself. */
 $docTypeRes = $conn->query("SELECT DISTINCT document_type FROM requests{$scopeWhere} ORDER BY document_type ASC");
 $docTypeOptions = [];
 while ($dt = $docTypeRes->fetch_assoc()) {
   $docTypeOptions[] = $dt['document_type'];
 }
 
-/* ---------------------------------------------------------------
-   Table filters (search / status / document / date) + pagination.
-   These now run as real SQL, not client-side row hiding — needed so
-   search and filtering still work correctly once the table is paged
-   instead of loading every row at once.
-   --------------------------------------------------------------- */
 $perPage = 50;
 
 $filterQ        = trim($_GET['q'] ?? '');
 $filterStatus   = trim($_GET['status'] ?? '');
 $filterDocument = trim($_GET['document'] ?? '');
-$filterPeriod   = trim($_GET['period'] ?? ''); // '' | today | week | month
+$filterPeriod   = trim($_GET['period'] ?? '');
 $page           = max(1, (int)($_GET['page'] ?? 1));
 
 $validStatuses = ['Pending', 'Processing', 'Ready for Pickup', 'Rejected'];
@@ -111,7 +103,6 @@ function filterUrl(array $overrides = []): string
   return 'dashboard.php' . ($params ? ('?' . http_build_query($params)) : '');
 }
 
-/* Quick stats — scoped to this admin's document types, if restricted */
 $stats = $conn->query("
     SELECT
         SUM(request_status = 'Pending') AS pending,
@@ -129,20 +120,13 @@ $firstInitial = strtoupper(substr($nameParts[0], 0, 1));
 $secondInitial = strtoupper(substr(end($nameParts), 0, 1));
 $adminInitial = $firstInitial . $secondInitial;
 $currentAdminPage = basename($_SERVER['PHP_SELF'] ?? '');
-$initialStatusFilter = $filterStatus; // alias kept for the sidebar active-state checks below
+$initialStatusFilter = $filterStatus;
 
-/* ---------------------------------------------------------------
-   Recent activity
-   --------------------------------------------------------------- */
 $fullActivityLimit = 200;
 
 $activityWhere = $scopeIn !== null ? "WHERE is_dismissed = 0 AND document_type IN ($scopeIn) " : 'WHERE is_dismissed = 0 ';
 $activityAnd = $scopeIn !== null ? "AND document_type IN ($scopeIn) " : '';
 
-/* A notification double-click lands back here with ?read_notif=<id> —
-mark that one entry read before we compute the unread count below.
-Assumes audit_log has an auto-increment `id` primary key and an
-`is_read` TINYINT(1) DEFAULT 0 column. */
 if (!empty($_GET['read_notif'])) {
   $readId = (int)$_GET['read_notif'];
   if ($readId > 0) {
@@ -159,9 +143,8 @@ while ($row = $fullActivity->fetch_assoc()) {
   $allActivityRows[] = $row;
 }
 
-$activityRows = $allActivityRows;   // every notification — the dropdown list scrolls
+$activityRows = $allActivityRows;
 
-// Facebook-style sections: anything logged today vs. everything before
 $notifToday = date('Y-m-d');
 $notifGroups = ['Today' => [], 'Earlier' => []];
 foreach ($allActivityRows as $act) {
@@ -171,8 +154,6 @@ foreach ($allActivityRows as $act) {
 $unreadWhere = $activityWhere . 'AND is_read = 0';
 $unreadCount = (int)($conn->query("SELECT COUNT(*) AS c FROM audit_log {$unreadWhere}")->fetch_assoc()['c'] ?? 0);
 
-// 'claimed' and 'deleted' remove the request row, so there's nothing left
-// to open on the dashboard for those — only status-change entries link out.
 function renderActivityItem(array $a): void
 {
   $isClaimed = $a['action'] === 'claimed';
@@ -241,7 +222,6 @@ function renderActivityItem(array $a): void
 
   <div class="admin-shell">
 
-    <!-- SIDEBAR -->
     <aside class="admin-sidebar">
       <div class="sidebar-brand">
         <span class="sidebar-brand-icon" aria-hidden="true">
@@ -257,7 +237,6 @@ function renderActivityItem(array $a): void
         </div>
       </div>
 
-      <!-- General -->
       <div class="sidebar-section-label">
         General
       </div>
@@ -282,16 +261,14 @@ function renderActivityItem(array $a): void
         <?php endif; ?>
       </nav>
 
-      <!-- Status -->
       <div class="sidebar-section-label">
         Status
       </div>
 
       <nav class="sidebar-nav sidebar-nav-status">
 
-        <!-- All -->
-        <a href="<?php echo filterUrl(['status' => '']); ?>"
-          class="sidebar-link sidebar-status-link<?php echo $initialStatusFilter === '' ? ' active' : ''; ?>"
+        <a href="dashboard.php"
+          class="sidebar-link sidebar-status-link<?php echo !$isFiltering ? ' active' : ''; ?>"
           data-status="">
           <span>All requests</span>
           <span class="sidebar-count sidebar-count-all"
@@ -300,53 +277,11 @@ function renderActivityItem(array $a): void
           </span>
         </a>
 
-        <a href="<?php echo filterUrl(['status' => 'Pending']); ?>"
-          class="sidebar-link sidebar-status-link<?php echo $initialStatusFilter === 'Pending' ? ' active' : ''; ?>"
-          data-status="Pending">
-          <span>Pending</span>
-          <span class="sidebar-count sidebar-count-pending"
-            id="count-pending">
-            <?php echo (int)$stats['pending']; ?>
-          </span>
-        </a>
-
-        <a href="<?php echo filterUrl(['status' => 'Processing']); ?>"
-          class="sidebar-link sidebar-status-link<?php echo $initialStatusFilter === 'Processing' ? ' active' : ''; ?>"
-          data-status="Processing">
-          <span>Processing</span>
-          <span class="sidebar-count sidebar-count-processing"
-            id="count-processing">
-            <?php echo (int)$stats['processing']; ?>
-          </span>
-        </a>
-
-        <a href="<?php echo filterUrl(['status' => 'Ready for Pickup']); ?>"
-          class="sidebar-link sidebar-status-link<?php echo $initialStatusFilter === 'Ready for Pickup' ? ' active' : ''; ?>"
-          data-status="Ready for Pickup">
-          <span>Ready for pickup</span>
-          <span class="sidebar-count sidebar-count-ready"
-            id="count-ready">
-            <?php echo (int)$stats['ready']; ?>
-          </span>
-        </a>
-
-        <a href="<?php echo filterUrl(['status' => 'Rejected']); ?>"
-          class="sidebar-link sidebar-status-link<?php echo $initialStatusFilter === 'Rejected' ? ' active' : ''; ?>"
-          data-status="Rejected">
-          <span>Rejected</span>
-          <span class="sidebar-count sidebar-count-rejected"
-            id="count-rejected">
-            <?php echo (int)$stats['rejected']; ?>
-          </span>
-        </a>
       </nav>
     </aside>
 
-    <!-- MAIN CONTENT -->
     <div class="admin-content">
 
-
-      <!-- TOPBAR -->
       <header class="admin-topbar">
         <div class="topbar-status-row">
           <a href="dashboard.php"
@@ -393,7 +328,6 @@ function renderActivityItem(array $a): void
             <span>Admin Dashboard</span>
           </a>
 
-          <!-- Light / dark mode toggle -->
           <button type="button" class="theme-toggle" id="themeToggle" role="switch"
             aria-checked="false" aria-label="Switch to light mode" title="Toggle light / dark mode">
             <svg class="theme-toggle-icon theme-toggle-icon-sun" viewBox="0 0 24 24" fill="none">
@@ -407,7 +341,6 @@ function renderActivityItem(array $a): void
             </svg>
           </button>
 
-          <!-- Notifications -->
           <?php if (isFullAdmin()): ?>
             <div class="notif-menu" id="notifMenu">
               <button type="button" class="notif-bell" id="notifTrigger"
@@ -483,7 +416,6 @@ function renderActivityItem(array $a): void
             </div>
           <?php endif; ?>
 
-          <!-- Admin profile -->
           <div class="topbar-profile" id="profileMenu">
             <button type="button" class="topbar-profile-trigger" id="profileTrigger"
               aria-haspopup="true" aria-expanded="false">
@@ -538,7 +470,6 @@ function renderActivityItem(array $a): void
           </div>
         </div>
 
-        <!-- SEARCH + FILTERS -->
         <div class="topbar-tools">
           <form method="GET" action="dashboard.php" id="filterForm">
             <label class="topbar-search">
@@ -566,11 +497,16 @@ function renderActivityItem(array $a): void
                 placeholder="Search name, student no. or reference no.">
             </label>
 
-            <?php if ($filterStatus !== ''): ?>
-              <input type="hidden" name="status" value="<?php echo htmlspecialchars($filterStatus, ENT_QUOTES, 'UTF-8'); ?>">
-            <?php endif; ?>
-
             <div class="table-filters">
+              <select name="status" id="filterStatus" aria-label="Filter by status">
+                <option value="">All statuses</option>
+                <?php foreach ($validStatuses as $st): ?>
+                  <option value="<?php echo htmlspecialchars($st, ENT_QUOTES, 'UTF-8'); ?>" <?php echo $filterStatus === $st ? ' selected' : ''; ?>>
+                    <?php echo htmlspecialchars($st); ?>
+                  </option>
+                <?php endforeach; ?>
+              </select>
+
               <select name="document" id="filterDocument" aria-label="Filter by document type">
                 <option value="">All documents</option>
                 <?php foreach ($docTypeOptions as $dt): ?>
@@ -592,13 +528,10 @@ function renderActivityItem(array $a): void
         </div>
       </header>
 
-      <!-- DASHBOARD CONTENT -->
       <main class="admin-main">
 
-        <!-- Statistics -->
         <div class="stats-row">
 
-          <!-- Total -->
           <div class="stat-card">
             <div class="stat-icon stat-icon-total">
               <svg viewBox="0 0 24 24" fill="none">
@@ -631,8 +564,6 @@ function renderActivityItem(array $a): void
             </div>
           </div>
 
-
-          <!-- Pending -->
           <div class="stat-card stat-card-pending">
             <div class="stat-icon stat-icon-pending">
               <svg viewBox="0 0 24 24" fill="none">
@@ -664,7 +595,6 @@ function renderActivityItem(array $a): void
             </div>
           </div>
 
-          <!-- Ready -->
           <div class="stat-card stat-card-ready">
             <div class="stat-icon stat-icon-ready">
               <svg viewBox="0 0 24 24" fill="none">
@@ -697,8 +627,6 @@ function renderActivityItem(array $a): void
           </div>
         </div>
 
-
-        <!-- REQUEST TABLE -->
         <div class="table-wrap">
 
           <table class="admin-table">
@@ -851,7 +779,6 @@ function renderActivityItem(array $a): void
     </div>
   </div>
 
-  <!-- CLAIM CONFIRMATION MODAL -->
   <div class="modal-overlay" id="claimModalOverlay" hidden>
     <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="claimModalTitle">
       <h3 id="claimModalTitle">Mark as claimed?</h3>
@@ -863,7 +790,6 @@ function renderActivityItem(array $a): void
     </div>
   </div>
 
-  <!-- DELETE CONFIRMATION MODAL (rejected requests only) -->
   <div class="modal-overlay" id="deleteModalOverlay" hidden>
     <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
       <h3 id="deleteModalTitle">Delete request?</h3>
@@ -875,7 +801,6 @@ function renderActivityItem(array $a): void
     </div>
   </div>
 
-  <!-- REQUEST DETAILS MODAL -->
   <div class="modal-overlay" id="requestDetailsOverlay" hidden>
     <div class="request-details-box" role="dialog" aria-modal="true" aria-labelledby="requestDetailsTitle">
       <div class="request-details-header">
@@ -930,7 +855,6 @@ function renderActivityItem(array $a): void
     </div>
   </div>
 
-  <!-- EDIT PROFILE MODAL -->
   <div class="modal-overlay" id="editProfileOverlay" hidden>
     <div class="edit-profile-box" role="dialog" aria-modal="true" aria-labelledby="editProfileTitle">
       <div class="edit-profile-header">
@@ -1029,7 +953,6 @@ function renderActivityItem(array $a): void
     </div>
   </div>
 
-  <!-- TOAST NOTIFICATIONS -->
   <div class="toast-container" id="toastContainer"></div>
 
   <script>
@@ -1037,7 +960,6 @@ function renderActivityItem(array $a): void
   </script>
   <script src="../assets/js/admin.js?v=<?php echo @filemtime(__DIR__ . '/../assets/js/admin.js'); ?>"></script>
 
-  <!-- THEME TOGGLE -->
   <script>
     (function() {
       var root = document.documentElement;
