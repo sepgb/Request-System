@@ -165,25 +165,33 @@ function schedulePlural(int $n, string $word): string
                                             $isReady = $r['request_status'] === 'Ready for Pickup';
                                             $isLate = !$isReady && $date <= $today;
                                             $stateClass = $isReady ? 'is-ready' : ($isLate ? 'is-late' : 'is-wait');
-                                            $subParts = array_filter(
-                                                [$r['student_number'], $r['year_level'], $r['semester']],
+                                            $docSubParts = array_filter(
+                                                [$r['year_level'], $r['semester']],
                                                 function ($v) {
                                                     return $v !== null && $v !== '';
                                                 }
                                             );
+                                            $docInlineParts = array_merge([$r['document_type']], $docSubParts);
                                             ?>
                                             <tr>
                                                 <td>
                                                     <div class="schedule-person">
                                                         <span class="schedule-name" title="<?php echo htmlspecialchars($r['full_name'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($r['full_name']); ?></span>
-                                                        <span class="schedule-sub"><?php echo htmlspecialchars(implode(' · ', $subParts)); ?></span>
+                                                        <span class="schedule-sub"><?php echo htmlspecialchars($r['student_number']); ?></span>
                                                         <span class="schedule-inline">
-                                                            <span class="schedule-doc-inline"><?php echo htmlspecialchars($r['document_type']); ?></span>
+                                                            <span class="schedule-doc-inline"><?php echo htmlspecialchars(implode(' · ', $docInlineParts)); ?></span>
                                                             <a class="schedule-ref-inline" href="dashboard.php?q=<?php echo urlencode($r['reference_no']); ?>"><?php echo htmlspecialchars($r['reference_no']); ?></a>
                                                         </span>
                                                     </div>
                                                 </td>
-                                                <td class="schedule-doc" title="<?php echo htmlspecialchars($r['document_type'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($r['document_type']); ?></td>
+                                                <td>
+                                                    <div class="schedule-person">
+                                                        <span class="schedule-doc-name" title="<?php echo htmlspecialchars($r['document_type'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($r['document_type']); ?></span>
+                                                        <?php if ($docSubParts): ?>
+                                                            <span class="schedule-sub"><?php echo htmlspecialchars(implode(' · ', $docSubParts)); ?></span>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                </td>
                                                 <td>
                                                     <a class="schedule-ref" href="dashboard.php?q=<?php echo urlencode($r['reference_no']); ?>"><?php echo htmlspecialchars($r['reference_no']); ?></a>
                                                 </td>

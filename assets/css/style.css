@@ -7404,6 +7404,11 @@ html[data-theme="light"] .doc-type-checkbox input[type="checkbox"]:checked {
   text-overflow: ellipsis;
 }
 
+.schedule-doc-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .schedule-sub {
   color: #777f8a;
   font-size: 12px;
