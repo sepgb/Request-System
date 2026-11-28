@@ -94,89 +94,118 @@ function schedulePlural(int $n, string $word): string
             <?php include __DIR__ . '/../includes/admin_topbar.php'; ?>
 
             <main class="admin-main schedule-main">
+                <div class="schedule-page">
 
-                <div class="schedule-toolbar">
-                    <h1 class="schedule-title">Claim Schedule</h1>
+                    <div class="schedule-toolbar">
+                        <h1 class="schedule-title">Claim Schedule</h1>
 
-                    <nav class="schedule-tabs" aria-label="Schedule view">
-                        <a href="claim_schedule.php" class="schedule-tab<?php echo $show === 'all' ? ' is-active' : ''; ?>">
-                            All scheduled
-                            <span class="schedule-tab-count"><?php echo $countAll; ?></span>
-                        </a>
-                        <a href="claim_schedule.php?show=not-ready" class="schedule-tab<?php echo $show === 'not-ready' ? ' is-active' : ''; ?>">
-                            Not ready yet
-                            <span class="schedule-tab-count"><?php echo $countNotReady; ?></span>
-                        </a>
-                    </nav>
-                </div>
+                        <nav class="schedule-tabs" aria-label="Schedule view">
+                            <a href="claim_schedule.php" class="schedule-tab<?php echo $show === 'all' ? ' is-active' : ''; ?>">
+                                All scheduled
+                                <span class="schedule-tab-count"><?php echo $countAll; ?></span>
+                            </a>
+                            <a href="claim_schedule.php?show=not-ready" class="schedule-tab<?php echo $show === 'not-ready' ? ' is-active' : ''; ?>">
+                                Not ready
+                                <span class="schedule-tab-count"><?php echo $countNotReady; ?></span>
+                            </a>
+                        </nav>
+                    </div>
 
-                <?php if (empty($groups)): ?>
-                    <p class="schedule-empty">
-                        <?php echo $countAll === 0
-                            ? 'No scheduled requests yet. Requests with a claim date will appear here.'
-                            : 'Every scheduled request is ready for pickup.'; ?>
-                    </p>
-                <?php else: ?>
-                    <?php foreach ($groups as $date => $g): ?>
-                        <?php
-                        $tag = scheduleDayTag($date, $today, $tomorrow);
-                        $needsAttention = $date <= $today && $g['notReady'] > 0;
-                        ?>
-                        <section class="schedule-group">
-                            <header class="schedule-group-head">
-                                <div class="schedule-group-title">
-                                    <h2 class="schedule-date"><?php echo (new DateTime($date))->format('l, F j, Y'); ?></h2>
-                                    <?php if ($tag): ?>
-                                        <span class="schedule-tag <?php echo $tag[1]; ?>"><?php echo $tag[0]; ?></span>
-                                    <?php endif; ?>
-                                </div>
-                                <span class="schedule-summary">
-                                    <?php echo schedulePlural($g['total'], 'request'); ?>
-                                    &middot; <?php echo $g['ready']; ?> ready
-                                    &middot; <span class="<?php echo $needsAttention ? 'schedule-count-warn' : ''; ?>"><?php echo $g['notReady']; ?> not ready</span>
-                                </span>
-                            </header>
+                    <?php if (empty($groups)): ?>
+                        <p class="schedule-empty">
+                            <?php echo $countAll === 0
+                                ? 'No requests are scheduled yet'
+                                : 'Everything scheduled is ready for pickup'; ?>
+                        </p>
+                    <?php else: ?>
+                        <?php $dayIndex = 0; ?>
+                        <?php foreach ($groups as $date => $g): ?>
+                            <?php
+                            $dayDate = new DateTime($date);
+                            $tag = scheduleDayTag($date, $today, $tomorrow);
+                            $pct = $g['total'] > 0 ? (int)round($g['ready'] / $g['total'] * 100) : 0;
+                            ?>
+                            <section class="schedule-day" style="--i: <?php echo min($dayIndex, 5); ?>">
+                                <header class="schedule-day-head">
+                                    <div class="schedule-leaf" aria-hidden="true">
+                                        <span class="schedule-leaf-month"><?php echo $dayDate->format('M'); ?></span>
+                                        <span class="schedule-leaf-day"><?php echo $dayDate->format('j'); ?></span>
+                                    </div>
 
-                            <div class="table-wrap">
+                                    <div class="schedule-day-title">
+                                        <h2 class="schedule-day-date"><?php echo $dayDate->format('l, F j, Y'); ?></h2>
+                                        <p class="schedule-day-meta">
+                                            <?php if ($tag): ?>
+                                                <span class="schedule-day-flag <?php echo $tag[1]; ?>"><?php echo $tag[0]; ?></span> &middot;
+                                            <?php endif; ?>
+                                            <?php echo schedulePlural($g['total'], 'request'); ?>
+                                        </p>
+                                    </div>
+
+                                    <div class="schedule-progress">
+                                        <span class="schedule-progress-text"><?php echo $g['ready']; ?> of <?php echo $g['total']; ?> ready</span>
+                                        <span class="schedule-bar" aria-hidden="true">
+                                            <span class="schedule-bar-fill" style="width: <?php echo $pct; ?>%"></span>
+                                        </span>
+                                    </div>
+                                </header>
+
                                 <table class="schedule-table">
                                     <thead>
                                         <tr>
-                                            <th>Reference no.</th>
-                                            <th>Student no.</th>
-                                            <th>Name</th>
-                                            <th>Document</th>
-                                            <th>Year Level</th>
-                                            <th>Semester</th>
-                                            <th>Status</th>
+                                            <th scope="col">Name</th>
+                                            <th scope="col">Document</th>
+                                            <th scope="col">Reference no.</th>
+                                            <th scope="col">Status</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <?php foreach ($g['rows'] as $r): ?>
+                                            <?php
+                                            $isReady = $r['request_status'] === 'Ready for Pickup';
+                                            $isLate = !$isReady && $date <= $today;
+                                            $stateClass = $isReady ? 'is-ready' : ($isLate ? 'is-late' : 'is-wait');
+                                            $subParts = array_filter(
+                                                [$r['student_number'], $r['year_level'], $r['semester']],
+                                                function ($v) {
+                                                    return $v !== null && $v !== '';
+                                                }
+                                            );
+                                            ?>
                                             <tr>
                                                 <td>
-                                                    <a class="cell-ref schedule-ref" href="dashboard.php?q=<?php echo urlencode($r['reference_no']); ?>">
-                                                        <?php echo htmlspecialchars($r['reference_no']); ?>
-                                                    </a>
+                                                    <div class="schedule-person">
+                                                        <span class="schedule-name" title="<?php echo htmlspecialchars($r['full_name'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($r['full_name']); ?></span>
+                                                        <span class="schedule-sub"><?php echo htmlspecialchars(implode(' · ', $subParts)); ?></span>
+                                                        <span class="schedule-inline">
+                                                            <span class="schedule-doc-inline"><?php echo htmlspecialchars($r['document_type']); ?></span>
+                                                            <a class="schedule-ref-inline" href="dashboard.php?q=<?php echo urlencode($r['reference_no']); ?>"><?php echo htmlspecialchars($r['reference_no']); ?></a>
+                                                        </span>
+                                                    </div>
                                                 </td>
-                                                <td><?php echo htmlspecialchars($r['student_number']); ?></td>
-                                                <td title="<?php echo htmlspecialchars($r['full_name'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($r['full_name']); ?></td>
-                                                <td title="<?php echo htmlspecialchars($r['document_type'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($r['document_type']); ?></td>
-                                                <td><?php echo $r['year_level'] !== '' && $r['year_level'] !== null ? htmlspecialchars($r['year_level']) : '&mdash;'; ?></td>
-                                                <td><?php echo $r['semester'] !== '' && $r['semester'] !== null ? htmlspecialchars($r['semester']) : '&mdash;'; ?></td>
+                                                <td class="schedule-doc" title="<?php echo htmlspecialchars($r['document_type'], ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($r['document_type']); ?></td>
                                                 <td>
-                                                    <span class="schedule-status status-select-<?php echo strtolower(str_replace(' ', '-', $r['request_status'])); ?>">
+                                                    <a class="schedule-ref" href="dashboard.php?q=<?php echo urlencode($r['reference_no']); ?>"><?php echo htmlspecialchars($r['reference_no']); ?></a>
+                                                </td>
+                                                <td>
+                                                    <span class="schedule-state <?php echo $stateClass; ?>">
+                                                        <span class="schedule-dot" aria-hidden="true"></span>
                                                         <?php echo htmlspecialchars($r['request_status']); ?>
+                                                        <?php if ($isLate): ?>
+                                                            <span class="schedule-late"><?php echo $date === $today ? 'Due today' : 'Overdue'; ?></span>
+                                                        <?php endif; ?>
                                                     </span>
                                                 </td>
                                             </tr>
                                         <?php endforeach; ?>
                                     </tbody>
                                 </table>
-                            </div>
-                        </section>
-                    <?php endforeach; ?>
-                <?php endif; ?>
+                            </section>
+                            <?php $dayIndex++; ?>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
 
+                </div>
             </main>
         </div>
     </div>
